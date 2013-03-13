@@ -3,3 +3,5 @@
 *.d
 *.o
 *.bc
+Release*
+Debug*

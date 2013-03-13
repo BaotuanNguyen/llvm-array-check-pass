@@ -1,7 +1,9 @@
 
 #include "llvm/Pass.h"
 #include "llvm/Function.h"
+#include "llvm/Instructions.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/InstIterator.h"
 
 using namespace llvm;
 
@@ -12,8 +14,16 @@ namespace {
 		HelloPass() : FunctionPass(ID) {}
 		virtual bool runOnFunction(Function &F)
 		{
-			errs() << "Hello: ";
-			errs().write_escaped(F.getName()) << "\n";
+			errs() << F.getName() << "\n";
+			for(inst_iterator I = inst_begin(F), E = inst_end(F); I != E; I++)
+			{
+				if(isa<GetElementPtrInst>(*I))
+				{
+					errs() << "this is element ptr instruction\n";
+				}
+				errs() << *I << "\n";
+			}
+			
 			return false;
 		}
 	};
