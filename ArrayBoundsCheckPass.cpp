@@ -14,43 +14,40 @@ static RegisterPass<ArrayBoundsCheckPass> X("hello", "hello pass", false, false)
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
-	errs() << F.getName() << "\n";
 
-	for(inst_iterator I = inst_begin(F), E = inst_end(F); I != E; I++)
-	{
-		Instruction* instruction = &(*I);
-		//GetElementPtrInst* getInstruction = this->findGetElementPtrInst(instruction);
-		//errs() << ((getInstruction != NULL) ? "this is element ptr instruction\n" : "");
-		errs() << *instruction << "\n";
-	}
-
-	return false;
+	this->linearizeAllInstructions(F);	
+	return true;
 
 }
 
-GetElementPtrInst* ArrayBoundsCheckPass::findGetElementPtrInst(Instruction* instruction)
+bool ArrayBoundsCheckPass::linearizeAllInstructions(Function& F)
 {
-	if(GetElementPtrInst* gepInstruction = dyn_cast<GetElementPtrInst>(instruction))
+	errs() << F.getName() << "\n";
+	//iterator over instructions
+	for(inst_iterator I = inst_begin(F), E = inst_end(F); I != E; I++)
 	{
-		//the instruction is a GEP instruction so return it
-		return gepInstruction;
+		Instruction* instruction = &(*I);
+		//linearize this insturction
+		this->linearizeInstruction(instruction);
+		//errs() << ((getInstruction != NULL) ? "this is element ptr instruction\n" : "");
 	}
-	else
+	return false;
+}
+/*
+ * whether the instruction was linearized
+ */
+bool ArrayBoundsCheckPass::linearizeInstruction(Instruction* instruction)
+{
+	unsigned int index;
+	errs() << "-> ("<< instruction->mayReadOrWriteMemory() <<", " << instruction->getOpcodeName() << ") " << *instruction;
+	errs() << "[ ";
+	for(index = 0; index < instruction->getNumOperands(); index++)
 	{
-		//check whether a GEP instruction is an argument to an instruction
-		errs() << "[ ";
-		for(llvm::User::value_op_iterator childValuesIterator = instruction->value_op_begin(); childValuesIterator != instruction->value_op_end(); childValuesIterator++)
-		{
-			Value* value = *childValuesIterator;
-			errs() << *value << ", ";
-			if(GetElementPtrInst* childGepInstruction = dyn_cast<GetElementPtrInst>(value))
-			{
-				return childGepInstruction;
-			}
-		}
-		errs() << "]\n";
+		Value* operand = instruction->getOperand(index);
+		errs() << *operand << ", ";
 	}
-	return (GetElementPtrInst*)0;
+	errs() << " ]\n";
+	return true;;
 
 }
 

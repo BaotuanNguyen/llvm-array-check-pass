@@ -10,8 +10,9 @@ struct ArrayBoundsCheckPass : public FunctionPass
 	public:
 		static char ID;
 		ArrayBoundsCheckPass() : FunctionPass(ID) {}
-		GetElementPtrInst* findGetElementPtrInst(Instruction* instruction);
 		virtual bool runOnFunction(Function& F);
+		bool linearizeAllInstructions(Function& F);
+		bool linearizeInstruction(Instruction* instruction);
 };
 
 }
