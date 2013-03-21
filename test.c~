@@ -12,6 +12,6 @@ int main(int argc, char** argv)
 	int *d = (int*)malloc(sizeof(int)*10);
 	arrayAccess(9);
 	int *e = (int*)malloc(sizeof(int)*5);
-        printf("end of test.c %d\n", b[0]);
+        printf("end of test.c\n");
 	return *e + *d;
 }
