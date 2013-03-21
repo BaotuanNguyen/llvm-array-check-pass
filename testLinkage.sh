@@ -6,7 +6,7 @@
 #	LibArrayCheck.cpp (C++ code)
 #	test (application code)
 #
-clang -emit-llvm -c -o  test.bc test.c
+#clang -emit-llvm -c -o  test.bc test.c
 clang++ -emit-llvm -c -o  LibArrayCheck.bc LibArrayCheck.cpp
-clang -lstdc++ -o "test" test.bc LibArrayCheck.bc
+clang -lstdc++ -o "test" test1.bc LibArrayCheck.bc
 rm -rf *.bc *.ll *.o

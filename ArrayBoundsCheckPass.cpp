@@ -13,8 +13,6 @@
 
 using namespace llvm;
 
-char ArrayBoundsCheckPass::ID = 0;
-static RegisterPass<ArrayBoundsCheckPass> X("hello", "hello pass", false, false);
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
@@ -38,6 +36,9 @@ bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
 				errs() << *origin;
 			}
 			errs() << "]\n";
+			errs() << "call inserted\n";
+			Value* ten = ConstantInt::get(Type::getInt32Ty(F.getContext()), 10);
+			CallInst::Create(this->arrayAccessFunction, ten, "", GEP);
 		}
 	}
 	return false;
