@@ -43,6 +43,23 @@ bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
 	return false;
 }
 
+/*
+ * whether the instruction was linearized
+ */
+bool ArrayBoundsCheckPass::linearizeInstruction(Instruction* instruction)
+{
+	unsigned int index;
+	errs() << "\n-> ("<< instruction->getNumUses() <<", " << instruction->hasName() << ") " << *instruction;
+	errs() << "[ ";
+	for(index = 0; index < instruction->getNumOperands(); index++)
+	{
+		Value* operand = instruction->getOperand(index);
+		Type* opType = instruction->getType();
+		errs() << *operand <<" (" << *opType << ") " <<"*** ";
+	}
+	errs() << " ]\n\n";
+	return true;;
+}
 
 /*
  * Given a pointer in a GEP instruction, this will try to determine which
