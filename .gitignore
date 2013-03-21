@@ -3,5 +3,8 @@
 *.d
 *.o
 *.bc
+*.ll
+*.dot
+*.pdf
 Release*
 Debug*
