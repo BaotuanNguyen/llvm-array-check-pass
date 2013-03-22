@@ -79,7 +79,7 @@ Value* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
 	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
 	globalStr->setInitializer(constStr);
 	errs() << "creating global variable: " << *globalStr << "\n";
-	return NULL;
+	return globalStr;
 }
 
 bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
