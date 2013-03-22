@@ -1,3 +1,4 @@
 -each ArrayBoundsCheckPass(Access|Alloc|Free|Malloc).cpp will add call functions that will tell the library, information about the variables being access, allocated, freed, or malloced.
 -for "alloc" whenever a variable is allocated a string will be passed to the library "functionName@variableName", and it's type
 -for  "malloc", whenever the malloced memory address is stored at one of the allocated variables, the library will be called with the name "functionName@variableName" and the size of the memory being assigned.
+TEST GIT
