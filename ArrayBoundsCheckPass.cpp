@@ -4,6 +4,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/InstIterator.h"
 #include "llvm/InstrTypes.h"
@@ -12,7 +13,17 @@
 #include <queue>
 
 using namespace llvm;
-
+bool ArrayBoundsCheckPass::doInitialization(Module& M)
+{
+	Type* voidTy = Type::getVoidTy(M.getContext());
+	Type* intTy = Type::getInt32Ty(M.getContext());
+	FunctionType* accessFunctionType = FunctionType::get(voidTy, intTy, false);
+	Constant* functionConstant = M.getOrInsertFunction("arrayAccess", accessFunctionType);
+	errs() << *functionConstant << "\n";
+	this->arrayAccessFunction = M.getFunction("arrayAccess");
+	errs() << *this->arrayAccessFunction << "\n";
+	return false;
+}
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
@@ -28,6 +39,7 @@ bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
 	errs() << this <<" block " << this->numBlockVisited << " \n";	
 	for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I)
 	{
+		Instruction* inst = &*I;
 		if(GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(&*I))
 		{
 			errs() << *GEP << "[";
@@ -43,7 +55,6 @@ bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
 	}
 	return false;
 }
-
 
 /*
  * Given a pointer in a GEP instruction, this will try to determine which

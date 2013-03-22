@@ -1,4 +1,10 @@
 LEVEL=../..
+
 LIBRARYNAME=llvm-array-check-pass
+
 LOADABLE_MODULE=1
+
+#files to be compiled
+SOURCES:= ArrayBoundsCheckPass.cpp ArrayBoundsCheckPassAccess.cpp ArrayBoundsCheckPassAlloc.cpp ArrayBoundsCheckPassFree.cpp ArrayBoundsCheckPassMalloc.cpp
+
 include $(LEVEL)/Makefile.common

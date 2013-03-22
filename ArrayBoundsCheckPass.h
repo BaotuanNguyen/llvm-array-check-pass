@@ -35,12 +35,7 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		{
 			this->numBlockVisited = 0;
 		}
-		virtual bool doInitialization(Module& M)
-		{
-			this->arrayAccessFunction = M.getFunction("arrayAccess");
-			errs() << *this->arrayAccessFunction << "\n";
-			return false;
-		}
+		virtual bool doInitialization(Module& M);
 		virtual bool runOnFunction(Function& F);
 		bool findArrayAccess(Function& F);
 		Value* findOriginOfPointer(Value* pointer);
@@ -58,7 +53,7 @@ char ArrayBoundsCheckPass::ID = 0;
 char FunctionGetterModulePass::ID = 0;
 
 static RegisterPass<FunctionGetterModulePass> X("fgmpass", "get function getter declaration pass", false, false);
-static RegisterPass<ArrayBoundsCheckPass> Y("hello", "hello pass", false, false);
+static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
 
 }
 
