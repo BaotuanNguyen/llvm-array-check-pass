@@ -1,6 +1,15 @@
 
 #ifndef __ARRAY_BOUNDS_CHECK_PASS_H__
 #define __ARRAY_BOUNDS_CHECK_PASS_H__
+#include "llvm/User.h"
+#include "llvm/BasicBlock.h"
+#include "llvm/Pass.h"
+#include "llvm/Function.h"
+#include "llvm/Instructions.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/InstIterator.h"
+#include "llvm/InstrTypes.h"
 #include "llvm/Pass.h"
 #include "llvm/Module.h"
 #include "llvm/Function.h"
@@ -37,7 +46,12 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		}
 		virtual bool doInitialization(Module& M);
 		virtual bool runOnFunction(Function& F);
+		Value* createGlobalString(const StringRef& str);
 		bool findArrayAccess(Function& F);
+		///defined in their respective files
+		bool insertCheckBeforeAccess(GetElementPtrInst* GEP);
+		bool collectVariableBeforeAlloca(AllocaInst* AI);
+		///everything else defined in main array checks file
 		Value* findOriginOfPointer(Value* pointer);
 		virtual void getAnalysisUsage(AnalysisUsage& AU) const
 		{
@@ -46,14 +60,12 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		}
 	private:
 		unsigned int numBlockVisited;
+		///this is the function currently being visited
+		Module* M;
+		Function* currentFunction;
 		Function* arrayAccessFunction;
+		Function* allocaFunction;
 };
-
-char ArrayBoundsCheckPass::ID = 0;
-char FunctionGetterModulePass::ID = 0;
-
-static RegisterPass<FunctionGetterModulePass> X("fgmpass", "get function getter declaration pass", false, false);
-static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
 
 }
 

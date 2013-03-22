@@ -1,36 +1,85 @@
 
-#include "llvm/User.h"
-#include "llvm/BasicBlock.h"
-#include "llvm/Pass.h"
-#include "llvm/Function.h"
-#include "llvm/Instructions.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/InstIterator.h"
-#include "llvm/InstrTypes.h"
 #include "ArrayBoundsCheckPass.h"
+#include "llvm/GlobalVariable.h"
+#include "llvm/GlobalValue.h"
 #include <set>
 #include <queue>
 
 using namespace llvm;
+
+char ArrayBoundsCheckPass::ID = 0;
+char FunctionGetterModulePass::ID = 0;
+
+static RegisterPass<FunctionGetterModulePass> X("fgmpass", "get function getter declaration pass", false, false);
+static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
+
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
+	this->M = &M;
+	///initialize all calls to library functions
+	
+	///scope start function
+	
+	///declared types
 	Type* voidTy = Type::getVoidTy(M.getContext());
 	Type* intTy = Type::getInt32Ty(M.getContext());
+	Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
+		
+
+	///declared functions type calls
+	FunctionType* allocaFunctionType = FunctionType::get(voidTy, charPtrTy, false);
 	FunctionType* accessFunctionType = FunctionType::get(voidTy, intTy, false);
-	Constant* functionConstant = M.getOrInsertFunction("arrayAccess", accessFunctionType);
-	errs() << *functionConstant << "\n";
+	FunctionType* scopeStartFunctionType = FunctionType::get(voidTy, false);
+	FunctionType* scopeEndFunctionType = FunctionType::get(voidTy, false);
+
+
+	///create functions
+	Constant* scopeStartFunctionConstant = M.getOrInsertFunction("scopeStart", scopeStartFunctionType);
+	Constant* accessFunctionConstant = M.getOrInsertFunction("arrayAccess", accessFunctionType);
+	Constant* allocaFunctionConstant = M.getOrInsertFunction("alloca", allocaFunctionType);
+	Constant* scopeEndFunctionConstant = M.getOrInsertFunction("scopeEnd", scopeEndFunctionType);
+	
+	errs() << "created function declaration " << *scopeStartFunctionConstant ;
+	errs() << "created function declaration " << *accessFunctionConstant ;
+	errs() << "created function declaration " << *allocaFunctionConstant ;
+	errs() << "created function declaration " << *scopeEndFunctionConstant ;
+
+	///store Value to function
+	this->allocaFunction = M.getFunction("alloca");
 	this->arrayAccessFunction = M.getFunction("arrayAccess");
-	errs() << *this->arrayAccessFunction << "\n";
-	return false;
+	return true;
 }
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
+	this->currentFunction = &F;
 	this->findArrayAccess(F);	
 	this->numBlockVisited++;
 	return true;
+}
 
+Value* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
+{
+	///create string variable name
+	std::string globalVarName = (std::string)this->currentFunction->getName();
+	globalVarName.append(".");
+	globalVarName.append((std::string)str);	
+
+	///get the size of the variable name
+	int arraySize = globalVarName.size()+1;
+
+	///create an char array type
+	Type* charTy = Type::getInt8Ty(this->M->getContext());
+	ArrayType* strArrayTy = ArrayType::get(charTy, arraySize);
+
+	///create the global variable
+	GlobalVariable* globalStr = new GlobalVariable(*(this->M), strArrayTy, true, GlobalVariable::ExternalLinkage, 0, globalVarName, 0, GlobalVariable::NotThreadLocal, 0);
+	globalStr->setAlignment(1);
+
+	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
+	globalStr->setInitializer(constStr);
+	errs() << "creating global variable: " << *globalStr << "\n";
+	return NULL;
 }
 
 bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
@@ -48,12 +97,13 @@ bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
 				errs() << *origin;
 			}
 			errs() << "]\n";
-			errs() << "call inserted\n";
-			Value* ten = ConstantInt::get(Type::getInt32Ty(F.getContext()), 10);
-			CallInst::Create(this->arrayAccessFunction, ten, "", GEP);
+		}
+		else if(AllocaInst* AI = dyn_cast<AllocaInst>(&*I))
+		{
+			this->collectVariableBeforeAlloca(AI);
 		}
 	}
-	return false;
+	return true;
 }
 
 /*
