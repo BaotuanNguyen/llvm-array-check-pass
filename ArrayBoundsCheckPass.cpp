@@ -1,4 +1,3 @@
-
 #include "ArrayBoundsCheckPass.h"
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
@@ -8,161 +7,328 @@
 using namespace llvm;
 
 char ArrayBoundsCheckPass::ID = 0;
-char FunctionGetterModulePass::ID = 0;
 
-static RegisterPass<FunctionGetterModulePass> X("fgmpass", "get function getter declaration pass", false, false);
 static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
+
+void ArrayBoundsCheckPass::die()
+{
+	errs() << "*** RUN TIME EXCEPTION ***" << "\n";
+}
+
 
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
 	this->M = &M;
-	///initialize all calls to library functions
+	this->dieFunction = M.getFunction("die");
 	
-	///scope start function
-	
-	///declared types
-	Type* voidTy = Type::getVoidTy(M.getContext());
-	Type* intTy = Type::getInt32Ty(M.getContext());
-	Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
-		
-
-	///declared functions type calls
-	FunctionType* allocaFunctionType = FunctionType::get(voidTy, charPtrTy, false);
-	FunctionType* accessFunctionType = FunctionType::get(voidTy, intTy, false);
-	FunctionType* scopeStartFunctionType = FunctionType::get(voidTy, false);
-	FunctionType* scopeEndFunctionType = FunctionType::get(voidTy, false);
-
-
-	///create functions
-	Constant* scopeStartFunctionConstant = M.getOrInsertFunction("scopeStart", scopeStartFunctionType);
-	Constant* accessFunctionConstant = M.getOrInsertFunction("arrayAccess", accessFunctionType);
-	Constant* allocaFunctionConstant = M.getOrInsertFunction("alloca", allocaFunctionType);
-	Constant* scopeEndFunctionConstant = M.getOrInsertFunction("scopeEnd", scopeEndFunctionType);
-	
-	errs() << "created function declaration " << *scopeStartFunctionConstant ;
-	errs() << "created function declaration " << *accessFunctionConstant ;
-	errs() << "created function declaration " << *allocaFunctionConstant ;
-	errs() << "created function declaration " << *scopeEndFunctionConstant ;
-
-	///store Value to function
-	this->allocaFunction = M.getFunction("alloca");
-	this->arrayAccessFunction = M.getFunction("arrayAccess");
 	return true;
 }
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
-	this->currentFunction = &F;
-	this->findArrayAccess(F);	
-	this->numBlockVisited++;
-	return true;
-}
-
-Value* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
-{
-	///create string variable name
-	std::string globalVarName = (std::string)this->currentFunction->getName();
-	globalVarName.append(".");
-	globalVarName.append((std::string)str);	
-
-	///get the size of the variable name
-	int arraySize = globalVarName.size()+1;
-
-	///create an char array type
-	Type* charTy = Type::getInt8Ty(this->M->getContext());
-	ArrayType* strArrayTy = ArrayType::get(charTy, arraySize);
-
-	///create the global variable
-	GlobalVariable* globalStr = new GlobalVariable(*(this->M), strArrayTy, true, GlobalVariable::ExternalLinkage, 0, globalVarName, 0, GlobalVariable::NotThreadLocal, 0);
-	globalStr->setAlignment(1);
-
-	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
-	globalStr->setInitializer(constStr);
-	errs() << "creating global variable: " << *globalStr << "\n";
-	return globalStr;
-}
-
-bool ArrayBoundsCheckPass::findArrayAccess(Function& F)
-{
-	//iterator over instructions
-	errs() << this <<" block " << this->numBlockVisited << " \n";	
-	for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I)
+	// iterate through instructions
+	for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ++i)
 	{
-		Instruction* inst = &*I;
-		if(GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(&*I))
-		{
-			errs() << *GEP << "[";
-			if(Value* origin = this->findOriginOfPointer(GEP->getPointerOperand()))
-			{
-				errs() << *origin;
-			}
-			errs() << "]\n";
-		}
-		else if(AllocaInst* AI = dyn_cast<AllocaInst>(&*I))
-		{
-			this->collectVariableBeforeAlloca(AI);
-		}
-	}
-	return true;
-}
+		Instruction* instr = &(*i);
 
-/*
- * Given a pointer in a GEP instruction, this will try to determine which
- * value the pointer came from
- */
-Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
-{
-	
-	std::set<Value*> originSet;
-	std::set<Value*> valuesExploredSet;
-	std::queue<Value*> valuesToExplore;
-
-	valuesToExplore.push(pointer);
-
-	while(!valuesToExplore.empty())
-	{
-		Value* currentValue = valuesToExplore.front();
-		valuesToExplore.pop();
-
-		//if this value has been explored already, then don't explore it
-		if(valuesExploredSet.count(currentValue) > 0)
+		// examine each instruction's operands to find out any recursive GEP constant expressions
+		// if an instruction itself is GEP, you need to check the array bounds of it
+		if (GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(instr))
 		{
-			continue;
-		}
-
-		valuesExploredSet.insert(currentValue);
-
-		if(CastInst* CAST = dyn_cast<CastInst>(currentValue))
-		{
-			//get the operand being cast, this will get us to memory location
-			valuesToExplore.push(CAST->getOperand(0));
-		}
-		else if(PHINode* PHI = dyn_cast<PHINode>(currentValue))
-		{
-			unsigned int i;
-			for(i = 0; i < PHI->getNumIncomingValues(); i++)
-			{
-				valuesToExplore.push(PHI->getIncomingValue(i));
-			}
-		}
-		else if(GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(currentValue))
-		{
-			valuesToExplore.push(GEP->getPointerOperand());
+			errs() << "----------------------------------------------------------------------\n";
+			errs() << "[GEP instruction detected]: " << *GEP << "\n";
+			checkGEPInstruction(GEP); // check array bounds for GEP Instruction as well as examine operands
 		}
 		else
 		{
-			//since we have a value and we don't know what to do with it, we should
-			//add it origin set, if it is the only value in the origin set then this will
-			//be the origin value.
-			originSet.insert(currentValue);
+			runOnInstruction(&(*i)); // examine each instruction's operand
 		}
 	}
-	if(originSet.size() == 1)
+	return true;
+}
+
+bool ArrayBoundsCheckPass::runOnInstruction(Instruction* inst)
+{
+	// iterate through operands
+	for (unsigned pos = 0; pos < inst->getNumOperands(); ++pos)
 	{
-		return *(originSet.begin());
+		Value* operand = inst->getOperand(pos);
+
+		// if an operand is a constant expression, further examine whether it is a GEP expression
+		if (ConstantExpr* expr = dyn_cast<ConstantExpr>(operand))
+		{
+			runOnConstantExpression(expr, inst);
+		}
 	}
-	else
+
+	return true;
+}
+
+bool ArrayBoundsCheckPass::runOnConstantExpression(ConstantExpr* CE, Instruction* currInst)
+{
+	// iterate recursively through operands to visit every single constant expression
+	for (unsigned pos = 0; pos < CE->getNumOperands(); ++pos)
 	{
-		return NULL;
+		Value* operand = CE->getOperand(pos);
+
+		if (ConstantExpr* expr = dyn_cast<ConstantExpr>(operand))
+		{
+			runOnConstantExpression(expr, currInst);
+		}
 	}
+
+	// if this expression is a GEP expression, check the array bounds
+	if (CE->getOpcode() == Instruction::GetElementPtr)
+	{
+		errs() << "----------------------------------------------------------------------\n";
+		errs() << "[GEP expression detected]: " << *currInst << "\n";
+
+		checkGEPExpression(CE, currInst);
+	}
+
+	return true;
+}
+
+// check array bounds of a GEP instruction
+// I think it is sufficient to check whether FIRST index of GEP instruction is greater than 0 (except in VLA case)
+bool ArrayBoundsCheckPass::checkGEPInstruction(Instruction* GEPInst)
+{
+	int position = 0; // operand position
+
+	gep_type_iterator GEPI = gep_type_begin(GEPInst), E = gep_type_end(GEPInst);
+	User::const_op_iterator OI = GEPInst->op_begin();
+
+	// iterate through array types (which equal to the number of operands in GEP - 1)
+	for (; GEPI != E; ++GEPI, ++OI, ++position)
+	{
+		// make sure you visit all constant expressions
+		if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI))
+		{
+			runOnConstantExpression(CE, GEPInst);
+		}
+		
+		// first operand contains Base Pointer information
+		if (position == 0)
+		{
+			errs() << "Base Pointer Type: " << **GEPI << "\n";
+			errs() << "Base Pointer " << **OI << "\n";
+			OI++; // now OI points to the first index position
+			
+			// second operand contains "first" index
+			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI))
+			{
+				uint64_t firstIndex = CI->getZExtValue();
+				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+				
+				// if there is only one index in GEP, then this must be a VLA
+				if ((OI+1) == GEPInst->op_end())
+				{
+					// Insert runtime check 
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}					
+				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
+				else if (CI->getZExtValue() > 0)
+				{
+					errs() << "GEP index " << firstIndex << " is out of bound at operand position " << position << "\n";
+					die();
+				}				
+			}
+			else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI)) // First index is in Constant Expression form
+			{
+				errs() << "\nFirst Index (ConstantExpr) " << *CE << "\n";
+				
+				if ((OI+1) == GEPInst->op_end())
+				{
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}
+				// Need to work on how to evaluate constant expression...
+				//else if
+				//{
+					// TO BE DONE
+				//}
+			}
+			else // First index is in non-constant form
+			{
+				errs() << "\nFirst Index (Non-constant): " << **OI << "\n";
+				
+				if ((OI+1) == GEPInst->op_end())
+				{
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}					
+				//else if
+				//{
+					//add dynamic check insertion here
+				//}
+			}
+		}
+		// bound checking for indices other than the "first" index
+		else
+		{
+			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI)) // index in constant form
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					uint64_t index = CI->getZExtValue();
+					uint64_t numElements = Aty->getNumElements();
+
+					errs() << "\nIndex (Constant): " << index << "\n";
+					errs() << "numElements: " << numElements << "\n"; // number of elements in this part of array
+				
+					// index cannot go above number of elements - 1
+					if (CI->getZExtValue() >= Aty->getNumElements())
+					{
+						errs() << "GEP index " << index << " is out of bound at operand position " << position << "\n";
+						die();
+					}
+				}
+			}
+			else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI)) // index in constant expression form
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					errs() << "\nIndex (ConstantExpr): " << *CE << "\n";
+					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+				
+					//TO DO
+					//if (CE evaluation > NumElements)
+					//{
+					//	die();
+					//}
+				}
+			}
+			else // index is in non-constant form
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					errs() << "\nIndex (Non-constant): " << **OI << "\n";
+					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+
+					//add dynamic check insertion here
+					errs() << "Check: If Index > BasePointer Allocation, call die();\n";
+
+				}
+			}
+		}
+	}
+
+	errs() << "----------------------------------------------------------------------\n";
+
+	return true;
+}
+
+// same mechanism with above function except this works on GEP expressions, not GEP instruction
+bool ArrayBoundsCheckPass::checkGEPExpression(ConstantExpr* CE, Instruction* currInst)
+{
+	int position = 0;
+
+	gep_type_iterator GEPI = gep_type_begin(CE), E = gep_type_end(CE);
+	User::const_op_iterator OI = CE->op_begin();
+
+	for (; GEPI != E; ++GEPI, ++OI, ++position)
+	{
+		if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI))
+		{
+			runOnConstantExpression(CE, currInst);
+		}
+		
+		if (position == 0)
+		{
+			errs() << "Base Pointer Type: " << **GEPI << "\n";
+			errs() << "Base Pointer " << **OI << "\n";
+			OI++; // now OI points to the first index position
+						
+			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI))
+			{
+				uint64_t firstIndex = CI->getZExtValue();
+				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+				
+				if ((OI+1) == CE->op_end())
+				{
+					// insert dynamic check
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}
+				else if (CI->getZExtValue() > 0)
+				{
+					errs() << "GEP index " << firstIndex << " is out of bound at operand position " << position << "\n";
+					die();
+				}				
+			}
+			else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI))
+			{
+				errs() << "\nFirst Index (ConstantExpr): " << *CE << "\n";
+				
+				if ((OI+1) == CE->op_end())
+				{
+					// insert dynamic check
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}			
+				// Need to work on how to evaluate constant expression...
+				//else if
+				//{
+					// TO BE DONE
+				//}
+			}
+			else
+			{
+				errs() << "\nFirst Index (Non-constant): " << **OI << "\n";
+				
+				if ((OI+1) == CE->op_end())
+				{
+					// insert dynamic check
+					errs() << "VLA Detected\n";
+					errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
+				}					
+					// insert dynamic check
+			}
+		}
+		else
+		{
+			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI))
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					uint64_t index = CI->getZExtValue();
+					uint64_t numElements = Aty->getNumElements();
+
+					errs() << "\nIndex (Constant): " << index << "\n";
+					errs() << "numElements: " << numElements << "\n";
+				
+					if (CI->getZExtValue() >= Aty->getNumElements())
+					{
+						errs() << "GEP index " << index << " is out of bound at operand position " << position << "\n";
+						die();
+					}
+				}
+			}
+			else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(*OI))
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					errs() << "\nIndex (ConstantExpr): " << *CE << "\n";
+					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+				}
+				//else if
+				//{
+				//	TO DO
+				//}
+			}
+			else
+			{
+				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
+				{
+					errs() << "\nIndex (Non-constant): " << **OI << "\n";
+					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+				}
+				//add dynamic check insertion here
+			}
+		}
+	}
+	errs() << "----------------------------------------------------------------------\n";
+
+	return true;
 }

@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-
-
 TEST_FILE=test.c
 TEST_NAME=${TEST_FILE%.c}
 LLVM_LIBRARY=../../Release+Asserts/
@@ -17,17 +15,17 @@ fi
 #other optimizations can added by opt as argument
 #all optimization can be obtained by -help
 
-clang -emit-llvm -c -o  $TEST_NAME.bc $TEST_NAME.c
+clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
+
 #array check pass is run on test code after being compiled
-opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check --debug-pass=Structure -o $TEST_NAME.mod.bc < $TEST_NAME.bc > /dev/null
-#compile library that will be linked to actual test code
-clang++ -emit-llvm -c -o  LibArrayCheck.bc LibArrayCheck.cpp
+opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+
 #the test code and library code are linked into executable
-#the stdc++ library is needed by LibArrayCheck
-clang -lstdc++ -o $TEST_NAME $TEST_NAME.mod.bc LibArrayCheck.bc
+clang -lstdc++ -o $TEST_NAME.out $TEST_NAME.mod.ll
+
 #clean up al intermediate files, unless specified
-if [[ $1 != "-i" ]] 
-then
-	rm -rf *.bc *.ll *.o
-fi
+#if [[ $1 != "-i" ]] 
+#then
+#	rm -rf *.bc *.ll *.o
+#fi
 	

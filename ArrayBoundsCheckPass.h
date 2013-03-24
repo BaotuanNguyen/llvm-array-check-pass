@@ -4,6 +4,8 @@
 #include "llvm/User.h"
 #include "llvm/BasicBlock.h"
 #include "llvm/Pass.h"
+#include "llvm/Operator.h"
+#include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
 #include "llvm/DerivedTypes.h"
@@ -19,23 +21,6 @@
 namespace llvm
 {
 
-struct FunctionGetterModulePass : public ModulePass
-{
-	public:
-		static char ID;
-		FunctionGetterModulePass() : ModulePass(ID)
-		{
-
-		}
-		virtual bool runOnModule(Module& M)
-		{
-			this->arrayAccessFunction = M.getFunction("arrayAccess");
-			return true;
-		}
-	private:
-		Function* arrayAccessFunction;
-};
-
 struct ArrayBoundsCheckPass : public FunctionPass
 {
 	public:
@@ -47,10 +32,9 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		virtual bool doInitialization(Module& M);
 		virtual bool runOnFunction(Function& F);
 		Value* createGlobalString(const StringRef& str);
-		bool findArrayAccess(Function& F);
 		///defined in their respective files
 		bool insertCheckBeforeAccess(GetElementPtrInst* GEP);
-		bool collectVariableBeforeAlloca(AllocaInst* AI);
+		
 		///everything else defined in main array checks file
 		Value* findOriginOfPointer(Value* pointer);
 		virtual void getAnalysisUsage(AnalysisUsage& AU) const
@@ -59,12 +43,14 @@ struct ArrayBoundsCheckPass : public FunctionPass
 			AU.addRequired<TargetLibraryInfo>();
 		}
 	private:
+		bool checkGEPExpression(ConstantExpr* GEP, Instruction* currInst);
+		bool checkGEPInstruction(Instruction* GEPInst);
+		bool runOnInstruction(Instruction* inst);
+		bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
+		void die();
 		unsigned int numBlockVisited;
-		///this is the function currently being visited
-		Module* M;
-		Function* currentFunction;
-		Function* arrayAccessFunction;
-		Function* allocaFunction;
+		Module* M;		
+		Function* dieFunction;
 };
 
 }
