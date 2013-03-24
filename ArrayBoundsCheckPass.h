@@ -25,15 +25,11 @@ struct ArrayBoundsCheckPass : public FunctionPass
 {
 	public:
 		static char ID;
-		ArrayBoundsCheckPass() : FunctionPass(ID)
-		{
-			this->numBlockVisited = 0;
-		}
+		ArrayBoundsCheckPass() : FunctionPass(ID) {}
 		virtual bool doInitialization(Module& M);
 		virtual bool runOnFunction(Function& F);
 		Constant* createGlobalString(const StringRef& str);
 		bool insertCheckBeforeInstruction(Instruction* I);
-		///everything else defined in main array checks file
 		Value* findOriginOfPointer(Value* pointer);
 		virtual void getAnalysisUsage(AnalysisUsage& AU) const
 		{
@@ -41,12 +37,10 @@ struct ArrayBoundsCheckPass : public FunctionPass
 			AU.addRequired<TargetLibraryInfo>();
 		}
 	private:
-		bool checkGEPExpression(ConstantExpr* GEP, Instruction* currInst);
-		bool checkGEPInstruction(Instruction* GEPInst);
+		bool checkGEP(User* GEP, Instruction* currInst);
 		bool runOnInstruction(Instruction* inst);
 		bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
 		void die();
-		unsigned int numBlockVisited;
 		unsigned int checkNumber;
 		Module* M;		
 		Function* currentFunction;
