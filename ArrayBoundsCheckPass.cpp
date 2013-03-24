@@ -3,6 +3,8 @@
 #include "llvm/GlobalValue.h"
 #include <set>
 #include <queue>
+#include <string>
+#include <sstream>
 
 using namespace llvm;
 
@@ -18,14 +20,40 @@ void ArrayBoundsCheckPass::die()
 
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
+	this->checkNumber = 0;
 	this->M = &M;
 	this->dieFunction = M.getFunction("die");
+
+	///initialize some variables	
+	///sets up the indices of the gep instruction for the first element	
+	ConstantInt* zeroInt = ConstantInt::get(Type::getInt32Ty(this->M->getContext()), 0);
+	this->gepFirstCharIndices.push_back(zeroInt);
+	this->gepFirstCharIndices.push_back(zeroInt);
+	///initialize all calls to library functions
 	
+	///scope start function
+		
+	///declared types
+	Type* voidTy = Type::getVoidTy(M.getContext());
+	///Type* intTy = Type::getInt32Ty(M.getContext());
+	Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
+		
+
+	///declared functions type calls
+	FunctionType* checkFunctionType = FunctionType::get(voidTy, charPtrTy, false);
+
+
+	///create functions
+	/*Constant* checkFunctionConstant =*/ M.getOrInsertFunction("check", checkFunctionType);
+	
+	///store Value to function
+	this->checkFunction = M.getFunction("check");
 	return true;
 }
 
 bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
+	this->currentFunction = &F;
 	// iterate through instructions
 	for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ++i)
 	{
@@ -35,6 +63,7 @@ bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 		// if an instruction itself is GEP, you need to check the array bounds of it
 		if (GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(instr))
 		{
+			this->insertCheckBeforeInstruction(GEP);
 			errs() << "----------------------------------------------------------------------\n";
 			errs() << "[GEP instruction detected]: " << *GEP << "\n";
 			checkGEPInstruction(GEP); // check array bounds for GEP Instruction as well as examine operands
@@ -330,5 +359,48 @@ bool ArrayBoundsCheckPass::checkGEPExpression(ConstantExpr* CE, Instruction* cur
 	}
 	errs() << "----------------------------------------------------------------------\n";
 
+	return true;
+}
+
+Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
+{
+	///create string variable name
+	std::string globalVarName = (std::string)this->currentFunction->getName();
+	globalVarName.append(".");
+	globalVarName.append((std::string)str);	
+
+	///get the size of the variable name
+	int arraySize = globalVarName.size()+1;
+
+	///create an char array type
+	Type* charTy = Type::getInt8Ty(this->M->getContext());
+	ArrayType* strArrayTy = ArrayType::get(charTy, arraySize);
+
+	///create the global variable
+	GlobalVariable* globalStr = new GlobalVariable(*(this->M), strArrayTy, true, GlobalVariable::ExternalLinkage, 0, globalVarName, 0, GlobalVariable::NotThreadLocal, 0);
+	globalStr->setAlignment(1);
+
+	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
+	globalStr->setInitializer(constStr);
+	errs() << "creating global variable: " << *globalStr << "\n";
+	return globalStr;
+}
+
+bool ArrayBoundsCheckPass::insertCheckBeforeInstruction(Instruction* I)
+{
+	///const StringRef& variableName = I->getName();
+	std::stringstream ss;
+	ss << this->checkNumber;
+	this->checkNumber++;
+	Constant* globalStr = this->createGlobalString(ss.str());
+
+	///errs() << "function " << *this->checkFunction << "\n";
+	///errs() << "variable " << *globalStr << "\n";
+
+	///insert the call instruction here	
+	Constant* gepFirstChar = ConstantExpr::getGetElementPtr(globalStr, this->gepFirstCharIndices);
+	CallInst* allocaCall = CallInst::Create(this->checkFunction, gepFirstChar, "", I);
+	allocaCall->setCallingConv(CallingConv::C);
+	allocaCall->setTailCall(false);
 	return true;
 }

@@ -31,10 +31,8 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		}
 		virtual bool doInitialization(Module& M);
 		virtual bool runOnFunction(Function& F);
-		Value* createGlobalString(const StringRef& str);
-		///defined in their respective files
-		bool insertCheckBeforeAccess(GetElementPtrInst* GEP);
-		
+		Constant* createGlobalString(const StringRef& str);
+		bool insertCheckBeforeInstruction(Instruction* I);
 		///everything else defined in main array checks file
 		Value* findOriginOfPointer(Value* pointer);
 		virtual void getAnalysisUsage(AnalysisUsage& AU) const
@@ -49,8 +47,12 @@ struct ArrayBoundsCheckPass : public FunctionPass
 		bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
 		void die();
 		unsigned int numBlockVisited;
+		unsigned int checkNumber;
 		Module* M;		
+		Function* currentFunction;
+		Function* checkFunction;
 		Function* dieFunction;
+		std::vector<Constant*> gepFirstCharIndices;
 };
 
 }
