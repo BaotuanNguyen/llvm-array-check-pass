@@ -19,7 +19,7 @@ clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #array check pass is run on test code after being compiled
-opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable

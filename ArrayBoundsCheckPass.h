@@ -17,37 +17,39 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
+#include "RunTimeBoundsChecking.h"
 
 namespace llvm
 {
 
-struct ArrayBoundsCheckPass : public FunctionPass
-{
-	public:
-		static char ID;
-		ArrayBoundsCheckPass() : FunctionPass(ID) {}
-		virtual bool doInitialization(Module& M);
-		virtual bool runOnFunction(Function& F);
-		Constant* createGlobalString(const StringRef& str);
-		bool insertCheckBeforeInstruction(Instruction* I);
-		Value* findOriginOfPointer(Value* pointer);
-		virtual void getAnalysisUsage(AnalysisUsage& AU) const
-		{
-			AU.addRequired<DataLayout>();
-			AU.addRequired<TargetLibraryInfo>();
-		}
-	private:
-		bool checkGEP(User* GEP, Instruction* currInst);
-		bool runOnInstruction(Instruction* inst);
-		bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
-		void die();
-		unsigned int checkNumber;
-		Module* M;		
-		Function* currentFunction;
-		Function* checkFunction;
-		Function* dieFunction;
-		std::vector<Constant*> gepFirstCharIndices;
-};
+	struct ArrayBoundsCheckPass : public FunctionPass
+	{
+		public:
+			static char ID;
+			ArrayBoundsCheckPass() : FunctionPass(ID) {}
+			virtual bool doInitialization(Module& M);
+			virtual bool runOnFunction(Function& F);
+			Constant* createGlobalString(const StringRef& str);
+			bool insertCheckBeforeInstruction(Instruction* I);
+			Value* findOriginOfPointer(Value* pointer);
+			virtual void getAnalysisUsage(AnalysisUsage& AU) const
+			{
+				AU.addRequired<DataLayout>();
+				AU.addRequired<TargetLibraryInfo>();
+				AU.addRequired<RunTimeBoundsChecking>();
+			}
+		private:
+			bool checkGEP(User* GEP, Instruction* currInst);
+			bool runOnInstruction(Instruction* inst);
+			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
+			void die();
+			unsigned int checkNumber;
+			Module* M;		
+			Function* currentFunction;
+			Function* checkFunction;
+			Function* dieFunction;
+			std::vector<Constant*> gepFirstCharIndices;
+	};
 
 }
 

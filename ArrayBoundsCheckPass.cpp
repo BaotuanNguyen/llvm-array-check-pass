@@ -1,4 +1,5 @@
 #include "ArrayBoundsCheckPass.h"
+#include "RunTimeBoundsChecking.h"
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
 #include <set>
@@ -9,7 +10,6 @@
 using namespace llvm;
 
 char ArrayBoundsCheckPass::ID = 0;
-
 static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
 
 void ArrayBoundsCheckPass::die()
@@ -56,6 +56,7 @@ bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
 	this->currentFunction = &F;
 	// iterate through instructions
+	/*
 	for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ++i)
 	{
 		Instruction* instr = &(*i);
@@ -74,6 +75,7 @@ bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 			runOnInstruction(&(*i)); // examine each instruction's operand
 		}
 	}
+	*/
 	return true;
 }
 
