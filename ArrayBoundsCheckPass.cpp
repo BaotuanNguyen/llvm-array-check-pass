@@ -2,6 +2,7 @@
 #include "RunTimeBoundsChecking.h"
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
+#include "llvm/InstrTypes.h"
 #include "stdlib.h"
 #include <set>
 #include <queue>
@@ -67,17 +68,22 @@ void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value*
 	ConstantInt* checkTypeValue = ConstantInt::get(Type::getInt32Ty(context), checkType);
 	//ConstantInt* index = ConstantInt::get(Type::getInt32Ty(context), 1);
 	//ConstantInt* upperBound = ConstantInt::get(Type::getInt32Ty(context), 2);
+	errs() << "Exectued this\n";
+	CastInst* castInst = llvm::CastInst::CreateIntegerCast(index, Type::getInt32Ty(context), true, "", Inst);
 	
 	///create vector with values which containts arguments values
 	std::vector<Value*> argValuesV;
 	argValuesV.push_back(gepFirstChar);
 	argValuesV.push_back(checkTypeValue);
-	argValuesV.push_back(index);
+	argValuesV.push_back(castInst);
 	argValuesV.push_back(limit);
 	///create array ref to vector or arguments
+	errs() << "Exectued this\n";
 	ArrayRef<Value*> argValuesA(argValuesV);
 	///create call in code
+	errs() << "Exectued this\n";
 	CallInst* allocaCall = CallInst::Create(this->checkFunction, argValuesA, "", Inst);
+	errs() << "Exectued this\n";
 	allocaCall->setCallingConv(CallingConv::C);
 	allocaCall->setTailCall(false);
 }
@@ -231,7 +237,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "VLA Detected\n";
 						this->Inst = currInst;
 						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-						//errs() << "executed this ," << *CI << ", " << *allocaInst->getOperand(0) <<"\n";
+						errs() << "1 executed this ," << *CI << ", " << *allocaInst->getOperand(0) <<"\n";
 						this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
 						this->checkGTZero(basePointerName, CI);
 					}
@@ -265,7 +271,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
 						this->Inst = currInst;
 						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-						//errs() << "executed this ," << *OI << ", " << *allocaInst->getOperand(0) <<"\n";
+						errs() << "2 executed this ," << *OI << ", " << *allocaInst->getOperand(0) <<"\n";
 						this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
 						this->checkGTZero(basePointerName, *OI);
 					}
@@ -308,11 +314,11 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				{
 					errs() << "\nIndex (Non-constant): " << **OI << "\n";
 					errs() << "NumElements: " << Aty->getNumElements() << "\n";
-
+					this->Inst = currInst;
 					LLVMContext& context = this->M->getContext();
 					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt32Ty(context), Aty->getNumElements());
 					StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-					errs() << "executed this ," << **OI << ", " << *arraySizeCI <<"\n";
+					errs() << "3 executed this ," << **OI << ", " << *arraySizeCI <<"\n";
 					this->checkLTLimit(basePointerName, *OI, arraySizeCI);
 					this->checkGTZero(basePointerName, *OI);
 				}
