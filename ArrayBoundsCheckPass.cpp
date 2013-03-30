@@ -231,9 +231,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "VLA Detected\n";
 						this->Inst = currInst;
 						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-						errs() << "executed this ," << *CI << ", " << *allocaInst->getOperand(0) <<"\n";
+						//errs() << "executed this ," << *CI << ", " << *allocaInst->getOperand(0) <<"\n";
 						this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
-						errs() << "executed this\n";
 						this->checkGTZero(basePointerName, CI);
 					}
 					else
@@ -245,7 +244,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				else if (CI->getZExtValue() > 0)
 				{
 					errs() << "GEP index " << firstIndex << " is out of bound at operand position " << position << "\n";
-					std::terminate();
+					exit(-1);
 				}				
 			}
 			else // First index is in non-constant form
@@ -266,10 +265,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "Check: If First Index > BasePointer Allocation, call die();\n";
 						this->Inst = currInst;
 						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-						errs() << "executed this ," << *OI << ", " << *allocaInst->getOperand(0) <<"\n";
-						errs() << "executed this\n";
+						//errs() << "executed this ," << *OI << ", " << *allocaInst->getOperand(0) <<"\n";
 						this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
-						errs() << "executed this\n";
 						this->checkGTZero(basePointerName, *OI);
 					}
 					else
@@ -312,9 +309,12 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					errs() << "\nIndex (Non-constant): " << **OI << "\n";
 					errs() << "NumElements: " << Aty->getNumElements() << "\n";
 
-					//add dynamic check insertion here
-					errs() << "Check: If Index > BasePointer Allocation, call die();\n";
-
+					LLVMContext& context = this->M->getContext();
+					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt32Ty(context), Aty->getNumElements());
+					StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
+					errs() << "executed this ," << **OI << ", " << *arraySizeCI <<"\n";
+					this->checkLTLimit(basePointerName, *OI, arraySizeCI);
+					this->checkGTZero(basePointerName, *OI);
 				}
 			}
 		}
