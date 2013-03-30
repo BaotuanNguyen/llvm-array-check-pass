@@ -4,6 +4,7 @@
 #include "llvm/GlobalValue.h"
 #include <set>
 #include <queue>
+#include <vector>
 #include <string>
 #include <sstream>
 
@@ -20,6 +21,7 @@ void ArrayBoundsCheckPass::die()
 
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
+	std::vector<Type*> argTypes;
 	this->checkNumber = 0;
 	this->M = &M;
 	this->dieFunction = M.getFunction("die");
@@ -35,13 +37,17 @@ bool ArrayBoundsCheckPass::doInitialization(Module& M)
 		
 	///declared types
 	Type* voidTy = Type::getVoidTy(M.getContext());
-	///Type* intTy = Type::getInt32Ty(M.getContext());
+	Type* intTy = Type::getInt32Ty(M.getContext());
 	Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
-		
+
+	argTypes.push_back(charPtrTy);
+	argTypes.push_back(intTy);
+	argTypes.push_back(intTy);
+	argTypes.push_back(intTy);
 
 	///declared functions type calls
-	FunctionType* checkFunctionType = FunctionType::get(voidTy, charPtrTy, false);
-
+	ArrayRef<Type*> argArray(argTypes);
+	FunctionType* checkFunctionType = FunctionType::get(voidTy, argArray, false);
 
 	///create functions
 	/*Constant* checkFunctionConstant =*/ M.getOrInsertFunction("check", checkFunctionType);
@@ -56,7 +62,6 @@ bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 {
 	this->currentFunction = &F;
 	// iterate through instructions
-	/*
 	for (inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ++i)
 	{
 		Instruction* instr = &(*i);
@@ -65,17 +70,20 @@ bool ArrayBoundsCheckPass::runOnFunction(Function& F)
 		// if an instruction itself is GEP, you need to check the array bounds of it
 		if (GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(instr))
 		{
+			/*
 			this->insertCheckBeforeInstruction(GEP);
 			errs() << "----------------------------------------------------------------------\n";
 			errs() << "[GEP instruction detected]: " << *GEP << "\n";
 			checkGEP(GEP, GEP); // check array bounds for GEP Instruction as well as examine operands
+			*/
 		}
 		else
 		{
+			/*
 			runOnInstruction(&(*i)); // examine each instruction's operand
+			*/
 		}
 	}
-	*/
 	return true;
 }
 
@@ -323,10 +331,23 @@ bool ArrayBoundsCheckPass::insertCheckBeforeInstruction(Instruction* I)
 
 	///errs() << "function " << *this->checkFunction << "\n";
 	///errs() << "variable " << *globalStr << "\n";
-
-	///insert the call instruction here	
+	
+	///create types of the arguments
+	LLVMContext& context = this->M->getContext();
 	Constant* gepFirstChar = ConstantExpr::getGetElementPtr(globalStr, this->gepFirstCharIndices);
-	CallInst* allocaCall = CallInst::Create(this->checkFunction, gepFirstChar, "", I);
+	ConstantInt* lowerBound = ConstantInt::get(Type::getInt32Ty(context), 0);
+	ConstantInt* index = ConstantInt::get(Type::getInt32Ty(context), 1);
+	ConstantInt* upperBound = ConstantInt::get(Type::getInt32Ty(context), 2);
+	///create vector with values which containts arguments values
+	std::vector<Value*> argValuesV;
+	argValuesV.push_back(gepFirstChar);
+	argValuesV.push_back(lowerBound);
+	argValuesV.push_back(index);
+	argValuesV.push_back(upperBound);
+	///create array ref to vector or arguments
+	ArrayRef<Value*> argValuesA(argValuesV);
+	///create call in code
+	CallInst* allocaCall = CallInst::Create(this->checkFunction, argValuesA, "", I);
 	allocaCall->setCallingConv(CallingConv::C);
 	allocaCall->setTailCall(false);
 	return true;
