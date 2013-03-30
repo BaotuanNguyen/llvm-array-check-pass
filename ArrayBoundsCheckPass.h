@@ -29,25 +29,33 @@ namespace llvm
 			ArrayBoundsCheckPass() : FunctionPass(ID) {}
 			virtual bool doInitialization(Module& M);
 			virtual bool runOnFunction(Function& F);
-			Constant* createGlobalString(const StringRef& str);
-			bool insertCheckBeforeInstruction(Instruction* I);
 			Value* findOriginOfPointer(Value* pointer);
 			virtual void getAnalysisUsage(AnalysisUsage& AU) const
 			{
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
-				AU.addRequired<RunTimeBoundsChecking>();
+				//AU.addRequired<RunTimeBoundsChecking>();
 			}
 		private:
+			/*check insertion functions*/
+			Constant* createGlobalString(const StringRef& str);
+			void die();
+			void checkGTZero(StringRef* varName, Value* index);
+			void checkLTLimit(StringRef* varName, Value* index, Value* limit);
+			void insertCheck(StringRef* varName, int checkType, Value* index, Value* limit);
+			/*gep checker functions*/
 			bool checkGEP(User* GEP, Instruction* currInst);
 			bool runOnInstruction(Instruction* inst);
 			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
-			void die();
+
 			unsigned int checkNumber;
 			Module* M;		
+			/*current function being checked*/
 			Function* currentFunction;
+			/*check function declared for check insertion*/
 			Function* checkFunction;
-			Function* dieFunction;
+			/*instruction before which to insert instructions*/
+			Instruction* Inst;
 			std::vector<Constant*> gepFirstCharIndices;
 	};
 
