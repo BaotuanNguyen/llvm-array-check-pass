@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
+#include "ArrayBoundsCheckPass.h"
 
 
 extern "C" void check(char* str, int type, int index, int limit)
