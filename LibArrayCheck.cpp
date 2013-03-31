@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <iostream>
+#include <stdint.h>
 
-extern "C" void check(char* str, int type, int index, int limit)
+extern "C" void check(char* str, uint64_t type, uint64_t index, uint64_t limit)
 {
 	//std::cout << "check " << str << ", " << type << ", " << index << ", " << limit << "\n";
 	switch(type)
