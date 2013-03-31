@@ -43,12 +43,12 @@ void ArrayBoundsCheckPass::checkGTZero(StringRef* varName, Value* index)
 {
 	LLVMContext& context = this->M->getContext();
 	ConstantInt* placeHolder = ConstantInt::get(Type::getInt32Ty(context), 0);
-	this->insertCheck(varName, 1, index, placeHolder);
+	this->insertCheck(varName, LOWER, index, placeHolder);
 }
 
 void ArrayBoundsCheckPass::checkLTLimit(StringRef* varName, Value* index, Value* limit)
 {
-	this->insertCheck(varName, 2, index, limit);	
+	this->insertCheck(varName, UPPER, index, limit);	
 }
 
 void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value* index, Value* limit)

@@ -28,8 +28,17 @@ bool LocalOptimizationsOnArrayChecks::doInitialization(Function& F)
 
 
 
+/*
+ * create a data structure to recognize the call instructions
+ */
 bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
 {
+        
+        for (BasicBlock::iterator i = BB.begin(), e = BB.end(); i != e; ++i) {
+                errs() << *i << "\n";
+        }
 
+        errs() << "iterating\n";
+        //BB->dump();
         return false;
 }

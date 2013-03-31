@@ -1,18 +1,14 @@
 #include <stdlib.h>
 #include <iostream>
 
+
 extern "C" void check(char* str, int type, int index, int limit)
 {
-	//std::cout << "check " << str << ", " << type << ", " << index << ", " << limit << "\n";
 	switch(type)
 	{
-		//die
-		case 0:
-			std::cout << "terminating...\n";
-			exit(1);
-			break;
-		//index >= 0
-		case 1:
+		// check that index >= 0
+                // (if index is less than 0, then index is out of bounds)
+		case LOWER:
 			std::cout << "checking " << str << " : " << index << " >= 0\n";
 			if(index < 0)
 			{
@@ -21,8 +17,9 @@ extern "C" void check(char* str, int type, int index, int limit)
 				exit(1);
 			}
 			break;
-		case 2:
-		//index < limit
+		// check that index < limit
+                // (if index is equal to or greater than the limiti, then index is out of bounds)
+		case UPPER:
 			std::cout << "checking " << str << " : " << index << " < " << limit << "\n";
 			if(index >= limit)
 			{
