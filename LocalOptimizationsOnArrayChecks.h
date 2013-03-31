@@ -29,7 +29,8 @@ namespace llvm {
 	struct LocalOptimizationsOnArrayChecks : public BasicBlockPass {
 		static char ID;
 		public: 
-			LocalOptimizationsOnArrayChecks() : BasicBlockPass(ID), Penalty(){}
+			LocalOptimizationsOnArrayChecks() : BasicBlockPass(ID) {}
+			virtual bool doInitialization(Module &M);
 			virtual bool doInitialization(Function &F);
 			virtual bool runOnBasicBlock(BasicBlock &BB);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -38,7 +39,6 @@ namespace llvm {
                                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
 		private:
-			unsigned Penalty;
 	};
 }
 
