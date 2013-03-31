@@ -1,5 +1,5 @@
 #include "ArrayBoundsCheckPass.h"
-//#include "RunTimeBoundsChecking.h"
+#include "RunTimeBoundsChecking.h"
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
 #include "llvm/InstrTypes.h"
@@ -14,6 +14,63 @@ using namespace llvm;
 
 char ArrayBoundsCheckPass::ID = 0;
 static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
+
+Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
+{
+	std::set<Value*> originSet;
+	std::set<Value*> valuesExploredSet;
+	std::queue<Value*> valuesToExplore;
+	
+	valuesToExplore.push(pointer);
+
+	while(!valuesToExplore.empty())
+	{
+		Value* currentValue = valuesToExplore.front();
+		valuesToExplore.pop();
+
+		//if this value has been explored already, then don't explore it
+		if(valuesExploredSet.count(currentValue) > 0)
+		{
+			continue;
+		}
+	
+		valuesExploredSet.insert(currentValue);
+
+		if (CastInst* CAST = dyn_cast<CastInst>(currentValue))
+		{
+			//get the operand being cast, this will get us to memory location
+			valuesToExplore.push(CAST->getOperand(0));
+		}
+		else if(PHINode* PHI = dyn_cast<PHINode>(currentValue))
+		{
+			unsigned int i;
+			for(i = 0; i < PHI->getNumIncomingValues(); i++)
+			{
+				valuesToExplore.push(PHI->getIncomingValue(i));
+			}
+		}
+		else if(GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(currentValue))
+		{
+			valuesToExplore.push(GEP->getPointerOperand());
+		}
+		else
+		{
+			//since we have a value and we don't know what to do with it, we should
+			////add it origin set, if it is the only value in the origin set then this will
+			////be the origin value.
+			originSet.insert(currentValue);
+		}
+	}
+
+	if(originSet.size() == 1)
+	{
+		return *(originSet.begin());
+	}
+	else
+	{
+		return NULL;
+	}
+}
 
 Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
 {
@@ -86,6 +143,7 @@ void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value*
 
 	///create call in code
 	CallInst* allocaCall = CallInst::Create(this->checkFunction, argValuesA, "", Inst);
+	
 	allocaCall->setCallingConv(CallingConv::C);
 	allocaCall->setTailCall(false);
 }
@@ -205,6 +263,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 	User::const_op_iterator OI = user->op_begin();
 			
 	Value* basePointer;
+	Value* originPointer;
 
 	// iterate through array types (which equal to the number of operands in GEP - 1)
 	for (; GEPI != E; ++GEPI, ++OI, ++position)
@@ -220,8 +279,16 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 		{
 			errs() << "Base Pointer Type: " << **GEPI << "\n";
 			errs() << "Base Pointer " << **OI << "\n";
+			errs() << "Origin Base Pointer: " << *findOriginOfPointer(*OI) << "\n";
 			
 			basePointer = *OI;	
+			originPointer = findOriginOfPointer(*OI);
+
+			if (!originPointer)
+			{
+				errs() << "origin pointer returned NULL. SHOULD NOT HAPPEN!!!\n";
+			}
+
 			OI++; // now OI points to the first index position
 			
 			// second operand contains "first" index
@@ -242,8 +309,29 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						errs() << "index: " << *CI << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
+
 						this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
 						this->checkGTZero(basePointerName, CI);
+					}
+					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
+					{
+						// Insert runtime check 
+						errs() << "VLA Chain Detected\n";
+						this->Inst = currInst;
+						StringRef* indexName = new StringRef((std::string)basePointer->getName() + ".idx");
+						
+//						errs() << "first operand: " << *(dyn_cast<User>(basePointer)->getOperand(1)) << "\n";
+//						errs() << "second operand: " << **OI << "\n";
+
+						BinaryOperator* index = BinaryOperator::Create(Instruction::Add, dyn_cast<User>(basePointer)->getOperand(1), &(**OI), Twine(*indexName), currInst);
+
+						//firstOperand of basePointer + index < limit; 
+						
+						errs() << "index: " << index << "\n";
+						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
+					
+						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
+						this->checkGTZero(indexName, index);
 					}
 					else
 					{
@@ -254,18 +342,14 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				else if (CI->getZExtValue() > 0)
 				{
 					errs() << "First index " << firstIndex << " is greater than 0";
-					errs() << "terminating...\n";
+					errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
 					exit(1);
 				}				
 			}
 			else // First index is in non-constant form
 			{
 				errs() << "\nFirst Index (Non-constant): " << **OI << "\n";
-			
-				if (Instruction* instr = dyn_cast<Instruction>(*OI))
-				{
-					errs() << instr->getName() << "\n";
-				}
+		
 				// if there is only one index in GEP and Base Pointer is alloca, then this must be a VLA
 				if ((OI+1) == user->op_end())
 				{
@@ -276,11 +360,28 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						this->Inst = currInst;
 						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
 						
-						errs() << "index: " << *CI << "\n";
+						errs() << "index: " << **OI << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
-						
+					
 						this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
 						this->checkGTZero(basePointerName, *OI);
+					}
+					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
+					{
+						// Insert runtime check 
+						errs() << "VLA Chain Detected\n";
+						this->Inst = currInst;
+						StringRef* indexName = new StringRef((std::string)basePointer->getName() + ".idx");
+						
+						BinaryOperator* index = BinaryOperator::Create(Instruction::Add, dyn_cast<User>(basePointer)->getOperand(1), &(**OI), Twine(*indexName), currInst);
+
+						//firstOperand of basePointer + index < limit; 
+						
+						errs() << "index: " << index << "\n";
+						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
+					
+						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
+						this->checkGTZero(indexName, index);
 					}
 					else
 					{
@@ -306,7 +407,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					if (CI->getZExtValue() >= Aty->getNumElements())
 					{
 						errs() << "GEP index " << index << " is >= " << Aty->getNumElements() << "\n";
-						errs() << "terminating...\n";
+						errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
 						exit(1);
 					}
 				}

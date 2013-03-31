@@ -5,6 +5,7 @@
 
 extern "C" void check(char* str, int64_t type, int64_t index, int64_t limit)
 {
+	//std::cout << "check " << str << ", " << type << ", " << index << ", " << limit << "\n";
 	switch(type)
 	{
 		// check that index >= 0
@@ -14,7 +15,7 @@ extern "C" void check(char* str, int64_t type, int64_t index, int64_t limit)
 			if(index < 0)
 			{
 				std::cout << str << ": " << index << " < 0\n";
-				std::cout << "terminating...\n";
+				std::cout << "Run-time Analysis detected an out-of-bound access! Terminating...\n";
 				exit(1);
 			}
 			break;
@@ -24,11 +25,10 @@ extern "C" void check(char* str, int64_t type, int64_t index, int64_t limit)
 			std::cout << "checking " << str << " : " << index << " < " << limit << "\n";
 			if(index >= limit)
 			{
-				std::cout << str << ": " << index << " >= limit\n";
-				std::cout << "terminating...\n";
+				std::cout << str << ": " << index << " >= " << limit << "\n";
+				std::cout << "Run-time Analysis detected an out-of-bound access! Terminating...\n";
 				exit(1);
 			}
 			break;
 	}
 }
-
