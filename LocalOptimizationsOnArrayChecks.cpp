@@ -35,6 +35,7 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
 {
         
         for (BasicBlock::iterator i = BB.begin(), e = BB.end(); i != e; ++i) {
+                Instruction *v = &*i;
                 errs() << *i << "\n";
         }
 

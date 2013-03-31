@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "ArrayBoundsCheckPass.h"
 
-extern "C" void check(char* str, uint64_t type, uint64_t index, uint64_t limit)
+extern "C" void check(char* str, int64_t type, int64_t index, int64_t limit)
 {
 	switch(type)
 	{

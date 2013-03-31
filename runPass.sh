@@ -16,7 +16,7 @@ fi
 #all optimization can be obtained by -help
 
 clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
-clang++ -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
+clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #array check pass is run on test code after being compiled
 opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
