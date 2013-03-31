@@ -312,7 +312,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					LLVMContext& context = this->M->getContext();
 					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt32Ty(context), Aty->getNumElements());
 					StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-					errs() << "executed this ," << **OI << ", " << *arraySizeCI <<"\n";
+					errs() << "executed this yo," << **OI << ", " << *arraySizeCI <<"\n";
+					errs() << "executed this yo," << *basePointerName << "\n";
 					this->checkLTLimit(basePointerName, *OI, arraySizeCI);
 					this->checkGTZero(basePointerName, *OI);
 				}
