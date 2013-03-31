@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <iostream>
 
 extern "C" void check(char* str, int type, int index, int limit)
@@ -7,8 +8,8 @@ extern "C" void check(char* str, int type, int index, int limit)
 	{
 		//die
 		case 0:
-			std::cout << "die()\n";
-			std::terminate();
+			std::cout << "terminating...\n";
+			exit(1);
 			break;
 		//index >= 0
 		case 1:
@@ -16,7 +17,8 @@ extern "C" void check(char* str, int type, int index, int limit)
 			if(index < 0)
 			{
 				std::cout << str << ": " << index << " < 0\n";
-				std::terminate();
+				std::cout << "terminating...\n";
+				exit(1);
 			}
 			break;
 		case 2:
@@ -25,7 +27,8 @@ extern "C" void check(char* str, int type, int index, int limit)
 			if(index >= limit)
 			{
 				std::cout << str << ": " << index << " >= limit\n";
-				std::terminate();
+				std::cout << "terminating...\n";
+				exit(1);
 			}
 			break;
 	}
