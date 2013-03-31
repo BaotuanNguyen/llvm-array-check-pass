@@ -19,6 +19,8 @@ clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #array check pass is run on test code after being compiled
+#opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -debug-pass=Structure -S -o $TEST_NAME.mod1.ll < $TEST_NAME.ll > /dev/null
+#opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod2.ll < $TEST_NAME.mod1.ll > /dev/null
 opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 

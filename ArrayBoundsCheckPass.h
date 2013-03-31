@@ -17,7 +17,7 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
-#include "RunTimeBoundsChecking.h"
+//#include "RunTimeBoundsChecking.h"
 
 #define LOWER 1 // for checking that an index is greater >- 0
 #define UPPER 2 // for checking that an index is < limit
