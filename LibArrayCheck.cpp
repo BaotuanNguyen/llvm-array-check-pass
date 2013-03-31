@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <iostream>
+#include <stdint.h>
 #include "ArrayBoundsCheckPass.h"
 
-
-extern "C" void check(char* str, int type, int index, int limit)
+extern "C" void check(char* str, uint64_t type, uint64_t index, uint64_t limit)
 {
 	switch(type)
 	{
