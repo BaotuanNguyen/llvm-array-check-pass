@@ -38,6 +38,7 @@ namespace llvm {
 				AU.addRequired<TargetLibraryInfo>();
                                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
+			Value* findOriginOfPointer(Value* pointer); // TODO copy-pasted from ArrayBoundsCheckPass
 		private:
 	};
 }

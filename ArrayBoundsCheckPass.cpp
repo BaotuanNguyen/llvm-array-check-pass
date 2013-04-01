@@ -75,9 +75,14 @@ Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
 {
 	///create string variable name
-	std::string globalVarName = (std::string)this->currentFunction->getName();
+	/*std::string globalVarName = (std::string)this->currentFunction->getName();
 	globalVarName.append(".");
-	globalVarName.append((std::string)str);	
+	globalVarName.append((std::string)str);*/
+	std::string globalVarName = (std::string) str; 
+	globalVarName.append(".");
+        // cporter commented block
+        //errs() << "BIG CLOCK: " << str << "\n";
+        //std::string globalVarName = (std::string) str; 
 
 	///get the size of the variable name
 	int arraySize = globalVarName.size()+1;
@@ -96,25 +101,36 @@ Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
 	return globalStr;
 }
 
-void ArrayBoundsCheckPass::checkGTZero(StringRef* varName, Value* index)
+//void ArrayBoundsCheckPass::checkGTZero(StringRef* varName, Value* index)
+void ArrayBoundsCheckPass::checkGTZero(Value *basePointer, Value* index)
 {
 	LLVMContext& context = this->M->getContext();
 	ConstantInt* placeHolder = ConstantInt::get(Type::getInt32Ty(context), 0);
-	this->insertCheck(varName, LOWER, index, placeHolder);
+	//this->insertCheck(varName, LOWER, index, placeHolder);
+	this->insertCheck(basePointer, LOWER, index, placeHolder);
 }
 
-void ArrayBoundsCheckPass::checkLTLimit(StringRef* varName, Value* index, Value* limit)
+//void ArrayBoundsCheckPass::checkLTLimit(StringRef* varName, Value* index, Value* limit)
+void ArrayBoundsCheckPass::checkLTLimit(Value *basePointer, Value* index, Value* limit)
 {
-	this->insertCheck(varName, UPPER, index, limit);	
+	//this->insertCheck(varName, UPPER, index, limit);	
+	this->insertCheck(basePointer, UPPER, index, limit);	
 }
 
-void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value* index, Value* limit)
+//void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value* index, Value* limit)
+void ArrayBoundsCheckPass::insertCheck(Value* basePointer, int checkType, Value* index, Value* limit)
 {
 	///const StringRef& variableName = I->getName();
 	std::stringstream ss;
 	ss << this->checkNumber;
 	this->checkNumber++;
-	Constant* globalStr = this->createGlobalString(ss.str());
+	//Constant* globalStr = this->createGlobalString(ss.str());
+	Constant* globalStr = this->createGlobalString(basePointer->getName());
+        errs() << "BIGGER CLOCK: " << basePointer->getName() << "\n";
+        //errs() << "BIGGER CLOCK: " << *varName << "\n";
+	//Constant* globalStr = this->createGlobalString(*varName);
+        //errs() << "globa str CLOCK: " << *globalStr << "\n";
+        
 
 	///errs() << "function " << *this->checkFunction << "\n";
 	///errs() << "variable " << *globalStr << "\n";
@@ -310,8 +326,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "index: " << *CI << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
 
-						this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
-						this->checkGTZero(basePointerName, CI);
+						//this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
+						//this->checkGTZero(basePointerName, CI);
+						this->checkLTLimit(basePointer, CI, allocaInst->getOperand(0));
+						this->checkGTZero(basePointer, CI);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
@@ -330,8 +348,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "index: " << index << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
 					
-						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
-						this->checkGTZero(indexName, index);
+						//this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
+						//this->checkGTZero(indexName, index);
+						this->checkLTLimit(basePointer, index, allocaInst->getOperand(0));
+						this->checkGTZero(basePointer, index);
 					}
 					else
 					{
@@ -363,8 +383,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "index: " << **OI << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
 					
-						this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
-						this->checkGTZero(basePointerName, *OI);
+						//this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
+						//this->checkGTZero(basePointerName, *OI);
+						this->checkLTLimit(basePointer, CI, allocaInst->getOperand(0));
+						this->checkGTZero(basePointer, CI);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
@@ -380,8 +402,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "index: " << index << "\n";
 						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
 					
-						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
-						this->checkGTZero(indexName, index);
+						//this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
+						//this->checkGTZero(indexName, index);
+						this->checkLTLimit(basePointer, CI, allocaInst->getOperand(0));
+						this->checkGTZero(basePointer, CI);
 					}
 					else
 					{
@@ -422,8 +446,11 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					LLVMContext& context = this->M->getContext();
 					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt32Ty(context), Aty->getNumElements());
 					StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-					this->checkLTLimit(basePointerName, *OI, arraySizeCI);
-					this->checkGTZero(basePointerName, *OI);
+					//this->checkLTLimit(basePointerName, *OI, arraySizeCI);
+					//this->checkGTZero(basePointerName, *OI);
+                                        // FIXME basePointer isn't defined here... does this line ever get hit?
+                                        this->checkLTLimit(basePointer, *OI, arraySizeCI);
+                                        this->checkGTZero(basePointer, *OI);
 				}
 			}
 		}

@@ -43,9 +43,12 @@ namespace llvm
 			/*check insertion functions*/
 			Constant* createGlobalString(const StringRef& str);
 			void die();
-			void checkGTZero(StringRef* varName, Value* index);
-			void checkLTLimit(StringRef* varName, Value* index, Value* limit);
-			void insertCheck(StringRef* varName, int checkType, Value* index, Value* limit);
+			//void checkGTZero(StringRef* varName, Value* index);
+			//void checkLTLimit(StringRef* varName, Value* index, Value* limit);
+			void checkGTZero(Value* basePointer, Value* index);
+			void checkLTLimit(Value* basePointer, Value* index, Value* limit);
+			//void insertCheck(StringRef* varName, int checkType, Value* index, Value* limit);
+			void insertCheck(Value* basePointer, int checkType, Value* index, Value* limit);
 			/*gep checker functions*/
 			bool checkGEP(User* GEP, Instruction* currInst);
 			bool runOnInstruction(Instruction* inst);

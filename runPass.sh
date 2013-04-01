@@ -1,6 +1,9 @@
 #!/bin/bash 
 
 TEST_FILE=test.c
+# fails with glibc 2.2.5 undefined reference error
+# adding $(pkg-config --cflags --libs glib-2.0) to the clang compile step did not fix it. version problem?
+#TEST_FILE=/home/ostrichjockey/test-suite-llvm/MultiSource/Benchmarks/MiBench/automotive-susan/susan.c
 TEST_NAME=${TEST_FILE%.c}
 LLVM_LIBRARY=../../Release+Asserts/
 
@@ -22,6 +25,7 @@ clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibA
 #opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -debug-pass=Structure -S -o $TEST_NAME.mod1.ll < $TEST_NAME.ll > /dev/null
 #opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod2.ll < $TEST_NAME.mod1.ll > /dev/null
 opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+#opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable
