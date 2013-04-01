@@ -1,8 +1,10 @@
-#!/bin/bash 
+#!/bin/bash
 
 TEST_FILE=test.c
 TEST_NAME=${TEST_FILE%.c}
 LLVM_LIBRARY=../../Release+Asserts/
+MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
+OPT="${LLVM_LIBRARY}bin/opt"
 
 if [[ $1 == "--help" ]]
 then
@@ -21,7 +23,8 @@ clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibA
 #array check pass is run on test code after being compiled
 #opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -debug-pass=Structure -S -o $TEST_NAME.mod1.ll < $TEST_NAME.ll > /dev/null
 #opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod2.ll < $TEST_NAME.mod1.ll > /dev/null
-opt -load "$LLVM_LIBRARY"lib/llvm-array-check-pass.so -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+#opt -load $MODULE_LIB -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+./$OPT -load $MODULE_LIB -array-check -local-opts -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable
