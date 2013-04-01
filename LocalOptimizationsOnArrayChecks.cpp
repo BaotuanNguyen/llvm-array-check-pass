@@ -78,8 +78,6 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
                                 errs() << "ptrOperand: " << *ptrOperand << "\n";
                                 errs() << "ptrOperand name: " << ptrOperand->getName() << "\n";
                                 errs() << "ptrOperand valueid: " << ptrOperand->getValueID() << "\n";
-                                Value *originPointer = findOriginOfPointer(ptrOperand);
-                                errs() << "originPointer name: " << originPointer->getName() << "\n";
                         }
                 }
         }
