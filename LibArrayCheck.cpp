@@ -20,7 +20,7 @@ extern "C" void check(char* str, int64_t type, int64_t index, int64_t limit)
 			}
 			break;
 		// check that index < limit
-                // (if index is equal to or greater than the limiti, then index is out of bounds)
+                // (if index is equal to or greater than the limit, then index is out of bounds)
 		case UPPER:
 			std::cout << "checking " << str << " : " << index << " < " << limit << "\n";
 			if(index >= limit)

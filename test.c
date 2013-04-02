@@ -3,6 +3,7 @@ int main(int argc, char** argv)
 {
 	int n = 4;
 	int c[n];
-	c[7] = 3;
+	c[n] = 3;
+	c[n] = 3;
 }
 

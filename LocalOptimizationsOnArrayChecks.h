@@ -19,6 +19,7 @@
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "ArrayBoundsCheckPass.h"
+#include <tr1/unordered_map>
 //#include "RunTimeBoundsChecking.h"
 
 
@@ -38,6 +39,8 @@ namespace llvm {
 				AU.addRequired<TargetLibraryInfo>();
                                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
+                        void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, Instruction *key, int value);
+                       // void bullshit();
 		private:
 	};
 }
