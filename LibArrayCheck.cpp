@@ -33,7 +33,6 @@ extern "C" void checkGTZero(int64_t index)
 		std::cout << "DETECT:" << index << " < 0\n";
 		std::cout << "Run-time Analysis detected an out-of-bound access! Terminating...\n";
 		exit(1);
->>>>>>> 04a9b6785b2d8e0479a5bc43139f5db279fa2e41
 	}
 }
 
