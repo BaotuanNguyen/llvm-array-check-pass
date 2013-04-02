@@ -19,6 +19,8 @@
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "ArrayBoundsCheckPass.h"
+#include <set>
+#include <map>
 //#include "RunTimeBoundsChecking.h"
 
 
@@ -39,6 +41,14 @@ namespace llvm {
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
 		private:
+			void findVeryBusyChecks();
+			void findAvailableChecks();
+			template <typename T>
+				void dumpSetOfPtr(std::set<T*>* set);
+			Function* currentFunction;
+			typedef std::set<Value*> ValuesSet;
+			typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
+			typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
 	};
 }
 

@@ -27,8 +27,53 @@ bool GlobalOptimizationsOnArrayChecks::doInitialization(Module& M)
 
 bool GlobalOptimizationsOnArrayChecks::runOnFunction(Function& F)
 {
-
+	//	
+	this->currentFunction = &F;
+	this->findVeryBusyChecks();
         return true;
 }
 
+void GlobalOptimizationsOnArrayChecks::findVeryBusyChecks()
+{
+
+	MapBBToValuesSet* VeryBusy_Gen = new MapBBToValuesSet();
+	//std::map<BasicBlock*, std::set<Value*> >* VeryBusy_OUT;
+	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++)
+	{
+		BasicBlock& BB = *IBB;
+		ValuesSet* BBVB_IN = new ValuesSet();
+		//find gen of the block
+		for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++)
+		{
+			if(CallInst* callInst = dyn_cast<CallInst>(&*II))
+			{
+				//should only be inserted if it is a gen call check instruction
+				BBVB_IN->insert(callInst);
+			}
+		}
+
+		VeryBusy_Gen->insert(PairBBToValuesSet(&BB, BBVB_IN));
+		this->dumpSetOfPtr(BBVB_IN);
+		//add block to map
+		//VeryBusy_IN->insert
+	}
+}
+
+template <typename T> void GlobalOptimizationsOnArrayChecks::dumpSetOfPtr(std::set<T*> *set)
+{
+	llvm::errs() << "{\n";
+	for(typename std::set<T*>::iterator IP = set->begin(), EP = set->end(); IP != EP; IP++)
+	{
+		llvm::errs() << "\t" << **IP << "\n";
+	}
+	if(set->empty())
+	{
+		llvm::errs() << "\tempty" << "\n";
+	}
+	llvm::errs() << "}\n";
+}
+
+void GlobalOptimizationsOnArrayChecks::findAvailableChecks()
+{
+}
 
