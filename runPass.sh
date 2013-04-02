@@ -44,7 +44,7 @@ clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #run opt, with specified passes
-./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure $2 -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable

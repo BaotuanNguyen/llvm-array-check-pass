@@ -9,10 +9,6 @@
 #include <sstream>
 #include "ArrayBoundsCheckPass.h"
 
-
-
-
-
 using namespace llvm;
 
 char GlobalOptimizationsOnArrayChecks::ID = 0;
@@ -48,6 +44,7 @@ void GlobalOptimizationsOnArrayChecks::findVeryBusyChecks()
 			if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 			{
 				//should only be inserted if it is a gen call check instruction
+					
 				BBVB_IN->insert(callInst);
 			}
 		}
