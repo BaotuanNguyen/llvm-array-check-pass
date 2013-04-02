@@ -17,10 +17,7 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
-//#include "RunTimeBoundsChecking.h"
-
-#define LOWER 1 // for checking that an index is greater >- 0
-#define UPPER 2 // for checking that an index is < limit
+#include "RunTimeBoundsChecking.h"
 
 namespace llvm
 {
@@ -37,31 +34,31 @@ namespace llvm
 			{
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
-                                //AU.addRequired<RunTimeBoundsChecking>();
+                //AU.addRequired<RunTimeBoundsChecking>();
 			}
 		private:
 			/*check insertion functions*/
-			Constant* createGlobalString(const StringRef& str);
-			void die();
-			void checkGTZero(StringRef* varName, Value* index);
-			void checkLTLimit(StringRef* varName, Value* index, Value* limit);
-			void insertCheck(StringRef* varName, int checkType, Value* index, Value* limit);
+			//Constant* createGlobalString(const StringRef* str);
+			Instruction* checkGTZero(Value* index);
+			Instruction* checkLTLimit(Value* index, Value* limit);
+			Instruction* insertGTZeroCheck(Value* index);
+			Instruction* insertLTLimitCheck(Value* index, Value* limit);
 			/*gep checker functions*/
 			bool checkGEP(User* GEP, Instruction* currInst);
 			bool runOnInstruction(Instruction* inst);
 			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
 
 			unsigned int checkNumber;
-			Module* M;		
+			Module* M;
 			/*current function being checked*/
 			Function* currentFunction;
 			/*check function declared for check insertion*/
-			Function* checkFunction;
+			Function* checkGTZeroFunction;
+			Function* checkLTLimitFunction;
 			/*instruction before which to insert instructions*/
 			Instruction* Inst;
 			std::vector<Constant*> gepFirstCharIndices;
 	};
 
 }
-
 #endif

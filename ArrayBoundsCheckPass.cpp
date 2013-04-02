@@ -72,12 +72,15 @@ Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 	}
 }
 
-Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
+/*
+Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef* str)
 {
-	///create string variable name
-	std::string globalVarName = (std::string)this->currentFunction->getName();
-	globalVarName.append(".");
-	globalVarName.append((std::string)str);	
+	errs() << "passed str: " << *str << "\n";
+
+	//create string variable name
+	std::string globalVarName = (this->currentFunction->getName()).str() + "." + str->str() + "\n";
+	errs() << "global: " << globalVarName << "\n";
+	
 
 	///get the size of the variable name
 	int arraySize = globalVarName.size()+1;
@@ -92,37 +95,72 @@ Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef& str)
 
 	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
 	globalStr->setInitializer(constStr);
-	//errs() << "creating global variable: " << *globalStr << "\n";
+	errs() << "created global variable: " << *globalStr << "\n";
 	return globalStr;
-}
+}*/
 
-void ArrayBoundsCheckPass::checkGTZero(StringRef* varName, Value* index)
+Instruction* ArrayBoundsCheckPass::checkGTZero(Value* index)
 {
-	LLVMContext& context = this->M->getContext();
-	ConstantInt* placeHolder = ConstantInt::get(Type::getInt32Ty(context), 0);
-	this->insertCheck(varName, LOWER, index, placeHolder);
+	return this->insertGTZeroCheck(index);
 }
 
-void ArrayBoundsCheckPass::checkLTLimit(StringRef* varName, Value* index, Value* limit)
+Instruction* ArrayBoundsCheckPass::checkLTLimit(Value* index, Value* limit)
 {
-	this->insertCheck(varName, UPPER, index, limit);	
+	return this->insertLTLimitCheck(index, limit);	
 }
 
-void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value* index, Value* limit)
+Instruction* ArrayBoundsCheckPass::insertGTZeroCheck(Value* index)
 {
 	///const StringRef& variableName = I->getName();
-	std::stringstream ss;
-	ss << this->checkNumber;
-	this->checkNumber++;
-	Constant* globalStr = this->createGlobalString(ss.str());
+	//std::stringstream ss;
+	///ss << this->checkNumber;
+	//this->checkNumber++;
+	//Constant* globalVar1 = this->createGlobalString(var1Name);
+	//Constant* globalVar2 = this->createGlobalString(var2Name);
 
-	///errs() << "function " << *this->checkFunction << "\n";
-	///errs() << "variable " << *globalStr << "\n";
-	
 	///create types of the arguments
 	LLVMContext& context = this->M->getContext();
-	Constant* gepFirstChar = ConstantExpr::getGetElementPtr(globalStr, this->gepFirstCharIndices);
-	ConstantInt* checkTypeValue = ConstantInt::get(Type::getInt64Ty(context), checkType);
+	//Constant* gepFirstChar = ConstantExpr::getGetElementPtr(globalVar1, this->gepFirstCharIndices);
+	//Constant* gepSecondChar = ConstantExpr::getGetElementPtr(globalVar2, this->gepFirstCharIndices);
+	//ConstantInt* checkTypeValue = ConstantInt::get(Type::getInt64Ty(context), checkType);
+	//ConstantInt* index = ConstantInt::get(Type::getInt32Ty(context), 1);
+	//ConstantInt* upperBound = ConstantInt::get(Type::getInt32Ty(context), 2);
+	
+	if (index->getType() == Type::getInt32Ty(context))
+		index = llvm::CastInst::CreateIntegerCast(index, Type::getInt64Ty(context), true, "", Inst);
+	
+	///create vector with values which containts arguments values
+	std::vector<Value*> argValuesV;
+	//argValuesV.push_back(gepFirstChar);
+	//argValuesV.push_back(gepSecondChar);
+	//argValuesV.push_back(checkTypeValue);
+	argValuesV.push_back(index);
+	///create array ref to vector or arguments
+	ArrayRef<Value*> argValuesA(argValuesV);
+
+	///create call in code
+	CallInst* allocaCall = CallInst::Create(this->checkGTZeroFunction, argValuesA, "", Inst);
+	
+	allocaCall->setCallingConv(CallingConv::C);
+	allocaCall->setTailCall(false);
+	
+	return allocaCall;
+}
+
+Instruction* ArrayBoundsCheckPass::insertLTLimitCheck(Value* index, Value* limit)
+{
+	///const StringRef& variableName = I->getName();
+	//std::stringstream ss;
+	///ss << this->checkNumber;
+	//this->checkNumber++;
+	//Constant* globalVar1 = this->createGlobalString(var1Name);
+	//Constant* globalVar2 = this->createGlobalString(var2Name);
+
+	///create types of the arguments
+	LLVMContext& context = this->M->getContext();
+	//Constant* gepFirstChar = ConstantExpr::getGetElementPtr(globalVar1, this->gepFirstCharIndices);
+	//Constant* gepSecondChar = ConstantExpr::getGetElementPtr(globalVar2, this->gepFirstCharIndices);
+	//ConstantInt* checkTypeValue = ConstantInt::get(Type::getInt64Ty(context), checkType);
 	//ConstantInt* index = ConstantInt::get(Type::getInt32Ty(context), 1);
 	//ConstantInt* upperBound = ConstantInt::get(Type::getInt32Ty(context), 2);
 	
@@ -134,31 +172,36 @@ void ArrayBoundsCheckPass::insertCheck(StringRef* varName, int checkType, Value*
 	
 	///create vector with values which containts arguments values
 	std::vector<Value*> argValuesV;
-	argValuesV.push_back(gepFirstChar);
-	argValuesV.push_back(checkTypeValue);
+	//argValuesV.push_back(gepFirstChar);
+	//argValuesV.push_back(gepSecondChar);
+	//argValuesV.push_back(checkTypeValue);
 	argValuesV.push_back(index);
 	argValuesV.push_back(limit);
 	///create array ref to vector or arguments
 	ArrayRef<Value*> argValuesA(argValuesV);
 
 	///create call in code
-	CallInst* allocaCall = CallInst::Create(this->checkFunction, argValuesA, "", Inst);
+	CallInst* allocaCall = CallInst::Create(this->checkLTLimitFunction, argValuesA, "", Inst);
 	
 	allocaCall->setCallingConv(CallingConv::C);
 	allocaCall->setTailCall(false);
+
+	return allocaCall;
 }
 
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
-	std::vector<Type*> argTypes;
+	std::vector<Type*> argTypes1;
+	std::vector<Type*> argTypes2;
+
 	this->checkNumber = 0;
 	this->M = &M;
 
 	//initialize some variables	
 	//sets up the indices of the gep instruction for the first element	
-	ConstantInt* zeroInt = ConstantInt::get(Type::getInt32Ty(this->M->getContext()), 0);
-	this->gepFirstCharIndices.push_back(zeroInt);
-	this->gepFirstCharIndices.push_back(zeroInt);
+	//ConstantInt* zeroInt = ConstantInt::get(Type::getInt32Ty(this->M->getContext()), 0);
+	//this->gepFirstCharIndices.push_back(zeroInt);
+	//this->gepFirstCharIndices.push_back(zeroInt);
 	//initialize all calls to library functions
 	
 	//scope start function
@@ -166,22 +209,31 @@ bool ArrayBoundsCheckPass::doInitialization(Module& M)
 	//declared types
 	Type* voidTy = Type::getVoidTy(M.getContext());
 	Type* intTy = Type::getInt64Ty(M.getContext());
-	Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
+	//Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
 
-	argTypes.push_back(charPtrTy);
-	argTypes.push_back(intTy);
-	argTypes.push_back(intTy);
-	argTypes.push_back(intTy);
+	//argTypes.push_back(charPtrTy);
+	//argTypes.push_back(intTy);
+	argTypes1.push_back(intTy);
+	
+	argTypes2.push_back(intTy);
+	argTypes2.push_back(intTy);
+
 
 	//declared functions type calls
-	ArrayRef<Type*> argArray(argTypes);
-	FunctionType* checkFunctionType = FunctionType::get(voidTy, argArray, false);
+	ArrayRef<Type*> argArray1(argTypes1);
+	ArrayRef<Type*> argArray2(argTypes2);
+	
+	FunctionType* checkGTZeroFunctionType = FunctionType::get(voidTy, argArray1, false);
+	FunctionType* checkLTLimitFunctionType = FunctionType::get(voidTy, argArray2, false);
+	
 
 	//create functions
-	M.getOrInsertFunction("check", checkFunctionType);
+	M.getOrInsertFunction("checkGTZero", checkGTZeroFunctionType);
+	M.getOrInsertFunction("checkLTLimit", checkLTLimitFunctionType);
 	
 	//store Value to function
-	this->checkFunction = M.getFunction("check");
+	this->checkGTZeroFunction = M.getFunction("checkGTZero");
+	this->checkLTLimitFunction = M.getFunction("checkLTLimit");
 	return true;
 }
 
@@ -277,18 +329,18 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 		// first operand contains Base Pointer information
 		if (position == 0)
 		{
-			errs() << "Base Pointer Type: " << **GEPI << "\n";
-			errs() << "Base Pointer " << **OI << "\n";
-			errs() << "Origin Base Pointer: " << *findOriginOfPointer(*OI) << "\n";
-			
 			basePointer = *OI;	
 			originPointer = findOriginOfPointer(*OI);
-
+			
 			if (!originPointer)
 			{
 				errs() << "origin pointer returned NULL. SHOULD NOT HAPPEN!!!\n";
 			}
-
+			
+			errs() << "Base Pointer Type: " << **GEPI << "\n";
+			errs() << "Base Pointer " << *basePointer << "\n";
+			errs() << "Origin Base Pointer: " << *originPointer << "\n";
+		
 			OI++; // now OI points to the first index position
 			
 			// second operand contains "first" index
@@ -302,36 +354,97 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				{
 					if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(basePointer))
 					{
-						// Insert runtime check 
-						errs() << "VLA Detected\n";
+						errs() << "VLA Detected1\n";
 						this->Inst = currInst;
-						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
+						
+						Value* limit = allocaInst->getOperand(0);
+						Value* originLimit = findOriginOfPointer(limit);
+
+						if (dyn_cast<LoadInst>(originLimit))
+							originLimit = ((LoadInst*) originLimit)->getOperand(0);
+				//		else
+				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 
 						errs() << "index: " << *CI << "\n";
-						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
+						errs() << "limit: " << *limit << "\n";
+						
+					/*	
+						if (!dyn_cast<ConstantInt*>(index))
+						{
+							var1Name = new StringRef("%" + (std::string) var1Name);
+						}*/
+						std::ostringstream os;
+						os << CI->getSExtValue();
+						
+						std::string var1Name = os.str();
+						std::string var2Name = "%" + (originLimit->getName()).str();
 
-						this->checkLTLimit(basePointerName, CI, allocaInst->getOperand(0));
-						this->checkGTZero(basePointerName, CI);
+						errs() << "var1Name: " << var1Name << "\n";
+						errs() << "var2Name: " << var2Name << "\n";
+						
+						LLVMContext& context = this->M->getContext();
+						std::vector<Value*> varNames;
+						
+						MDString* var1 = MDString::get(context, var1Name);
+						MDString* var2 = MDString::get(context, var2Name);
+						
+						varNames.push_back(var1);
+						varNames.push_back(var2);
+						
+						MDNode* meta_LT = MDNode::get(context, varNames);
+						MDNode* meta_GT = MDNode::get(context, var1);
+
+						Instruction* callLTLimit = this->checkLTLimit(CI, limit);
+						Instruction* callGTZero = this->checkGTZero(CI);
+						
+						callLTLimit->setMetadata("Vars", meta_LT);
+						callGTZero->setMetadata("Vars", meta_GT);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
 						// Insert runtime check 
-						errs() << "VLA Chain Detected\n";
+						errs() << "VLA Chain Detected1\n";
 						this->Inst = currInst;
-						StringRef* indexName = new StringRef((std::string)basePointer->getName() + ".idx");
-						
-//						errs() << "first operand: " << *(dyn_cast<User>(basePointer)->getOperand(1)) << "\n";
-//						errs() << "second operand: " << **OI << "\n";
+						StringRef* indexName = new StringRef((basePointer->getName()).str() + ".idx");
 
 						BinaryOperator* index = BinaryOperator::Create(Instruction::Add, dyn_cast<User>(basePointer)->getOperand(1), &(**OI), Twine(*indexName), currInst);
+						Value* limit = allocaInst->getOperand(0);
+						Value* originLimit = findOriginOfPointer(limit);
 
-						//firstOperand of basePointer + index < limit; 
+						if (dyn_cast<LoadInst>(originLimit))
+							originLimit = ((LoadInst*) originLimit)->getOperand(0);
+					//	else
+					//		errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 						
-						errs() << "index: " << index << "\n";
-						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
-					
-						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
-						this->checkGTZero(indexName, index);
+						//firstOperand of basePointer + index < limit;
+						errs() << "Origin Pointer: " << *originPointer << "\n";
+						
+						errs() << "index: " << *index << "\n";
+						errs() << "limit: " << *limit << "\n";
+						
+						std::string var1Name = "%" + (index->getName()).str();
+						std::string var2Name = "%" + (originLimit->getName()).str();
+						
+						errs() << "var1Name: " << var1Name << "\n";
+						errs() << "var2Name: " << var2Name << "\n";
+						
+						LLVMContext& context = this->M->getContext();
+						std::vector<Value*> varNames;
+						
+						MDString* var1 = MDString::get(context, var1Name);
+						MDString* var2 = MDString::get(context, var2Name);
+						
+						varNames.push_back(var1);
+						varNames.push_back(var2);
+										
+						MDNode* meta_LT = MDNode::get(context, varNames);
+						MDNode* meta_GT = MDNode::get(context, var1);
+
+						Instruction* callLTLimit = this->checkLTLimit(CI, limit);
+						Instruction* callGTZero = this->checkGTZero(CI);
+						
+						callLTLimit->setMetadata("Vars", meta_LT);
+						callGTZero->setMetadata("Vars", meta_GT);
 					}
 					else
 					{
@@ -356,37 +469,132 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(basePointer))
 					{
 						// Insert runtime check 
-						errs() << "VLA Detected\n";
+						errs() << "VLA Detected2\n";
 						this->Inst = currInst;
-						StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
+
+						Value* originIndex = findOriginOfPointer(*OI);
+						Value* limit = allocaInst->getOperand(0);
+						Value* originLimit = findOriginOfPointer(limit);
+
+						if (dyn_cast<LoadInst>(originIndex))
+							originIndex = ((LoadInst*) originIndex)->getOperand(0);
+				//		else
+				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
+
+						if (dyn_cast<LoadInst>(originLimit))
+							originLimit = ((LoadInst*)originLimit)->getOperand(0);
+				//		else
+				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 						
 						errs() << "index: " << **OI << "\n";
-						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
-					
-						this->checkLTLimit(basePointerName, *OI, allocaInst->getOperand(0));
-						this->checkGTZero(basePointerName, *OI);
+						errs() << "limit: " << *limit << "\n";
+						
+						std::string var1Name = "%" + (originIndex->getName()).str();
+						std::string var2Name = "%" + (originLimit->getName()).str();
+						
+						errs() << "var1Name: " << var1Name << "\n";
+						errs() << "var2Name: " << var2Name << "\n";
+						
+						LLVMContext& context = this->M->getContext();
+						std::vector<Value*> varNames;
+						
+						MDString* var1 = MDString::get(context, var1Name);
+						MDString* var2 = MDString::get(context, var2Name);
+						
+						varNames.push_back(var1);
+						varNames.push_back(var2);
+						
+						MDNode* meta_LT = MDNode::get(context, varNames);
+						MDNode* meta_GT = MDNode::get(context, var1);
+
+						Instruction* callLTLimit = this->checkLTLimit(*OI, limit);
+						Instruction* callGTZero = this->checkGTZero(*OI);
+						
+						callLTLimit->setMetadata("Vars", meta_LT);
+						callGTZero->setMetadata("Vars", meta_GT);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
 						// Insert runtime check 
-						errs() << "VLA Chain Detected\n";
+						errs() << "VLA Chain Detected2\n";
 						this->Inst = currInst;
-						StringRef* indexName = new StringRef((std::string)basePointer->getName() + ".idx");
+						StringRef* indexName = new StringRef((basePointer->getName()).str() + ".idx");
 						
 						BinaryOperator* index = BinaryOperator::Create(Instruction::Add, dyn_cast<User>(basePointer)->getOperand(1), &(**OI), Twine(*indexName), currInst);
 
-						//firstOperand of basePointer + index < limit; 
-						
-						errs() << "index: " << index << "\n";
-						errs() << "limit: " << *(allocaInst->getOperand(0)) << "\n";
+						Value* originIndex = findOriginOfPointer(*OI);
+						Value* limit = allocaInst->getOperand(0);
+						Value* originLimit = findOriginOfPointer(limit);
+
+						if (dyn_cast<LoadInst>(originIndex))
+							originIndex = ((LoadInst*)originIndex)->getOperand(0);
+				//		else
+				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
+
+						if (dyn_cast<LoadInst>(originLimit))
+							originLimit = ((LoadInst*)originLimit)->getOperand(0);
+				//		else
+				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 					
-						this->checkLTLimit(indexName, index, allocaInst->getOperand(0));
-						this->checkGTZero(indexName, index);
+						//firstOperand of basePointer + index < limit;
+						errs() << "Origin Pointer: " << *originPointer << "\n";
+						
+						errs() << "index: " << *index << "\n";
+						errs() << "limit: " << *limit << "\n";
+						
+						std::string var1Name = "%" + (originIndex->getName()).str();
+						std::string var2Name = "%" + (originLimit->getName()).str();
+						
+						errs() << "var1Name: " << var1Name << "\n";
+						errs() << "var2Name: " << var2Name << "\n";
+						
+						LLVMContext& context = this->M->getContext();
+						std::vector<Value*> varNames;
+						
+						MDString* var1 = MDString::get(context, var1Name);
+						MDString* var2 = MDString::get(context, var2Name);
+						
+						varNames.push_back(var1);
+						varNames.push_back(var2);
+					
+						MDNode* meta_LT = MDNode::get(context, varNames);
+						MDNode* meta_GT = MDNode::get(context, var1);
+
+						Instruction* callLTLimit = this->checkLTLimit(*OI, limit);
+						Instruction* callGTZero = this->checkGTZero(*OI);
+						
+						callLTLimit->setMetadata("Vars", meta_LT);
+						callGTZero->setMetadata("Vars", meta_GT);
 					}
 					else
 					{
 						errs() << "This GEP is not an array access\n";
 					}
+				}
+				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
+				else
+				{
+					Value* originIndex = findOriginOfPointer(*OI);
+					
+					if (dyn_cast<LoadInst>(originIndex))
+						originIndex = ((LoadInst*)originIndex)->getOperand(0);
+			//		else
+			//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
+					
+					std::string var1Name = "%" + (originIndex->getName()).str();
+					errs() << "var1Name: " << var1Name << "\n";
+					
+					LLVMContext& context = this->M->getContext();
+					std::vector<Value*> varNames;
+						
+					MDString* var1 = MDString::get(context, var1Name);
+						
+					varNames.push_back(var1);
+						
+					MDNode* meta_GT = MDNode::get(context, var1);
+					
+					Instruction* callGTZero = this->checkGTZero(CI);
+					callGTZero->setMetadata("Vars", meta_GT);
 				}					
 			}
 		}
@@ -418,12 +626,45 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				{
 					errs() << "\nIndex (Non-constant): " << **OI << "\n";
 					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+			
 					this->Inst = currInst;
 					LLVMContext& context = this->M->getContext();
-					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt32Ty(context), Aty->getNumElements());
-					StringRef* basePointerName = new StringRef((std::string)basePointer->getName());
-					this->checkLTLimit(basePointerName, *OI, arraySizeCI);
-					this->checkGTZero(basePointerName, *OI);
+					ConstantInt* arraySizeCI = ConstantInt::get(Type::getInt64Ty(context), Aty->getNumElements());
+					
+					Value* originIndex = findOriginOfPointer(*OI);
+					
+					errs() << "Origin Index: " << *originIndex << "\n";
+
+					if (dyn_cast<LoadInst>(originIndex))
+						originIndex = ((LoadInst*)originIndex)->getOperand(0);
+				//	else
+				//		errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
+					
+					std::ostringstream os;
+					os << arraySizeCI->getSExtValue();
+				
+					std::string var1Name = "%" + (originIndex->getName()).str();
+					std::string var2Name = os.str();
+						
+					errs() << "var1Name: " << var1Name << "\n";
+					errs() << "var2Name: " << var2Name << "\n";
+
+					std::vector<Value*> varNames;
+						
+					MDString* var1 = MDString::get(context, var1Name);
+					MDString* var2 = MDString::get(context, var2Name);
+						
+					varNames.push_back(var1);
+					varNames.push_back(var2);
+						
+					MDNode* meta_LT = MDNode::get(context, varNames);
+					MDNode* meta_GT = MDNode::get(context, var1);
+
+					Instruction* callLTLimit = this->checkLTLimit(*OI, arraySizeCI);
+					Instruction* callGTZero = this->checkGTZero(*OI);
+					
+					callLTLimit->setMetadata("Vars", meta_LT);
+					callGTZero->setMetadata("Vars", meta_GT);
 				}
 			}
 		}
