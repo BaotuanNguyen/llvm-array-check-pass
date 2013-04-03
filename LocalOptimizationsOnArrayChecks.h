@@ -42,7 +42,7 @@ namespace llvm {
                                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
                         //void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, MDNode *key);
-                        void vtInsert(LocalTable &table, MDNode *key);
+                        void vtInsert(LocalTable &table, Instruction *inst, MDNode *key, std::vector<Instruction *> &deleteVector);
 		private:
 	};
 }
