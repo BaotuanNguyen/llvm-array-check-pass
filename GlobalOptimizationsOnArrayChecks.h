@@ -18,6 +18,9 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "ArrayBoundsCheckPass.h"
 #include <set>
 #include <map>
@@ -38,17 +41,30 @@ namespace llvm {
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
                                 AU.addRequired<ArrayBoundsCheckPass>();
+				AU.addRequired<AliasAnalysis>();
+				AU.addRequired<ScalarEvolution>();
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
 		private:
-			void findVeryBusyChecks();
-			void findAvailableChecks();
+			enum EffectTy {
+				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
+			};
+			///effect - find the effect for a given variable within a given block, this method will
+			///go throught the instructions in a block, and determine how the variable is affected. 
+			///Value should be either a local or global variable, else this will always return changedTy.
+			///
+			EffectTy effect(BasicBlock* B, Value* v);
+			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 			Function* currentFunction;
+			//some definitions
 			typedef std::set<Value*> ValuesSet;
 			typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
 			typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+			//private variables
+			ScalarEvolution* SE;
+			AliasAnalysis* AA;
 	};
 }
 
