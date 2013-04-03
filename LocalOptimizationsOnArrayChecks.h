@@ -27,6 +27,8 @@
 
 namespace llvm {
 
+        typedef std::tr1::unordered_map<MDNode *, MDNode *> LocalTable;
+
 	struct LocalOptimizationsOnArrayChecks : public BasicBlockPass {
 		static char ID;
 		public: 
@@ -39,8 +41,8 @@ namespace llvm {
 				AU.addRequired<TargetLibraryInfo>();
                                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
-                        void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, Instruction *key, int value);
-                       // void bullshit();
+                        //void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, MDNode *key);
+                        void vtInsert(LocalTable &table, MDNode *key);
 		private:
 	};
 }

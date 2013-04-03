@@ -39,8 +39,8 @@ bool LocalOptimizationsOnArrayChecks::doInitialization(Function& F)
 
 bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
 {
-        std::tr1::unordered_map<Instruction *, int> valueTable;
         int value = 0;
+        LocalTable valueTable;//= new LocalTable();
 
         errs() << "Inspecting a new basic block...\n";
         // hold an array of all of the call instructions in that basic block
@@ -60,23 +60,24 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
 
                 // insert every instruction into the value table.
                 // those that have been seen already will have identical values
-                errs() << "size before: " << valueTable.size() << "\n";
-                vtInsert(valueTable, inst, value);
-                errs() << "size after: " << valueTable.size() << "\n";
+                //errs() << "size before: " << valueTable.size() << "\n";
+                //errs() << "size after: " << valueTable.size() << "\n";
 
-                errs() << "Instruction: " <<  *i << "\n";
-                errs() << "Instruction getname:: " <<  i->getName() << "\n";
+                //errs() << "Instruction: " <<  *i << "\n";
+                //errs() << "Instruction getname:: " <<  i->getName() << "\n";
 
                 // if it is a CallInst, then we may have a redundant check
                 if (CallInst *ci = dyn_cast<CallInst> (inst)) {
                         errs() << "is call inst: " << *ci << "\n";
+                        vtInsert(valueTable, ci->getMetadata("Vars"));
 
                         // get the called fn
-                        Function *calledFn = ci->getCalledFunction();
-                        errs() << "called fn: " <<  *calledFn << "\n";
-
+                        //Function *calledFn = ci->getCalledFunction();
+                        //errs() << "called fn: " <<  *calledFn << "\n";
+                        //if (ci->hasMetadata())
+                                //errs() << "meata at 0: " << *ci->getMetadata("Vars") << "\n";
                         // iterate over the operands
-                        int numArgs = ci->getNumArgOperands();
+                        /*int numArgs = ci->getNumArgOperands();
                         for (int a = 0; a < numArgs; ++a) {
                                 Value *v = ci->getArgOperand(a);
                                 errs() << "arg " << a << ": " << *v << "\n";
@@ -106,7 +107,7 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
                                 }
 
 
-                        }
+                        }*/
                 }
         }
 
@@ -117,20 +118,19 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
 
 
 
-void LocalOptimizationsOnArrayChecks::vtInsert(std::tr1::unordered_map<Instruction *, int> &table, Instruction *key, int value)
+void LocalOptimizationsOnArrayChecks::vtInsert(LocalTable &table, MDNode *key)
 {
         errs() << "inside vtInsert with instruction: " << *key << "\n";
 
-        // check if 
-        std::tr1::unordered_map<Instruction *, int>::const_iterator el = table.find(key);
+        LocalTable::const_iterator el = table.find(key);
         
         if (el != table.end()) {
-                errs() << "Not end\n";
+                errs() << "Redundant check.  TODO: Rmove instruction.\n";
         }else{
-                errs() << "END\n";
+                errs() << "Necessary check\n";
         }
 
-        std::pair<Instruction *, int> row(key, value);
+        std::pair<MDNode *, MDNode *> row(key, key);
         table.insert(row);
 
 
@@ -154,3 +154,74 @@ void LocalOptimizationsOnArrayChecks::vtInsert(std::tr1::unordered_map<Instructi
 
 
 
+// part 3
+/// value numbering example code perhaps can be used later
+/*bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
+{
+        std::tr1::unordered_map<Instruction *, int> valueTable;
+        int value = 0;
+
+        errs() << "Inspecting a new basic block...\n";
+        // hold an array of all of the call instructions in that basic block
+        // every time we see a call instruction, loop over all the ones seen so far
+        // if the exact check has already been made,
+        // remove it
+
+        for (BasicBlock::iterator i = BB.begin(), e = BB.end(); i != e; ++i) {
+                Instruction *inst = &*i;
+
+                // insert every instruction into the value table.
+                // those that have been seen already will have identical values
+                errs() << "size before: " << valueTable.size() << "\n";
+                vtInsert(valueTable, inst, value);
+                errs() << "size after: " << valueTable.size() << "\n";
+
+                errs() << "Instruction: " << *i << "\n";
+                errs() << "Instruction getname:: " << i->getName() << "\n";
+
+                // if it is a CallInst, then we may have a redundant check
+                if (CallInst *ci = dyn_cast<CallInst> (inst)) {
+                        errs() << "is call inst: " << *ci << "\n";
+
+                        // get the called fn
+                        Function *calledFn = ci->getCalledFunction();
+                        errs() << "called fn: " << *calledFn << "\n";
+
+                        // iterate over the operands
+                        int numArgs = ci->getNumArgOperands();
+                        for (int a = 0; a < numArgs; ++a) {
+                                Value *v = ci->getArgOperand(a);
+                                errs() << "arg " << a << ": " << *v << "\n";
+
+
+                                // if an operand is also an instruction, we need to find where it was derived
+                                if (Instruction *operandAsInstruction = dyn_cast<Instruction> (v)) {
+
+                                        errs() << "cast on arg " << a << " worked\n";
+
+                                        // for a simple identity check, it is sufficient to check
+                                        // the target of the load
+                                        Value *zeroOperand = operandAsInstruction->getOperand(0);
+                                        if (LoadInst *loadInst = dyn_cast<LoadInst>(zeroOperand)) {
+                                                errs() << "please be n: " << loadInst->getOperand(0)->getName() << "\n";
+                                        }else{
+                                                errs() << "sign extend instead: " << *zeroOperand << "\n";
+                                        }
+
+                                        User::const_op_iterator operandIterator = operandAsInstruction->op_begin();
+                                        User::const_op_iterator end = operandAsInstruction->op_end();
+                                        
+                                        for (; operandIterator != end; operandIterator++) {
+                                                errs() << "GOING GOING GOING: " << **operandIterator << "\n";
+
+                                        }
+                                }
+
+
+                        }
+                }
+        }
+
+        errs() << "Exiting basic block\n\n";
+        return false;
+}*/
