@@ -36,9 +36,10 @@ namespace llvm {
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
-                                AU.addRequired<ArrayBoundsCheckPass>();
+                AU.addRequired<ArrayBoundsCheckPass>();
 			}
 		private:
+			Module* M;
 	};
 }
 

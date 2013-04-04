@@ -21,14 +21,14 @@
 
 namespace llvm
 {
-
-	struct ArrayBoundsCheckPass : public FunctionPass
+	struct ArrayBoundsCheckPass : public ModulePass
 	{
 		public:
 			static char ID;
-			ArrayBoundsCheckPass() : FunctionPass(ID) {}
+			ArrayBoundsCheckPass() : ModulePass(ID) {}
 			virtual bool doInitialization(Module& M);
-			virtual bool runOnFunction(Function& F);
+			virtual bool doFinalization(Module& M);
+			virtual bool runOnModule(Module& F);
 			Value* findOriginOfPointer(Value* pointer);
 			virtual void getAnalysisUsage(AnalysisUsage& AU) const
 			{
@@ -47,6 +47,7 @@ namespace llvm
 			bool checkGEP(User* GEP, Instruction* currInst);
 			bool runOnInstruction(Instruction* inst);
 			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
+			bool runOnFunction(Function* F);
 
 			unsigned int checkNumber;
 			Module* M;

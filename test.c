@@ -1,8 +1,7 @@
-
-int main(int argc, char** argv)
+int main()
 {
 	int n = 4;
-	int c[n];
-	c[7] = 3;
+	int b = 5;
+	n = n + b;
+	n = 99 + n + 100;
 }
-

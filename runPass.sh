@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TEST_FILE=test.c
-TEST_NAME=""
+TEST_NAME=$2
 OPT_PASSES=""
 LLVM_LIBRARY=../../Release+Asserts/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
@@ -37,14 +37,14 @@ case "$1" in
 esac
 
 #remove suffix .c
-TEST_NAME=${TEST_FILE%.c}
+TEST_NAME=${2%.c}
 
 #compiles the test file, and the check library
 clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #run opt, with specified passes
-./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure $2 -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable
