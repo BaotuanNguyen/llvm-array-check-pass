@@ -1,7 +1,8 @@
 int main()
 {
 	int n = 4;
-	int b = 5;
-	n = n + b;
-	n = 99 + n + 100;
+	int c[n];
+	c[n] = 3;
+        n = 3;
+	c[n] = 3;
 }

@@ -19,12 +19,15 @@
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "ArrayBoundsCheckPass.h"
+#include <tr1/unordered_map>
 //#include "RunTimeBoundsChecking.h"
 
 
 
 
 namespace llvm {
+
+        typedef std::tr1::unordered_map<MDNode *, MDNode *> LocalTable;
 
 	struct LocalOptimizationsOnArrayChecks : public BasicBlockPass {
 		static char ID;
@@ -38,6 +41,8 @@ namespace llvm {
 				AU.addRequired<TargetLibraryInfo>();
                 AU.addRequired<ArrayBoundsCheckPass>();
 			}
+                        //void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, MDNode *key);
+                        void vtInsert(LocalTable &table, Instruction *inst, MDNode *key, std::vector<Instruction *> &deleteVector);
 		private:
 			Module* M;
 	};
