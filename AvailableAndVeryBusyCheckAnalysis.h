@@ -34,6 +34,7 @@ namespace llvm {
 	typedef std::set<Value*> ValuesSet;
 	typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
 	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+	typedef std::list<ValuesSet*> ListOfValuesSets;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
@@ -59,10 +60,13 @@ namespace llvm {
 			///Value should be either a local or global variable, else this will always return changedTy.
 			///
 			EffectTy effect(BasicBlock* B, Value* v);
+			void dataFlowAnalysis(bool isForward);
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 			Function* currentFunction;
+			MapBBToValuesSet* VeryBusy_Gen;
+			MapBBToValuesSet* Available_Gen;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
