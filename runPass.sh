@@ -1,7 +1,6 @@
 #!/bin/bash
 
-TEST_FILE=test.c
-TEST_NAME=$2
+TEST_FILE=$2
 OPT_PASSES=""
 LLVM_LIBRARY=../../Release+Asserts/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
@@ -13,25 +12,21 @@ OPT="${LLVM_LIBRARY}bin/opt"
 
 #DIFFERENT WAYS TO RUN OPT UNDER
 case "$1" in
-	'-checks-only')	
-		TEST_FILE=test.c
+	'-array-check')	
 		OPT_PASSES="-array-check"
 		;;
-	'-local-opts')
-		TEST_FILE=test.c
-		OPT_PASSES="-array-check -local-opts"
+	'-effect-gen')
+		OPT_PASSES="-array-check -effect-gen"
 		;;
 	'-global-opts-only')
-		TEST_FILE=globalOptTest.c
 		OPT_PASSES="-array-check -global-opts"
 		;;
 	'-global-opts')
-		TEST_FILE=globalOptTest.c
-		OPT_PASSES="-array-check -local-opts -global-opts"
+		OPT_PASSES="-array-check -effect-gen -global-opts"
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -checks-only | -local-opts | -global-opts-only | -global-opts ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -global-opts-only | -global-opts ]"
 		exit 1
 		;;
 esac
