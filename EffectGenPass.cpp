@@ -53,8 +53,8 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 		for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 		{
                 Instruction *inst = &*i;
-         		errs() << "inst:  " << *inst << "\n";
-		 		if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
+		 		
+				if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
 				{
 					if (AllocaInst* alloca = dyn_cast<AllocaInst>(LI->getOperand(0)))
 					{
@@ -98,24 +98,24 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						}
 
 						operand = dyn_cast<Instruction>(BO->getOperand(variablePos));
+						
+						MDNode* operandMetadata = operand->getMetadata("EFFECT");
 
-						if (MDNode* operandMetadata = operand->getMetadata("EFFECT"))
-						{
-								variable = operandMetadata->getOperand(1);
-								constant = BO->getOperand(constantPos);								
-						}
-						else // variable reference is from another block
+						if (operandMetadata == NULL) // variable reference is from another block
 						{
 							errs() << "VARIABLE REFERENCE IS FROM ANOTHER BLOCK!!\n";
 							generateMetadata(changedString, NULL, BO, M);
 							continue;
 						}
 
-						if (variable == NULL) // operand is associated with changed variable. So this should be changed as well.
+						if (operandMetadata->getOperand(1) == NULL) // operand refers to changed variable
 						{
 							generateMetadata(changedString, NULL, BO, M);
 							continue;
 						}
+							
+						variable = operandMetadata->getOperand(1);
+						constant = BO->getOperand(constantPos);								
 
 						MDNode* metadata = operand->getMetadata("EFFECT");
 						MDString* mdstr = dyn_cast<MDString>(metadata->getOperand(0));
@@ -166,24 +166,30 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 									
 									if (constValue > 0)
 									{
-										effect.push_back(incrementString);
-										effect.push_back(variable);
-										MDNode* effects = MDNode::get(context, effect);
-										BO->setMetadata("EFFECT", effects);
+										if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
+										{
+											generateMetadata(incrementString, variable, BO, M);
+										}
+										else
+										{
+											generateMetadata(changedString, NULL, BO, M);
+										}
 									}
 									else if (constValue == 0)
 									{
-										effect.push_back(unchangedString);
-										effect.push_back(variable);
-										MDNode* effects = MDNode::get(context, effect);
-										BO->setMetadata("EFFECT", effects);
+										MDString* prev = (MDString*)(((Instruction*)variable)->getMetadata("EFFECT")->getOperand(1));
+										generateMetadata(prev, variable, BO, M);
 									}
 									else
 									{
-										effect.push_back(changedString);
-										effect.push_back(NULL);
-										MDNode* effects = MDNode::get(context, effect);
-										BO->setMetadata("EFFECT", effects);
+										if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
+										{
+											generateMetadata(decrementString, variable, BO, M);
+										}
+										else
+										{
+											generateMetadata(changedString, NULL, BO, M);
+										}
 									}
 								}
 								else
