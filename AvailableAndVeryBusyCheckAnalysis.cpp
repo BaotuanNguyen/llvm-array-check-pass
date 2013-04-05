@@ -1,6 +1,7 @@
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
 #include "llvm/ADT/ilist.h"
+#include "llvm/Support/CFG.h"
 #include "stdlib.h"
 #include <set>
 #include <queue>
@@ -18,25 +19,23 @@ using namespace llvm;
 char AvailableAndVeryBusyCheckAnalysis::ID = 0;
 static RegisterPass<AvailableAndVeryBusyCheckAnalysis> E("a-vb-analysis", "Available and Very Busy Checks Analysis", false, false);
 
-ValuesSet* SetUnion(ValuesSet* S1, ValuesSet* S2)
+/*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
 {
-	ValuesSet* unionSet = new ValuesSet();
-	std::set_union(S1->begin(), S1->end(), S2->begin(), S2->end(), std::inserter(*unionSet, unionSet->end()));
+	RangeCheckSet* unionSet = S1->set_union(S2);
 	return unionSet;
-}
+}*/
 
-ValuesSet* SetIntersection(ValuesSet* S1, ValuesSet* S2)
+RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
 {
-	ValuesSet* intersectSet = new ValuesSet();
-	std::set_intersection(S1->begin(), S1->end(), S2->begin(), S2->end(), std::inserter(*intersectSet, intersectSet->end()));
+	RangeCheckSet* intersectSet = S1->set_intersect(S2);
 	return intersectSet;
 }
 
-ValuesSet* SetsMeet(ListOfValuesSets* sets, ValuesSet*(*meet)(ValuesSet*, ValuesSet*))
+RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSet*, RangeCheckSet*))
 {
-	ValuesSet* lastSet = new ValuesSet();
-	for(std::list<ValuesSet*>::iterator II = sets->begin(), IE = sets->end(); II != IE; II++){
-		ValuesSet* currentSet = meet(lastSet, *II);
+	RangeCheckSet* lastSet = new RangeCheckSet();
+	for(std::list<RangeCheckSet*>::iterator II = sets->begin(), IE = sets->end(); II != IE; II++){
+		RangeCheckSet* currentSet = meet(lastSet, *II);
 		//this may be a little slow but I am just trying to finish this
 		delete lastSet;
 		lastSet = currentSet;
@@ -44,40 +43,36 @@ ValuesSet* SetsMeet(ListOfValuesSets* sets, ValuesSet*(*meet)(ValuesSet*, Values
 	return lastSet;
 }
 
-bool SetEqual(ValuesSet* S1, ValuesSet* S2)
-{
-	if(S1->size() > S2->size())
-		return std::equal(S1->begin(), S1->end(), S2->begin());
-	else
-		return std::equal(S2->begin(), S2->end(), S1->begin());
-}
-
-ValuesSet* forward(ValuesSet* C_IN, BasicBlock* BB)
-{
-	return C_IN;
-}
-
-ValuesSet* backward(ValuesSet* C_OUT, BasicBlock* BB)
-{
-	return C_OUT;
-}
-
-bool AvailableAndVeryBusyCheckAnalysis::doInitialization(Module& M)
-{
-	// stub function. do not delete. keeps the compiler warnings and errors at bay
-	return false;
-}
-
 bool AvailableAndVeryBusyCheckAnalysis::runOnFunction(Function& F)
 {
-	//	
 	this->currentFunction = &F;
+	this->createUniverse();
 	this->AA = &this->getAnalysis<AliasAnalysis>();
 	this->SE = &this->getAnalysis<ScalarEvolution>();
-	this->findGenSets();
+	this->dataFlowAnalysis(false);
+	this->dataFlowAnalysis(true);
 	return true;
 }
 
+
+
+void AvailableAndVeryBusyCheckAnalysis::createUniverse()
+{		
+	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
+	{
+		BasicBlock* BB = &*BBI;
+		for(BasicBlock::iterator II = BB->begin(), IE = BB->end(); II != IE; II++)
+		{
+			Instruction* inst = &*II;	
+			if(CallInst *ci = dyn_cast<CallInst> (inst)){
+				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
+                        	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero")){
+					universe->set_union(new RangeCheckExpression(ci, this->module));
+				}
+			}
+		}
+	}
+}
 
 ///we should probably keep a map of the affect type for a given variable, to make this faster if we already
 ///check a variable previously
@@ -88,6 +83,46 @@ AvailableAndVeryBusyCheckAnalysis::EffectTy AvailableAndVeryBusyCheckAnalysis::e
 
 void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 {
+	/*
+	 * available expression is a forward flow problem.
+	 *
+	 * iterate over the basic blocks of the function.
+	 * for each basic block, i want the C_IN and C_OUT
+	 *
+	 */
+	if(isForward){
+		
+		this->BB_A_OUT = new MapBBToRCS();
+		///initialize all blocks sets
+		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
+		{
+			///in of the block is universe
+			BasicBlock* BB = &*BBI;
+			this->BB_A_OUT->insert(PairBBAndRCS(BB, universe));
+		}
+
+		bool isChanged = true;
+		while(isChanged){
+			isChanged = false;
+			///go throught all of the blocks
+			for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++){
+				BasicBlock* BB = &*BBI;
+				ListRCS predRCS;
+				///get a list of range check sets
+				for(succ_iterator SBBI = succ_begin(BB), SBBE = succ_end(BB); SBBI != SBBE; SBBI++){
+				 	predRCS.push_back((*BB_A_OUT)[*SBBI]);
+				}
+				///calculate the OUT of the block, by intersecting all successors IN's
+				RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
+				///calculate the IN of the block, running the functions we already created
+				RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
+				RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
+				BB_A_OUT->erase(BB);
+				// TODO compare C_OUT and C_OUT_PREV
+				BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
+			}	
+		}
+	}
         /*
          * iterate over all instructions in a basic block BACKWARDS, like the capable students at the skating rinks
          * using the I_VB_IN data structure, i can map an instruction to its IN set.
@@ -96,135 +131,40 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
          *  . then i call the backwards function
          * the OUT set is a union over all successors' INs
          */
-        // compute the very busy checks: step 2 of gupta-loplas paper, p7
-	if(!isForward)
-	{
-                // goal: change this code from using Value to RangeCheckSet
-                I_VB_IN = new MapInstToRCS();
-
-
-
-
-
-		ListOfValuesSets ALL;
-		for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++) {
-                        ALL.push_back(II->second);
-                }
-
-		///initialize each basic block information
-		for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
-			Instrunction* inst = II->first;
-			IN->insert(PairBBToValuesSet(BB, U));
+        else{
+		this->BB_VB_IN = new MapBBToRCS();
+		///initialize all blocks sets
+		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
+		{
+			///in of the block is universe
+			BasicBlock* BB = &*BBI;
+			this->BB_VB_IN->insert(PairBBAndRCS(BB, universe));
 		}
+
 		bool isChanged = true;
-		int i = 0;
 		while(isChanged){
 			isChanged = false;
-			///go throught each basic block
-			errs() << "^^^^^^^^^^^^^^RUN " << i << "^^^^^^^^^^^^^^\n";
-			for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
-				BasicBlock* BB = II->first;
-				ValuesSet* C_GEN = II->second;
-				//successor IN sets
-				ListOfValuesSets S_INS;
-				//for every sucessor block
-				errs() << BB->getName() << "\n";
-				for(BasicBlock::use_iterator SBBI = BB->use_begin(), SBBE = BB->use_end(); SBBI != SBBE; SBBI++) { 
-					BasicBlock* SBB = dyn_cast<BasicBlock>(*SBBI);
-					ValuesSet* SBB_IN = (*IN)[SBB];
-					S_INS.push_back(SBB_IN);
+			///go throught all of the blocks
+			for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++){
+				BasicBlock* BB = &*BBI;
+				ListRCS succsRCS;
+				///get a list of range check sets
+				for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++){
+				 	succsRCS.push_back((*BB_VB_IN)[*PBBI]);
 				}
-
-				ValuesSet* C_OUT = SetsMeet(&S_INS, &SetIntersection);
-				ValuesSet* BB_IN = (*IN)[BB];
-				//transition C_OUT to IN
-				ValuesSet* T = backward(C_OUT, BB);
-				ValuesSet* BB_N_IN = SetIntersection(C_GEN, T);
-				///store new basic block IN set
-				IN->erase(BB);
-				IN->insert(PairBBToValuesSet(BB, BB_N_IN));
-				///check if IN changed
-				if(!SetEqual(BB_IN, BB_N_IN))
-					inChanged = true;
-				///clean up unneeded memory
-				delete C_OUT;
-				delete BB_IN;
-			}
-			errs() << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
-			i++;
+				///calculate the OUT of the block, by intersecting all successors IN's
+				RangeCheckSet *C_OUT = SetsMeet(&succsRCS, SetIntersection);
+				///calculate the IN of the block, running the functions we already created
+				RangeCheckSet *C_IN = this->getVBIn(BB, C_OUT);
+				RangeCheckSet *C_IN_P = BB_VB_IN->find(BB)->second;
+				BB_VB_IN->erase(BB);
+				// TODO
+				// compare C_IN with our previous C_IN
+				BB_VB_IN->insert(PairBBAndRCS(BB, C_IN));
+			}	
 		}
-		delete U;
-		delete N;
-		delete IN;
-	}
-        // goal: change this code from using Value to RangeCheckSet
-        /*if(!isForward)
-        {
-                //MapBBToValuesSet* IN = new MapBBToValuesSet();
-                MapInstToValuesSet* IN = new MapInstToValuesSet();
-                ListOfValuesSets ALL;
-                for(MapInstToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++) {
-                        ALL.push_back(II->second);
-                }
-
-                ///universal set
-                ValuesSet* U = SetsMeet(&ALL, &SetUnion);
-                ValuesSet* N = new ValuesSet();
-                ///initialize each basic block information
-                for(MapBBToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
-                        BasicBlock* BB = II->first;
-                        IN->insert(PairBBToValuesSet(BB, U));
-                }
-                bool inChanged = true;
-                int i = 0;
-                while(inChanged){
-                        inChanged = false;
-                        ///go throught each basic block
-                        errs() << "^^^^^^^^^^^^^^RUN " << i << "^^^^^^^^^^^^^^\n";
-                        for(MapBBToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
-                                BasicBlock* BB = II->first;
-                                ValuesSet* C_GEN = II->second;
-                                //successor IN sets
-                                ListOfValuesSets S_INS;
-                                //for every sucessor block
-                                errs() << BB->getName() << "\n";
-                                for(BasicBlock::use_iterator SBBI = BB->use_begin(), SBBE = BB->use_end(); SBBI != SBBE; SBBI++) {
-                                        BasicBlock* SBB = dyn_cast<BasicBlock>(*SBBI);
-                                        ValuesSet* SBB_IN = (*IN)[SBB];
-                                        S_INS.push_back(SBB_IN);
-                                }
-
-                                ValuesSet* C_OUT = SetsMeet(&S_INS, &SetIntersection);
-                                ValuesSet* BB_IN = (*IN)[BB];
-                                //transition C_OUT to IN
-                                ValuesSet* T = backward(C_OUT, BB);
-                                ValuesSet* BB_N_IN = SetIntersection(C_GEN, T);
-                                ///store new basic block IN set
-                                IN->erase(BB);
-                                IN->insert(PairBBToValuesSet(BB, BB_N_IN));
-                                ///check if IN changed
-                                if(!SetEqual(BB_IN, BB_N_IN))
-                                inChanged = true;
-                                ///clean up unneeded memory
-                                delete C_OUT;
-                                delete BB_IN;
-                        }
-                        errs() << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
-                        i++;
-                }
-                delete U;
-                delete N;
-                delete IN;
-        }*/
-	else
-	{
-		//to be done	
 	}
 }
-
-///create 
-
-
 RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
 {
         /*
@@ -232,22 +172,20 @@ RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, Ra
          * iterate over the basic block.  
          */
 	RangeCheckSet* currentRCS = cInOfBlock;
-	llvm::BasicBlock::InstListType& instList = BB.getInstList();
+	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++){
                 if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
                         const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
                         if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
                                 continue;
                         }
-			RangeCheckExpression rce = new RangeCheckExpression(callInst, &this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			currentRCS->insert(rce);
+			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			currentRCS->set_union(rce);
                 }
                 else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
 			currentRCS->kill_forward(storeInst);
                 }
         }
-
-
         return currentRCS;
 }
 
@@ -262,21 +200,20 @@ RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getVBIn(BasicBlock *BB, RangeC
 	 *      iterate over every instruction and just examine CALL and STORE instructions
 	 */
         RangeCheckSet* currentRCS = cOutOfBlock;
-	llvm::BasicBlock::InstListType& instList = BB.getInstList();
+	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
 			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
 				continue;
 			}
-			RangeCheckExpression rce = new RangeCheckExpression(callInst, &this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			currentRCS->insert(rce);
+			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			currentRCS->set_union(rce);
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
 			currentRCS->kill_backward(storeInst);
 		}
 	}
-
 	return currentRCS;
 }
 
