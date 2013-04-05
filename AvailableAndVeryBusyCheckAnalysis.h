@@ -33,9 +33,7 @@
 namespace llvm {
 
 	///old definitions
-	typedef std::set<Value*> ValuesSet;
-	typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
-	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+	typedef std::set<Value*> ValuesSet; typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet; typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
 	typedef std::list<ValuesSet*> ListOfValuesSets;
 	///new definitions
 	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
@@ -56,6 +54,8 @@ namespace llvm {
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
 			virtual bool doFinalization(Module& M);
+			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock)
+			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock)
 		private:
 			enum EffectTy {
 				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
