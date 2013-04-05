@@ -1,6 +1,6 @@
-
 #ifndef __ARRAY_BOUNDS_CHECK_PASS_H__
 #define __ARRAY_BOUNDS_CHECK_PASS_H__
+
 #include "llvm/User.h"
 #include "llvm/BasicBlock.h"
 #include "llvm/Pass.h"

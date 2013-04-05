@@ -5,14 +5,13 @@
 #include "stdlib.h"
 #include "ArrayBoundsCheckPass.h"
 #include "RangeCheckExpression.h"
+#include "RangeCheckSet.h"
 #include <vector>
 
 using namespace llvm;
 
 char EffectGenPass::ID = 0;
 static RegisterPass<EffectGenPass> C("effect-gen", "Generate Effect gen for each Basic Block", false, false);
-
-std::vector<RangeCheckExpression> gen_set;
 
 bool EffectGenPass::runOnModule(Module& M)
 {
@@ -132,8 +131,6 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 							case Instruction::FAdd:
 								{
 								errs() << *BO <<  " BINOP: ADD\n";
-								RangeCheckExpression expr(BO, LT, BO);
-								gen_set.push_back(expr);
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{

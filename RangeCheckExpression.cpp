@@ -5,6 +5,127 @@
 #include "llvm/InstrTypes.h"
 #include "RangeCheckExpression.h"
 
+using namespace llvm;
+		
+void RangeCheckExpression::print()
+{
+		std::string relOpStr;
+		if (this->relOp == GTEQ)
+		{
+			relOpStr = " <= ";
+			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
+			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str()) << "\n";
+		}
+		else
+		{
+			relOpStr = " < ";
+			
+			if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
+			{
+				errs() << CI->getSExtValue();															
+			}
+			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op1))
+			{
+				errs() << (CF->getValueAPF()).convertToDouble();
+			}
+			else
+			{
+				errs() << op1->getName().str();
+			}
+			
+			errs() << relOpStr;
+
+			if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
+			{
+				errs() << CI->getSExtValue();															
+			}
+			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op2))
+			{
+				errs() << (CF->getValueAPF()).convertToDouble();
+			}
+			else
+			{
+				errs() << op2->getName().str();
+			}
+		}
+}
+
+void RangeCheckExpression::println()
+{
+		std::string relOpStr;
+		if (this->relOp == GTEQ)
+		{
+			relOpStr = " <= ";
+			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
+			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str()) << "\n";
+		}
+		else
+		{
+			relOpStr = " < ";
+			
+			if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
+			{
+				errs() << CI->getSExtValue();															
+			}
+			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op1))
+			{
+				errs() << (CF->getValueAPF()).convertToDouble();
+			}
+			else
+			{
+				errs() << op1->getName().str();
+			}
+			
+			errs() << relOpStr;
+
+			if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
+			{
+				errs() << CI->getSExtValue();															
+			}
+			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op2))
+			{
+				errs() << (CF->getValueAPF()).convertToDouble();
+			}
+			else
+			{
+				errs() << op2->getName().str();
+			}
+		}
+
+		errs() << "\n";
+}
+
+RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
+{
+	StringRef funcName = inst->getCalledFunction()->getName();
+	LLVMContext& context = M->getContext();
+
+	if (!funcName.equals("checkLTLimit") && !funcName.equals("checkGTZero"))
+	{
+		errs() << "ERROR! Can only create RangeCheckExpression from checkLTLimit call or checkGTZero call\n";
+	}
+	
+	MDNode* metadata = inst->getMetadata("VarName");
+		
+	if (metadata == NULL)
+	{
+		errs() << "ERROR! call inst does not have VarName metadata!\n";
+	}
+	
+	if (funcName.equals("checkGTZero"))
+	{
+		this->op1 = ConstantInt::get(Type::getInt64Ty(context), 0);
+		this->op2 = metadata->getOperand(0);
+		this->relOp = GTEQ;
+	}
+	else
+	{
+		this->op1 = metadata->getOperand(0);
+		this->op2 = metadata->getOperand(1);
+		this->relOp = LT;
+	}
+}
+
 bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 {
 	return true;
@@ -26,7 +147,7 @@ bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
 		{
 			return false;
 		}
-		else if (cast<Constant>(this->op2) && cast<Constant>(other.op2)) // RHS consists of constants for both
+		else if (dyn_cast<Constant>(this->op2) && dyn_cast<Constant>(other.op2)) // RHS consists of constants for both
 		{
 			if (ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op2))
 			{

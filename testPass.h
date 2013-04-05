@@ -1,7 +1,8 @@
 
-#ifndef __EFFECT_GEN_PASS_H__
-#define __EFFECT_GEN_PASS_H__
+#ifndef __TEST_PASS_H__
+#define __TEST_PASS_H__
 
+#include "EffectGenPass.h"
 #include "llvm/User.h"
 #include "llvm/BasicBlock.h"
 #include "llvm/Pass.h"
@@ -21,24 +22,22 @@
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Analysis/Dominators.h"
 #include "ArrayBoundsCheckPass.h"
-#include <tr1/unordered_map>
 //#include "RunTimeBoundsChecking.h"
 
 namespace llvm 
 {
-	struct EffectGenPass : public ModulePass 
+	struct testPass : public ModulePass 
 	{
 		public: 
 			static char ID;
-			EffectGenPass() : ModulePass(ID) {}
+			testPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-                AU.addRequired<ArrayBoundsCheckPass>();
+				AU.addRequired<EffectGenPass>();
 			}
 		private:
 			bool runOnFunction(Function* func);
 			bool runOnBasicBlock(BasicBlock* BB);
-			void generateMetadata(MDString* str, Value* variable, Instruction* inst, Module* M);
 			Module* M;
 	};
 }

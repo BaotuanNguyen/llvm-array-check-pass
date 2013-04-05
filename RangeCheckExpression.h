@@ -36,13 +36,18 @@ class RangeCheckExpression
 			this->relOp = relOp;
 		}
 
-	private:
+		RangeCheckExpression(CallInst* Inst, Module* M);
+		
+		bool operator==(const RangeCheckExpression& other) const;
+		
+		void print();
+		void println();
+
 		RelOps getRelOp()
 		{
 			return relOp;
 		}
 
-		bool operator==(const RangeCheckExpression& other) const;
 		bool subsumes(RangeCheckExpression* expr);
 };
 
