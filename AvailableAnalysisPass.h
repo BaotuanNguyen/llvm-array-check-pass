@@ -1,6 +1,6 @@
 
-#ifndef __GLOBAL_OPTIMIZATIONS_ON_ARRAY_CHECKS_H__
-#define __GLOBAL_OPTIMIZATIONS_ON_ARRAY_CHECKS_H__
+#ifndef __AVAILABLE_ANALYSIS_PASS_H__
+#define __AVAILABLE_ANALYSIS_PASS_H__
 
 #include "llvm/User.h"
 #include "llvm/BasicBlock.h"
@@ -22,6 +22,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "ArrayBoundsCheckPass.h"
+#include "EffectGenPass.h"
 #include "RangeCheckSet.h"
 #include "EffectGenPass.h"
 #include <set>
@@ -35,10 +36,10 @@ namespace llvm {
 	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
 	typedef std::pair<BasicBlock*, RangeCheckSet*> PairBBAndRCS;
 
-	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
+	struct AvailableAnalysisPass : public FunctionPass {
 		static char ID;
 		public: 
-			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID), module(NULL) {}
+			AvailableAnalysisPass() : FunctionPass(ID), module(NULL) {}
 			virtual bool doInitialization(Module &M) {
                                 this->module = &M;        
 				return false;
@@ -48,7 +49,6 @@ namespace llvm {
                 AU.addRequired<EffectGenPass>();
 			}
 			virtual bool doFinalization(Module& M);
-			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 		private:
@@ -57,8 +57,9 @@ namespace llvm {
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 
-			MapInstToRCS *I_VB_IN, *I_A_OUT;
-			MapBBToRCS *BB_VB_IN, *BB_A_OUT;
+			MapInstToRCS *I_A_OUT;
+			MapBBToRCS *BB_A_OUT;
+			//private variables
 
 			Module* module;
 			Function* currentFunction;
@@ -67,4 +68,4 @@ namespace llvm {
 	};
 }
 
-#endif /* __GLOBAL_OPTIMIZATIONS_ON_ARRAY_CHECKS_H__ */
+#endif /* __AVAILABLE_ANALYSIS_PASS_H__ */
