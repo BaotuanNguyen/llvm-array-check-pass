@@ -31,10 +31,15 @@
 
 namespace llvm {
 
-	struct GlobalOptimizationsOnArrayChecks : public FunctionPass {
+	typedef std::set<Value*> ValuesSet;
+	typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
+	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+	typedef std::list<ValuesSet*> ListOfValuesSets;
+
+	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
 		public: 
-			GlobalOptimizationsOnArrayChecks() : FunctionPass(ID) {}
+			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID) {}
 			virtual bool doInitialization(Module &M);
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -45,6 +50,7 @@ namespace llvm {
 				AU.addRequired<ScalarEvolution>();
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
+			virtual bool doFinalization(Module& M);
 		private:
 			enum EffectTy {
 				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
@@ -54,14 +60,13 @@ namespace llvm {
 			///Value should be either a local or global variable, else this will always return changedTy.
 			///
 			EffectTy effect(BasicBlock* B, Value* v);
+			void dataFlowAnalysis(bool isForward);
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 			Function* currentFunction;
-			//some definitions
-			typedef std::set<Value*> ValuesSet;
-			typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
-			typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+			MapBBToValuesSet* VeryBusy_Gen;
+			MapBBToValuesSet* Available_Gen;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;

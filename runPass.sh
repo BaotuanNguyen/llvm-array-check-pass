@@ -1,7 +1,6 @@
 #!/bin/bash
 
-TEST_FILE=test.c
-TEST_NAME=""
+TEST_FILE=$2
 OPT_PASSES=""
 LLVM_LIBRARY=../../Release+Asserts/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
@@ -13,38 +12,34 @@ OPT="${LLVM_LIBRARY}bin/opt"
 
 #DIFFERENT WAYS TO RUN OPT UNDER
 case "$1" in
-	'-checks-only')	
-		TEST_FILE=test.c
+	'-array-check')	
 		OPT_PASSES="-array-check"
 		;;
-	'-local-opts')
-		TEST_FILE=test.c
-		OPT_PASSES="-array-check -local-opts"
+	'-effect-gen')
+		OPT_PASSES="-array-check -effect-gen"
 		;;
 	'-global-opts-only')
-		TEST_FILE=globalOptTest.c
-		OPT_PASSES="-array-check -global-opts"
+		OPT_PASSES="-array-check -a-vb-analysis"
 		;;
 	'-global-opts')
-		TEST_FILE=globalOptTest.c
-		OPT_PASSES="-array-check -local-opts -global-opts"
+		OPT_PASSES="-array-check -effect-gen -global-opts"
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -checks-only | -local-opts | -global-opts-only | -global-opts ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -global-opts-only | -global-opts ]"
 		exit 1
 		;;
 esac
 
 #remove suffix .c
-TEST_NAME=${TEST_FILE%.c}
+TEST_NAME=${2%.c}
 
 #compiles the test file, and the check library
 clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
 #run opt, with specified passes
-./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure $2 -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 
 #the test code and library code are linked into executable

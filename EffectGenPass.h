@@ -6,6 +6,7 @@
 #include "llvm/BasicBlock.h"
 #include "llvm/Pass.h"
 #include "llvm/Operator.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
@@ -18,32 +19,29 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
+#include "llvm/Analysis/Dominators.h"
 #include "ArrayBoundsCheckPass.h"
 #include <tr1/unordered_map>
 //#include "RunTimeBoundsChecking.h"
 
-
-
-
-namespace llvm {
-
-        typedef std::tr1::unordered_map<MDNode *, MDNode *> LocalTable;
-
-	struct LocalOptimizationsOnArrayChecks : public BasicBlockPass {
-		static char ID;
+namespace llvm 
+{
+	struct EffectGenPass : public ModulePass 
+	{
 		public: 
-			LocalOptimizationsOnArrayChecks() : BasicBlockPass(ID) {}
-			virtual bool doInitialization(Module &M);
-			virtual bool doInitialization(Function &F);
-			virtual bool runOnBasicBlock(BasicBlock &BB);
+			static char ID;
+			EffectGenPass() : ModulePass(ID) {}
+			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
-                                AU.addRequired<ArrayBoundsCheckPass>();
+                AU.addRequired<ArrayBoundsCheckPass>();
 			}
-                        //void vtInsert(std::tr1::unordered_map<Instruction *, int> &table, MDNode *key);
-                        void vtInsert(LocalTable &table, Instruction *inst, MDNode *key, std::vector<Instruction *> &deleteVector);
 		private:
+			bool runOnFunction(Function* func);
+			bool runOnBasicBlock(BasicBlock* BB);
+			void generateMetadata(MDString* str, Value* variable, Instruction* inst, Module* M);
+			Module* M;
 	};
 }
 

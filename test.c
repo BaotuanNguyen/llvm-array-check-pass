@@ -1,10 +1,9 @@
-
-int main(int argc, char** argv)
+int main()
 {
-	int n = 4;
-	int c[n];
-	c[n] = 3;
-        n = 3;
-	c[n] = 3;
-}
+	int a = 4;
+	int b = 10;
+	int n = 7;
+	n = a + b + 3;
 
+	n = 4 + n;
+}
