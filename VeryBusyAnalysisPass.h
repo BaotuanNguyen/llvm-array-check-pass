@@ -37,11 +37,13 @@ namespace llvm {
 	struct VeryBusyAnalysisPass : public FunctionPass {
 		static char ID;
 		public: 
-			VeryBusyAnalysisPass() : FunctionPass(ID), module(NULL) {}
-			virtual bool doInitialization(Module &M) {
-                                this->module = &M;        
+			VeryBusyAnalysisPass() : FunctionPass(ID){} 
+			virtual bool doInitialization(Module &M) 
+			{
+                this->module = &M;
+				this->universe = new RangeCheckSet();		
 				return false;
-                        }
+            }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
                      AU.addRequired<EffectGenPass>();

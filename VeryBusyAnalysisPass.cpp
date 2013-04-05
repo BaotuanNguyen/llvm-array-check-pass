@@ -55,15 +55,17 @@ bool VeryBusyAnalysisPass::runOnFunction(Function& F)
 
 void VeryBusyAnalysisPass::createUniverse()
 {		
-	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
+	for (Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
 		BasicBlock* BB = &*BBI;
 		for(BasicBlock::iterator II = BB->begin(), IE = BB->end(); II != IE; II++)
 		{
 			Instruction* inst = &*II;	
-			if(CallInst *ci = dyn_cast<CallInst> (inst)){
+			if(CallInst *ci = dyn_cast<CallInst> (inst))
+			{
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-				if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero")){
+				if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero"))
+				{
 					universe->set_union(new RangeCheckExpression(ci, this->module));
 				}
 			}
