@@ -17,7 +17,6 @@
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
 #include "llvm/Target/TargetLibraryInfo.h"
-#include "RunTimeBoundsChecking.h"
 
 namespace llvm
 {

@@ -23,12 +23,10 @@
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "ArrayBoundsCheckPass.h"
 #include "RangeCheckSet.h"
+#include "EffectGenPass.h"
 #include <set>
 #include <map>
 //#include "RunTimeBoundsChecking.h"
-
-
-
 
 namespace llvm {
 
@@ -47,26 +45,13 @@ namespace llvm {
                         }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<DataLayout>();
-				AU.addRequired<TargetLibraryInfo>();
-                                AU.addRequired<ArrayBoundsCheckPass>();
-				AU.addRequired<AliasAnalysis>();
-				AU.addRequired<ScalarEvolution>();
-                                //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
+                AU.addRequired<EffectGenPass>();
 			}
 			virtual bool doFinalization(Module& M);
 			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 		private:
-			enum EffectTy {
-				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
-			};
-			///effect - find the effect for a given variable within a given block, this method will
-			///go throught the instructions in a block, and determine how the variable is affected. 
-			///Value should be either a local or global variable, else this will always return changedTy.
-			///
-			EffectTy effect(BasicBlock* B, Value* v);
 			void dataFlowAnalysis(bool isForward);
 			void findGenSets();
 			template <typename T>
@@ -74,9 +59,6 @@ namespace llvm {
 
 			MapInstToRCS *I_VB_IN, *I_A_OUT;
 			MapBBToRCS *BB_VB_IN, *BB_A_OUT;
-			//private variables
-			ScalarEvolution* SE;
-			AliasAnalysis* AA;
 
 			Module* module;
 			Function* currentFunction;

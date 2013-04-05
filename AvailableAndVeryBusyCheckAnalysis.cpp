@@ -19,12 +19,6 @@ using namespace llvm;
 char AvailableAndVeryBusyCheckAnalysis::ID = 0;
 static RegisterPass<AvailableAndVeryBusyCheckAnalysis> E("a-vb-analysis", "Available and Very Busy Checks Analysis", false, false);
 
-/*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
-{
-	RangeCheckSet* unionSet = S1->set_union(S2);
-	return unionSet;
-}*/
-
 RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
 {
 	RangeCheckSet* intersectSet = S1->set_intersect(S2);
@@ -47,13 +41,10 @@ bool AvailableAndVeryBusyCheckAnalysis::runOnFunction(Function& F)
 {
 	this->currentFunction = &F;
 	this->createUniverse();
-	this->AA = &this->getAnalysis<AliasAnalysis>();
-	this->SE = &this->getAnalysis<ScalarEvolution>();
 	this->dataFlowAnalysis(false);
 	this->dataFlowAnalysis(true);
 	return true;
 }
-
 
 
 void AvailableAndVeryBusyCheckAnalysis::createUniverse()
@@ -74,29 +65,15 @@ void AvailableAndVeryBusyCheckAnalysis::createUniverse()
 	}
 }
 
-///we should probably keep a map of the affect type for a given variable, to make this faster if we already
-///check a variable previously
-AvailableAndVeryBusyCheckAnalysis::EffectTy AvailableAndVeryBusyCheckAnalysis::effect(BasicBlock* B, Value* v)
-{
-	return changedTy;
-}
-
 void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 {
-	/*
-	 * available expression is a forward flow problem.
-	 *
-	 * iterate over the basic blocks of the function.
-	 * for each basic block, i want the C_IN and C_OUT
-	 *
-	 */
-	if(isForward){
-		
+	if(isForward)
+	{
 		this->BB_A_OUT = new MapBBToRCS();
+
 		///initialize all blocks sets
 		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 		{
-			///in of the block is universe
 			BasicBlock* BB = &*BBI;
 			this->BB_A_OUT->insert(PairBBAndRCS(BB, universe));
 		}
@@ -112,11 +89,13 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 				for(succ_iterator SBBI = succ_begin(BB), SBBE = succ_end(BB); SBBI != SBBE; SBBI++){
 				 	predRCS.push_back((*BB_A_OUT)[*SBBI]);
 				}
-				///calculate the OUT of the block, by intersecting all successors IN's
+				///calculate the IN of the block, by intersecting all successors IN's
 				RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
-				///calculate the IN of the block, running the functions we already created
+				
+				///calculate the OUT of the block, running the functions we already created
 				RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
 				RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
+
 				BB_A_OUT->erase(BB);
 				// TODO compare C_OUT and C_OUT_PREV
 				BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
