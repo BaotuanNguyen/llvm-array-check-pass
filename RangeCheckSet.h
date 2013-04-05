@@ -13,6 +13,11 @@ class RangeCheckSet
 		{
 			this->checkSet = new std::vector<RangeCheckExpression>();
 		}
+		RangeCheckSet* copy(){
+			RangeCheckSet* newRCS = new RangeCheckSet();
+			std::copy(this->checkSet->begin(), this->checkSet->end(), back_inserter(newRCS->checkSet));
+			return newRCS;
+		}
 
 	private:
 		void insert(RangeCheckExpression expr)

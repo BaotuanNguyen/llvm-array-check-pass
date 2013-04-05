@@ -31,10 +31,13 @@
 
 namespace llvm {
 
+	///old definitions
 	typedef std::set<Value*> ValuesSet;
 	typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
 	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
 	typedef std::list<ValuesSet*> ListOfValuesSets;
+	///new definitions
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToValuesSet;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
@@ -65,8 +68,11 @@ namespace llvm {
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 			Function* currentFunction;
+
 			MapBBToValuesSet* VeryBusy_Gen;
 			MapBBToValuesSet* Available_Gen;
+			MapInstToValuesSet* vbIN;
+			MapInstToValuesSet* aOUT;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;

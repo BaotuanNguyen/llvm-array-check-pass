@@ -103,15 +103,18 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 			IN->insert(PairBBToValuesSet(BB, U));
 		}
 		bool inChanged = true;
+		int i = 0;
 		while(inChanged){
 			inChanged = false;
 			///go throught each basic block
+			errs() << "^^^^^^^^^^^^^^RUN " << i << "^^^^^^^^^^^^^^\n";
 			for(MapBBToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
 				BasicBlock* BB = II->first;
 				ValuesSet* C_GEN = II->second;
 				//successor IN sets
 				ListOfValuesSets S_INS;
 				//for every sucessor block
+				errs() << BB->getName() << "\n";
 				for(BasicBlock::use_iterator SBBI = BB->use_begin(), SBBE = BB->use_end(); SBBI != SBBE; SBBI++) { 
 					BasicBlock* SBB = dyn_cast<BasicBlock>(*SBBI);
 					ValuesSet* SBB_IN = (*IN)[SBB];
@@ -133,15 +136,21 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 				delete C_OUT;
 				delete BB_IN;
 			}
+			errs() << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
+			i++;
 		}
 		delete U;
 		delete N;
+		delete IN;
 	}
 	else
 	{
-		
+		//to be done	
 	}
 }
+
+
+
 void AvailableAndVeryBusyCheckAnalysis::findGenSets()
 {
 	///
@@ -154,25 +163,20 @@ void AvailableAndVeryBusyCheckAnalysis::findGenSets()
 	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++)
 	{
 		BasicBlock& BB = *IBB;
-		ValuesSet* BBVB_IN = new ValuesSet();
-		//find gen of the block
+		RangeCheckSet* currentRCS = new RangeCheckSet
+		///go throught each block
 		for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++)
 		{
-			if(CallInst* callInst = dyn_cast<CallInst>(&*II))
-			{
-				//should only be inserted if it is a gen call check instruction
+			if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
 				const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-				///
-				///check whether it is a check call
-				///
-				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero"))
-				{
+				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
 					continue;
 				}
-				///
-				///insert into values set
-				///
 				BBVB_IN->insert(callInst);
+			}
+			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
+			{
+
 			}
 		}
 		///
