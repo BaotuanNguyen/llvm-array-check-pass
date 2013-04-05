@@ -55,6 +55,7 @@ bool VeryBusyAnalysisPass::runOnFunction(Function& F)
 
 void VeryBusyAnalysisPass::createUniverse()
 {		
+	this->universe = new RangeCheckSet();
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
 		BasicBlock* BB = &*BBI;
@@ -99,8 +100,9 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 			RangeCheckSet *C_IN = this->getVBIn(BB, C_OUT);
 			RangeCheckSet *C_IN_P = BB_VB_IN->find(BB)->second;
 			BB_VB_IN->erase(BB);
-			// TODO
 			// compare C_IN with our previous C_IN
+			if(!C_IN_P->equal(C_IN))
+				isChanged = true;	
 			BB_VB_IN->insert(PairBBAndRCS(BB, C_IN));
 		}	
 	}

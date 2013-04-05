@@ -59,6 +59,16 @@ class RangeCheckSet
 		RangeCheckSet* set_intersect(RangeCheckSet* s);
 		bool doValueKillCheckForward(RangeCheckExpression* currentCheck, Value* valueBeingStored, int variablePos);
 		bool doValueKillCheckBackward(RangeCheckExpression* currentCheck, Value* valueBeingStored, int variablePos);
+		bool equal(RangeCheckSet* anotherRCS)
+		{
+			std::vector<RangeCheckExpression> *vecThis = this->checkSet, *vecThat = anotherRCS->checkSet;
+			if(vecThis->size() != vecThat->size()){
+				return false;
+			}
+			else{
+				return std::equal(vecThis->begin(), vecThis->end(), vecThat->begin());
+			}
+		}
 
 		int size()
 		{
