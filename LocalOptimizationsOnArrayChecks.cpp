@@ -77,7 +77,7 @@ bool LocalOptimizationsOnArrayChecks::runOnBasicBlock(BasicBlock& BB)
                          || ((std::string)(ci->getCalledFunction()->getName()) == "checkGTZero")) {
                                 errs() << "YESSSSSSSSSSSSS\n";
                                 //vtInsert(valueTable, ci, ci->getMetadata("Vars"));
-                                vtInsert(valueTable, inst, ci->getMetadata("Vars"), deleteVector);
+                                //vtInsert(valueTable, inst, ci->getMetadata("Vars"), deleteVector);
                         }
                         value++;
                         
