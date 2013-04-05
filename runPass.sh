@@ -18,7 +18,7 @@ case "$1" in
 		OPT_PASSES="-array-check -effect-gen"
 		;;
 	'-global-opts-only')
-		OPT_PASSES="-array-check -global-opts"
+		OPT_PASSES="-array-check -a-vb-analysis"
 		;;
 	'-global-opts')
 		OPT_PASSES="-array-check -effect-gen -global-opts"
