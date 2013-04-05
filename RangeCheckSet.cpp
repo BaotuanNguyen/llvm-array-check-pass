@@ -31,7 +31,6 @@ RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
 	return intersectSet;
 }
 
-
 RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
 	RangeCheckSet* unionedSet = this->copy();

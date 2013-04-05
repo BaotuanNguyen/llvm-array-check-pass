@@ -38,6 +38,18 @@ class RangeCheckSet
 			checkSet->resize(std::distance(checkSet->begin(),it));
 		}
 
+		void println()
+		{
+			errs() << "{ ";
+			for (std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin(); it != this->checkSet->end(); ++it)
+			{
+				errs() << "(";
+				(*it).print();
+				errs() << ") ";
+			}
+			errs() << " }\n";
+		}
+
 		/*
 		RangeCheckSet& operator=(const RangeCheckSet& rhs)
 		{
@@ -65,7 +77,12 @@ class RangeCheckSet
 			if(vecThis->size() != vecThat->size()){
 				return false;
 			}
-			else{
+			else if (vecThis->size() == 0)
+			{
+				return true;
+			}
+			else
+			{
 				return std::equal(vecThis->begin(), vecThis->end(), vecThat->begin());
 			}
 		}

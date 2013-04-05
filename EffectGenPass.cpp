@@ -64,6 +64,30 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						generateMetadata(unchangedString, LI->getOperand(0), LI, M);
 					}
 				}
+				
+				if (CastInst* CI = dyn_cast<CastInst>(inst)) 
+				{
+					Instruction* operand1 = dyn_cast<Instruction>(CI->getOperand(0));
+
+					if (operand1 == NULL)
+					{
+						errs() << "ERROR!! CastInst op1 is not a variable!\n";
+					}
+						
+					MDNode* operandMetadata = operand1->getMetadata("EFFECT");
+						
+					if (operandMetadata->getOperand(1) == NULL) // operand refers to changed variable
+					{
+						generateMetadata(changedString, NULL, CI, M);
+					}
+					else
+					{
+						MDString* prev = (MDString*)(operand1->getMetadata("EFFECT")->getOperand(0));
+						Value* variable = operandMetadata->getOperand(1);
+						generateMetadata(prev, variable, CI, M);
+					}
+
+				}
                 
 				if (BinaryOperator *BO = dyn_cast<BinaryOperator>(inst)) 
 				{	

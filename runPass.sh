@@ -34,7 +34,7 @@ case "$1" in
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available analysis | -remove-redundant-check  ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available-analysis | -remove-redundant-check  ]"
 		exit 1
 		;;
 esac

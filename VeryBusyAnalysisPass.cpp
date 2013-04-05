@@ -106,8 +106,9 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 			if(!C_IN_P->equal(C_IN))
 				isChanged = true;	
 			BB_VB_IN->insert(PairBBAndRCS(BB, C_IN));
-		}	
+		}
 	}
+	//errs() << "VERY BUSY: " << *BB_VB_IN[*(this->currentFunction->begin())] << "\n";	
 }
 
 RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
