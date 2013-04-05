@@ -99,7 +99,9 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 			RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
 			RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
 			BB_A_OUT->erase(BB);
-			// TODO compare C_OUT and C_OUT_PREV
+			//compare C_OUT and C_OUT_PREV
+			if(!C_OUT_P->equal(C_OUT))
+				isChanged = true;	
 			BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
 		}	
 	}
