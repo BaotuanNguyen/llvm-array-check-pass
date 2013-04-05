@@ -89,42 +89,40 @@ AvailableAndVeryBusyCheckAnalysis::EffectTy AvailableAndVeryBusyCheckAnalysis::e
 void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 {
         /*
-         * iterate over all instructions in a basic block
-         * using the vbIN data structure, i can map an instruction to its IN set.
+         * iterate over all instructions in a basic block BACKWARDS, like the capable students at the skating rinks
+         * using the I_VB_IN data structure, i can map an instruction to its IN set.
          * the IN set i get like so:
          *  . first i call victor's function to get the gen set for it
          *  . then i call the backwards function
-         * the OUT
+         * the OUT set is a union over all successors' INs
          */
         // compute the very busy checks: step 2 of gupta-loplas paper, p7
 	if(!isForward)
 	{
                 // goal: change this code from using Value to RangeCheckSet
-                //
-                //
-                //
-		MapInstToRCS* IN = new MapInstToRCS();
+                I_VB_IN = new MapInstToRCS();
+
+
+
+
+
 		ListOfValuesSets ALL;
 		for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++) {
                         ALL.push_back(II->second);
                 }
-
-		///universal set
-		//ValuesSet* U = SetsMeet(&ALL, &SetUnion);
-		//ValuesSet* N = new ValuesSet();
 
 		///initialize each basic block information
 		for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
 			Instrunction* inst = II->first;
 			IN->insert(PairBBToValuesSet(BB, U));
 		}
-		bool inChanged = true;
+		bool isChanged = true;
 		int i = 0;
-		while(inChanged){
-			inChanged = false;
+		while(isChanged){
+			isChanged = false;
 			///go throught each basic block
 			errs() << "^^^^^^^^^^^^^^RUN " << i << "^^^^^^^^^^^^^^\n";
-			for(MapBBToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
+			for(MapInstToRCS::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++){
 				BasicBlock* BB = II->first;
 				ValuesSet* C_GEN = II->second;
 				//successor IN sets
