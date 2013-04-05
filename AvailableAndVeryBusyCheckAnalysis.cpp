@@ -149,64 +149,50 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 	}
 }
 
+///create 
 
 
 void AvailableAndVeryBusyCheckAnalysis::findGenSets()
 {
-	///
-	///both the very busy, and available gen sets are calculated
-	///for every basic block
-	///
 	this->VeryBusy_Gen = new MapBBToValuesSet();
 	this->Available_Gen = new MapBBToValuesSet();
-
-	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++)
+	
+	///very busy IN sets generated, going backwards throught the instructions
+	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; EBB--)
 	{
 		BasicBlock& BB = *IBB;
-		RangeCheckSet* currentRCS = new RangeCheckSet
-		///go throught each block
-		for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++)
-		{
+		///the last
+		RangeCheckSet* currentRCS = new RangeCheckSet();
+		llvm::BasicBlock::InstListType& instList = BB.getInstList();
+		for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
 			if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
 				const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
 				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
 					continue;
 				}
-				BBVB_IN->insert(callInst);
 			}
-			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
-			{
+			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+				
+			}
+		}
+	}
+	///available OUT sets generated, going fowards throught the instructions
+	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++){
+		BasicBlock& BB = *IBB;
+		///go throught each block
+		for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++){
+			if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+				const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+					continue;
+				}
+			}
+			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+				
+			}
 
-			}
 		}
-		///
-		///sets generated are stored for each block
-		///
-		VeryBusy_Gen->insert(PairBBToValuesSet(&BB, BBVB_IN));
-		Available_Gen->insert(PairBBToValuesSet(&BB, BBVB_IN));
-		//this->dumpSetOfPtr(BBVB_IN);
 	}
-	/*
-	ValuesSet* lastSet = NULL;
-	for(MapBBToValuesSet::iterator II = VeryBusy_Gen->begin(), IE = VeryBusy_Gen->end(); II != IE; II++)
-	{
-		ValuesSet* currentSet = II->second;
-		if(lastSet)
-		{	
-			ValuesSet* intSet = SetUnion(currentSet, lastSet);
-			errs() << "--------------set union---------------\n";
-			errs() << "set 1 - " << SetEqual(currentSet, intSet) << "\n";
-			this->dumpSetOfPtr(currentSet);
-			errs() << "set 2 - " << SetEqual(lastSet, intSet) << "\n";
-			this->dumpSetOfPtr(lastSet);
-			errs() << "set out - " << SetEqual(intSet, intSet) << "\n";
-			this->dumpSetOfPtr(intSet);
-			errs() << "--------------------------------------\n";
-			delete intSet;
-		}
-		lastSet = currentSet;
-	}
-	*/
 }
 
 
