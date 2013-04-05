@@ -88,12 +88,16 @@ AvailableAndVeryBusyCheckAnalysis::EffectTy AvailableAndVeryBusyCheckAnalysis::e
 
 void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 {
+        // goal: change this code from using Value to RangeCheckSet
 	if(!isForward)
 	{
-		MapBBToValuesSet* IN = new MapBBToValuesSet();
-///		MapBBToValuesSet* OUT = new MapBBToValuesSet();
+		//MapBBToValuesSet* IN = new MapBBToValuesSet();
+		MapInstToValuesSet* IN = new MapInstToValuesSet();
 		ListOfValuesSets ALL;
-		for(MapBBToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++) {ALL.push_back(II->second);}
+		for(MapInstToValuesSet::iterator II = this->VeryBusy_Gen->begin(), IE = this->VeryBusy_Gen->end(); II != IE; II++) {
+                        ALL.push_back(II->second);
+                }
+
 		///universal set
 		ValuesSet* U = SetsMeet(&ALL, &SetUnion);
 		ValuesSet* N = new ValuesSet();
