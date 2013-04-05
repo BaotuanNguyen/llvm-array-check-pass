@@ -60,7 +60,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 		 		
 				if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
 				{
-					if (AllocaInst* alloca = dyn_cast<AllocaInst>(LI->getOperand(0)))
+					if (dyn_cast<AllocaInst>(LI->getOperand(0)))
 					{
 						generateMetadata(unchangedString, LI->getOperand(0), LI, M);
 					}
