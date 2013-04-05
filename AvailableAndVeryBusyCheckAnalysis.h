@@ -22,6 +22,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "ArrayBoundsCheckPass.h"
+#include "RangeCheckSet.h"
 #include <set>
 #include <map>
 //#include "RunTimeBoundsChecking.h"
@@ -31,16 +32,21 @@
 
 namespace llvm {
 
-	typedef std::set<Value*> ValuesSet;
-	typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet;
-	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
+	///old definitions
+	typedef std::set<Value*> ValuesSet; typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet; typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
 	typedef std::list<ValuesSet*> ListOfValuesSets;
+	///new definitions
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
+	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
+	typedef std::pair<BasicBlock*, ValuesSet*> PairBBToValuesSet;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
 		public: 
 			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID) {}
-			virtual bool doInitialization(Module &M);
+			virtual bool doInitialization(Module &M) {
+                                this->module = M;        
+                        }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
 				AU.addRequired<DataLayout>();
@@ -51,6 +57,8 @@ namespace llvm {
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
 			virtual bool doFinalization(Module& M);
+			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock)
+			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock)
 		private:
 			enum EffectTy {
 				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
@@ -65,11 +73,17 @@ namespace llvm {
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 			Function* currentFunction;
+
 			MapBBToValuesSet* VeryBusy_Gen;
 			MapBBToValuesSet* Available_Gen;
+
+			MapInstToRCS *I_VB_IN, *I_A_OUT;
+			MapBBToRCS *BB_VB_IN, *BB_A_OUT;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
+
+			Module &module;
 	};
 }
 

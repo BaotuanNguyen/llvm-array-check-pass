@@ -1,5 +1,6 @@
 #include "RangeCheckExpression.h"
 #include <set>
+#include <iterator>
 #include "llvm/InstrTypes.h"
 
 using namespace llvm;
@@ -9,12 +10,17 @@ using namespace llvm;
 
 class RangeCheckSet
 {
-	std::vector<RangeCheckExpression>* checkSet;
+	std::vector<RangeCheckExpression*>* checkSet;
 
 	public:
 		RangeCheckSet()
 		{
-			this->checkSet = new std::vector<RangeCheckExpression>();
+			this->checkSet = new std::vector<RangeCheckExpression*>();
+		}
+		RangeCheckSet* copy(){
+			RangeCheckSet* newRCS = new RangeCheckSet();
+			std::copy(this->checkSet->begin(), this->checkSet->end(), newRCS->checkSet->begin());
+			return newRCS;
 		}
 
 		void insert(RangeCheckExpression expr)
@@ -24,6 +30,7 @@ class RangeCheckSet
 			it = std::unique(checkSet->begin(), checkSet->end());
 			checkSet->resize(std::distance(checkSet->begin(),it));
 		}
+
 		void kill_forward(Instruction* var);
 		void kill_backward(Instruction* var);
 		RangeCheckSet* set_union(RangeCheckSet* s);
