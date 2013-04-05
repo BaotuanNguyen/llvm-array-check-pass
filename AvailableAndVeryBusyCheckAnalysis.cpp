@@ -134,7 +134,7 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 					ValuesSet* SBB_IN = (*IN)[SBB];
 					S_INS.push_back(SBB_IN);
 				}
-					
+
 				ValuesSet* C_OUT = SetsMeet(&S_INS, &SetIntersection);
 				ValuesSet* BB_IN = (*IN)[BB];
 				//transition C_OUT to IN
@@ -225,47 +225,98 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 ///create 
 
 
+RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
+{
+}
+
+///available OUT sets generated, going fowards throught the instructions
+for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++){
+	BasicBlock& BB = *IBB;
+	///go throught each block
+	for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++){
+		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+				continue;
+			}
+		}
+		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+
+		}
+
+	}
+
+
+	return currentRCS;
+}
+
+
+RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getVBIn(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
+{
+	/*
+	 * iterate over every instruction and just examine CALL and STORE instructions
+	 *
+	 */
+	RangeCheckSet* currentRCS = new RangeCheckSet();
+	llvm::BasicBlock::InstListType& instList = BB.getInstList();
+	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
+		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+				continue;
+			}
+			RangeCheckExpression rce = new RangeCheckExpression(callInst, callInst->getModule()); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			currentRCS->insert(rce);
+		}
+		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+			currentRCS->kill_backward(storeInst);
+		}
+	}
+
+	return currentRCS;
+}
+
 void AvailableAndVeryBusyCheckAnalysis::findGenSets()
 {
-	this->VeryBusy_Gen = new MapBBToValuesSet();
-	this->Available_Gen = new MapBBToValuesSet();
-	
+	/*this->VeryBusy_Gen = new MapBBToValuesSet();
+	  this->Available_Gen = new MapBBToValuesSet();
+
 	///very busy IN sets generated, going backwards throught the instructions
 	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; EBB--)
 	{
-		BasicBlock& BB = *IBB;
-		///the last
-		RangeCheckSet* currentRCS = new RangeCheckSet();
-		llvm::BasicBlock::InstListType& instList = BB.getInstList();
-		for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
-			if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
-				const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
-					continue;
-				}
-			}
-			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
-				
-			}
-		}
+	BasicBlock& BB = *IBB;
+	///the last
+	RangeCheckSet* currentRCS = new RangeCheckSet();
+	llvm::BasicBlock::InstListType& instList = BB.getInstList();
+	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
+	if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+	const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+	if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+	continue;
+	}
+	}
+	else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+
+	}
+	}
 	}
 	///available OUT sets generated, going fowards throught the instructions
 	for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++){
-		BasicBlock& BB = *IBB;
-		///go throught each block
-		for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++){
-			if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
-				const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-				if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
-					continue;
-				}
-			}
-			else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
-				
-			}
-
-		}
+	BasicBlock& BB = *IBB;
+	///go throught each block
+	for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++){
+	if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+	const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+	if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+	continue;
 	}
+	}
+	else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+
+	}
+
+	}
+	}*/
 }
 
 
