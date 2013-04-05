@@ -22,6 +22,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "ArrayBoundsCheckPass.h"
+#include "RangeCheckSet.h"
 #include <set>
 #include <map>
 //#include "RunTimeBoundsChecking.h"
@@ -73,8 +74,9 @@ namespace llvm {
 
 			MapBBToValuesSet* VeryBusy_Gen;
 			MapBBToValuesSet* Available_Gen;
-			MapInstToRCS* vbIN, aOUT;
-			MapBBToRCS* BB_IN, BB_OUT;
+
+			MapInstToRCS *I_VB_IN, *I_A_OUT;
+			MapBBToRCS *BB_VB_IN, *BB_A_OUT;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
