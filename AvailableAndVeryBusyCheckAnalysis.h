@@ -37,7 +37,8 @@ namespace llvm {
 	typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
 	typedef std::list<ValuesSet*> ListOfValuesSets;
 	///new definitions
-	typedef std::map<Instruction*, RangeCheckSet*> MapInstToValuesSet;
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
+	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
@@ -71,8 +72,8 @@ namespace llvm {
 
 			MapBBToValuesSet* VeryBusy_Gen;
 			MapBBToValuesSet* Available_Gen;
-			MapInstToValuesSet* vbIN;
-			MapInstToValuesSet* aOUT;
+			MapInstToRCS* vbIN, aOUT;
+			MapBBToRCS* BB_IN, BB_OUT;
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
