@@ -5,9 +5,38 @@
 
 using namespace llvm;
 		
-RangeCheckSet* RangeCheckSet::set_union(RangeCheckSet* s)
+RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
-	return NULL;
+	RangeCheckSet* unionedSet = this->copy();
+	
+	std::vector<RangeCheckExpression>::iterator it = unionedSet->checkSet->begin();
+
+	for (;it != unionedSet->checkSet->end(); ++it)
+	{
+		RangeCheckExpression current = *it;
+
+		if (current.subsumes(expr))
+		{
+			current.print();
+			errs() << " SUBSUMES ";
+			expr->println();
+			return unionedSet;
+		}	
+		else if (expr->subsumes(&current))
+		{
+			int index = (it - unionedSet->checkSet->begin());
+			unionedSet->checkSet->at(index) = *expr;
+
+			expr->print();
+			errs() << " SUBSUMES ";
+			current.println();
+			
+			return unionedSet;
+		}
+	}
+
+	unionedSet->insert(*expr);
+	return unionedSet;
 }
 
 RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)

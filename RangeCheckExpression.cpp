@@ -6,6 +6,77 @@
 #include "RangeCheckExpression.h"
 
 using namespace llvm;
+
+bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
+{
+	errs() << "subsume?\n";
+	// a rangecheckexpression subsumes itself
+	if ((*this) == (*expr))
+	{
+		return true;
+	}
+
+	// if relops are different, cannot subsume
+	if (this->relOp != expr->relOp)
+	{
+		return false;
+	}
+	else
+	{
+		// GTEQ check expressions cannot subsume one another unless they are equal
+		if ((this->relOp == GTEQ) && (expr->relOp == GTEQ))
+		{
+			return false;
+		}
+		else // both are LT expressions
+		{
+			if (this->op1 != expr->op1)
+			{
+				return false;
+			}	
+			else
+			{
+				if (ConstantInt* CI1 = dyn_cast<ConstantInt>(op1))
+				{
+					uint64_t value1 = CI1->getSExtValue();
+					
+					if (ConstantInt* CI2 = dyn_cast<ConstantInt>(op2))
+					{
+						uint64_t value2 = CI2->getSExtValue();
+						return (value1 < value2);
+					}
+					else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(op2))
+					{
+						double value2 = (CF2->getValueAPF()).convertToDouble();
+						return (value1 < value2);
+					}
+				}
+				else if (ConstantFP* CF1 = dyn_cast<ConstantFP>(op1))
+				{
+					double value1 = (CF1->getValueAPF()).convertToDouble();
+					
+					if (ConstantInt* CI2 = dyn_cast<ConstantInt>(op2))
+					{
+						uint64_t value2 = CI2->getSExtValue();
+						return (value1 < value2);
+					}
+					else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(op2))
+					{
+						double value2 = (CF2->getValueAPF()).convertToDouble();
+						return (value1 < value2);
+					}
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	errs() << "ERROR (IN SUBSUME): THIS SHOULD NOT BE REACHED!!!\n";
+	return false;
+}
 		
 void RangeCheckExpression::print()
 {
@@ -14,7 +85,7 @@ void RangeCheckExpression::print()
 		{
 			relOpStr = " <= ";
 			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
-			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str()) << "\n";
+			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str());
 		}
 		else
 		{
@@ -57,7 +128,7 @@ void RangeCheckExpression::println()
 		{
 			relOpStr = " <= ";
 			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
-			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str()) << "\n";
+			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str());
 		}
 		else
 		{
@@ -124,11 +195,6 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 		this->op2 = metadata->getOperand(1);
 		this->relOp = LT;
 	}
-}
-
-bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
-{
-	return true;
 }
 
 bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
