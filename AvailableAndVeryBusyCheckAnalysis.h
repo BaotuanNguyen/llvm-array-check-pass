@@ -32,20 +32,18 @@
 
 namespace llvm {
 
-	///old definitions
-	typedef std::set<Value*> ValuesSet; typedef std::pair<BasicBlock*, ValuesSet* > PairBBToValuesSet; typedef std::map<BasicBlock*, ValuesSet* > MapBBToValuesSet;
-	typedef std::list<ValuesSet*> ListOfValuesSets;
-	///new definitions
+	typedef std::list<RangeCheckSet*> ListRCS;
 	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
-	typedef std::pair<BasicBlock*, ValuesSet*> PairBBToValuesSet;
+	typedef std::pair<BasicBlock*, RangeCheckSet*> PairBBAndRCS;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
 		public: 
-			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID) {}
+			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID), module(NULL) {}
 			virtual bool doInitialization(Module &M) {
-                                this->module = M;        
+                                this->module = &M;        
+				return false;
                         }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -57,8 +55,9 @@ namespace llvm {
                                 //LATER AU.addRequired<LocalOptimizationsOnArrayChecks>();
 			}
 			virtual bool doFinalization(Module& M);
-			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock)
-			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock)
+			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
+			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
+			void createUniverse();
 		private:
 			enum EffectTy {
 				unchangedTy, incrementTy, decrementTy, multiplyTy, divIntTy, divLessIntTy, changedTy
@@ -72,10 +71,6 @@ namespace llvm {
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
-			Function* currentFunction;
-
-			MapBBToValuesSet* VeryBusy_Gen;
-			MapBBToValuesSet* Available_Gen;
 
 			MapInstToRCS *I_VB_IN, *I_A_OUT;
 			MapBBToRCS *BB_VB_IN, *BB_A_OUT;
@@ -83,7 +78,10 @@ namespace llvm {
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
 
-			Module &module;
+			Module* module;
+			Function* currentFunction;
+
+			RangeCheckSet *universe;
 	};
 }
 
