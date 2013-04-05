@@ -1,9 +1,9 @@
 int main()
 {
-	int a = 4;
-	int b = 10;
-	int n = 7;
-	n = a + b + 3;
-
-	n = 4 + n;
+	int a[10];
+	int n = 4;
+	int b = 77;
+	a[n] = 4;
+	n = n + b;
+	a[n] = 5;
 }

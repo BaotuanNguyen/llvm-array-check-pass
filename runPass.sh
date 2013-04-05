@@ -9,7 +9,6 @@ OPT="${LLVM_LIBRARY}bin/opt"
 #other optimizations can added by opt as argument
 #all optimization can be obtained by -help
 
-
 #DIFFERENT WAYS TO RUN OPT UNDER
 case "$1" in
 	'-array-check')	

@@ -4,16 +4,20 @@
 #include "llvm/Analysis/Dominators.h"
 #include "stdlib.h"
 #include "ArrayBoundsCheckPass.h"
+#include "RangeCheckExpression.h"
+#include <vector>
 
 using namespace llvm;
 
 char EffectGenPass::ID = 0;
 static RegisterPass<EffectGenPass> C("effect-gen", "Generate Effect gen for each Basic Block", false, false);
 
+std::vector<RangeCheckExpression> gen_set;
+
 bool EffectGenPass::runOnModule(Module& M)
 {
 	this->M = &M;
-	
+
 	errs() << "\n#########################################\n";
 	errs() << "Generating Effects\n";
 	errs() << "#########################################\n";
@@ -52,7 +56,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
         
 		for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 		{
-                Instruction *inst = &*i;
+				Instruction *inst = &*i;
 		 		
 				if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
 				{
@@ -126,8 +130,11 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						{
 							case Instruction::Add:
 							case Instruction::FAdd:
+								{
 								errs() << *BO <<  " BINOP: ADD\n";
-							
+								RangeCheckExpression expr(BO, LT, BO);
+								gen_set.push_back(expr);
+
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{
 									int64_t constValue = CI->getSExtValue();
@@ -197,6 +204,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
 								}
 								break;
+								}
 							case Instruction::Sub:
 							case Instruction::FSub:
 								errs() << *BO <<  " BINOP: SUB\n";

@@ -6,9 +6,6 @@
 #include "stdlib.h"
 #include <set>
 #include <queue>
-#include <vector>
-#include <string>
-#include <sstream>
 
 using namespace llvm;
 
