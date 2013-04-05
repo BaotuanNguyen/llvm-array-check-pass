@@ -39,6 +39,7 @@ namespace llvm {
 	///new definitions
 	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
+	typedef std::pair<BasicBlock*, ValuesSet*> PairBBToValuesSet;
 
 	struct AvailableAndVeryBusyCheckAnalysis : public FunctionPass {
 		static char ID;
