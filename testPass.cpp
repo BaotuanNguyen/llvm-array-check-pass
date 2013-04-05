@@ -46,7 +46,7 @@ bool testPass::runOnBasicBlock(BasicBlock* BB)
 {
 	errs() << "Entering basic block\n";
 
-	RangeCheckSet current_set;
+	RangeCheckSet* current_set = new RangeCheckSet();
 
 	for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 	{
@@ -61,7 +61,7 @@ bool testPass::runOnBasicBlock(BasicBlock* BB)
 				RangeCheckExpression* rangeExpr = new RangeCheckExpression(CI, this->M);
 				errs() << "RangeExpr generated: ";
 				rangeExpr->println();
-				current_set.insert(*rangeExpr);
+				current_set = current_set->set_union(rangeExpr);
 			}
 		}
 
@@ -74,7 +74,7 @@ bool testPass::runOnBasicBlock(BasicBlock* BB)
 			
 			if (dyn_cast<AllocaInst>(op2))
 			{
-				current_set.kill_forward(SI);
+				current_set->kill_forward(SI);
 			}		
 		}
 	}
