@@ -5,6 +5,33 @@
 
 using namespace llvm;
 		
+RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
+{
+	RangeCheckSet* intersectSet = new RangeCheckSet();
+
+	for (std::vector<RangeCheckExpression>::iterator it1 = this->checkSet->begin(); it1 != this->checkSet->end(); ++it1)
+	{
+		for (std::vector<RangeCheckExpression>::iterator it2 = s->checkSet->begin(); it2 != s->checkSet->end(); ++it2)
+		{
+			if (*it1 == *it2)
+			{
+				intersectSet->insert(*it1);
+			}
+			else if (it2->subsumes(&(*it1)))
+			{
+				intersectSet->insert(*it1);
+			}
+			else if (it1->subsumes(&(*it2)))
+			{
+				intersectSet->insert(*it2);
+			}
+		}
+	}
+	
+	return intersectSet;
+}
+
+
 RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
 	RangeCheckSet* unionedSet = this->copy();
@@ -37,11 +64,6 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 
 	unionedSet->insert(*expr);
 	return unionedSet;
-}
-
-RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
-{
-	return NULL;
 }
 
 bool RangeCheckSet::doValueKillCheckBackward(RangeCheckExpression* currentCheck, Value* v, int variablePos)

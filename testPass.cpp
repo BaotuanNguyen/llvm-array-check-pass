@@ -63,6 +63,10 @@ bool testPass::runOnBasicBlock(BasicBlock* BB)
 				rangeExpr->println();
 				current_set = current_set->set_union(rangeExpr);
 			}
+
+			errs() << "before intersect size: " << current_set->size() << "\n";
+			RangeCheckSet* intersectedSet = current_set->set_intersect(current_set);
+			errs() << "after intersect size: " << intersectedSet->size() << "\n";
 		}
 
 		if (StoreInst *SI = dyn_cast<StoreInst>(inst))
