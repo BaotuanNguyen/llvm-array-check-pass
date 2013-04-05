@@ -17,7 +17,7 @@
 using namespace llvm;
 
 char VeryBusyAnalysisPass::ID = 0;
-static RegisterPass<VeryBusyAnalysisPass> E("a-vb-analysis", "Available and Very Busy Checks Analysis", false, false);
+static RegisterPass<VeryBusyAnalysisPass> E("very-busy-analysis", "Very Busy Checks Analysis", false, false);
 
 /*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
   {

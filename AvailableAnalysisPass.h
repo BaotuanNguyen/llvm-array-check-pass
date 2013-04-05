@@ -24,7 +24,7 @@
 #include "ArrayBoundsCheckPass.h"
 #include "EffectGenPass.h"
 #include "RangeCheckSet.h"
-#include "EffectGenPass.h"
+#include "ModifyCheckPass.h"
 #include <set>
 #include <map>
 //#include "RunTimeBoundsChecking.h"
@@ -46,13 +46,13 @@ namespace llvm {
                         }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-                AU.addRequired<EffectGenPass>();
+                AU.addRequired<ModifyCheckPass>();
 			}
 			virtual bool doFinalization(Module& M);
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 		private:
-			void dataFlowAnalysis(bool isForward);
+			void dataFlowAnalysis();
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);

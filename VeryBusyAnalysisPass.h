@@ -44,7 +44,7 @@ namespace llvm {
                         }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-                                AU.addRequired<EffectGenPass>();
+                     AU.addRequired<EffectGenPass>();
 			}
 			virtual bool doFinalization(Module& M);
 			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);

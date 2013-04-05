@@ -21,7 +21,7 @@
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Analysis/Dominators.h"
 #include "ArrayBoundsCheckPass.h"
-//#include "RunTimeBoundsChecking.h"
+#include "AvailableAnalysisPass.h"
 
 namespace llvm 
 {
@@ -32,7 +32,7 @@ namespace llvm
 			RemoveRedundantCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<EffectGenPass>();
+				AU.addRequired<AvailableAnalysisPass>();
 			}
 		private:
 			bool runOnFunction(Function* func);

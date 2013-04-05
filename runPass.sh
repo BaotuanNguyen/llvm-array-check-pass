@@ -20,15 +20,21 @@ case "$1" in
 	'-test-pass')
 		OPT_PASSES="-test-pass"
 		;;
-	'-global-opts-only')
-		OPT_PASSES="-array-check -a-vb-analysis"
+	'-very-busy-analysis')
+		OPT_PASSES="-very-busy-analysis"
 		;;
-	'-global-opts')
-		OPT_PASSES="-array-check -effect-gen -global-opts"
+	'-modify-check')
+		OPT_PASSES="-modify-check"
+		;;
+	'-available-analysis')
+		OPT_PASSES="-available-analysis"
+		;;
+	'-remove-redundant-check')
+		OPT_PASSES="-remove-redundant-check"
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -array-check | -effect-gen | -global-opts-only | -global-opts ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available analysis | -remove-redundant-check  ]"
 		exit 1
 		;;
 esac
