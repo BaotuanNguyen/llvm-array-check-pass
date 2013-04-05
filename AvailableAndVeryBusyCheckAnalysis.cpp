@@ -225,39 +225,43 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 ///create 
 
 
-RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
+RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
 {
+        /*
+         * available OUT sets generated, going fowards throught the instructions
+         * iterate over the basic block.  
+         */
+	RangeCheckSet* currentRCS = cInOfBlock;
+	llvm::BasicBlock::InstListType& instList = BB.getInstList();
+	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++){
+                if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+                        const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+                        if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
+                                continue;
+                        }
+			RangeCheckExpression rce = new RangeCheckExpression(callInst, &this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			currentRCS->insert(rce);
+                }
+                else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+			currentRCS->kill_forward(storeInst);
+                }
+        }
+
+
+        return currentRCS;
 }
 
-///available OUT sets generated, going fowards throught the instructions
-for(llvm::Function::iterator IBB = this->currentFunction->begin(), EBB = this->currentFunction->end(); IBB != EBB; IBB++){
-	BasicBlock& BB = *IBB;
-	///go throught each block
-	for(llvm::BasicBlock::iterator II = BB.begin(), EI = BB.end(); II != EI; II++){
-		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
-			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
-				continue;
-			}
-		}
-		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
-
-		}
-
-	}
-
-
-	return currentRCS;
-}
 
 
 RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getVBIn(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
 {
 	/*
-	 * iterate over every instruction and just examine CALL and STORE instructions
-	 *
+         * Return the range check set entering a basic block (given that basic block and its out RCS)
+         *
+         * Alg:
+	 *      iterate over every instruction and just examine CALL and STORE instructions
 	 */
-	RangeCheckSet* currentRCS = new RangeCheckSet();
+        RangeCheckSet* currentRCS = cOutOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB.getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
@@ -265,7 +269,7 @@ RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getVBIn(BasicBlock *BB, RangeC
 			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
 				continue;
 			}
-			RangeCheckExpression rce = new RangeCheckExpression(callInst, callInst->getModule()); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			RangeCheckExpression rce = new RangeCheckExpression(callInst, &this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
 			currentRCS->insert(rce);
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){

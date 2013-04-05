@@ -44,7 +44,9 @@ namespace llvm {
 		static char ID;
 		public: 
 			AvailableAndVeryBusyCheckAnalysis() : FunctionPass(ID) {}
-			virtual bool doInitialization(Module &M);
+			virtual bool doInitialization(Module &M) {
+                                this->module = M;        
+                        }
 			virtual bool runOnFunction(Function &F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
 				AU.addRequired<DataLayout>();
@@ -80,6 +82,8 @@ namespace llvm {
 			//private variables
 			ScalarEvolution* SE;
 			AliasAnalysis* AA;
+
+			Module &module;
 	};
 }
 
