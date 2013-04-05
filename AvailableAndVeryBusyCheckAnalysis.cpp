@@ -19,11 +19,11 @@ using namespace llvm;
 char AvailableAndVeryBusyCheckAnalysis::ID = 0;
 static RegisterPass<AvailableAndVeryBusyCheckAnalysis> E("a-vb-analysis", "Available and Very Busy Checks Analysis", false, false);
 
-RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
+/*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
 {
 	RangeCheckSet* unionSet = S1->set_union(S2);
 	return unionSet;
-}
+}*/
 
 RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
 {
@@ -67,7 +67,6 @@ void AvailableAndVeryBusyCheckAnalysis::createUniverse()
 			if(CallInst *ci = dyn_cast<CallInst> (inst)){
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
                         	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero")){
-					///TODO:universe->insert(new RangeCheckExpression(ci, this->module));
 					universe->set_union(new RangeCheckExpression(ci, this->module));
 				}
 			}
@@ -117,9 +116,9 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 				RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
 				///calculate the IN of the block, running the functions we already created
 				RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
+				RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
 				BB_A_OUT->erase(BB);
-				// TODO
-				// compare C_IN with our previous C_IN
+				// TODO compare C_OUT and C_OUT_PREV
 				BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
 			}	
 		}
@@ -139,7 +138,7 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 		{
 			///in of the block is universe
 			BasicBlock* BB = &*BBI;
-			// TODO			
+			this->BB_VB_IN->insert(PairBBAndRCS(BB, universe));
 		}
 
 		bool isChanged = true;
@@ -157,6 +156,7 @@ void AvailableAndVeryBusyCheckAnalysis::dataFlowAnalysis(bool isForward)
 				RangeCheckSet *C_OUT = SetsMeet(&succsRCS, SetIntersection);
 				///calculate the IN of the block, running the functions we already created
 				RangeCheckSet *C_IN = this->getVBIn(BB, C_OUT);
+				RangeCheckSet *C_IN_P = BB_VB_IN->find(BB)->second;
 				BB_VB_IN->erase(BB);
 				// TODO
 				// compare C_IN with our previous C_IN
@@ -180,7 +180,7 @@ RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getAvailOut(BasicBlock *BB, Ra
                                 continue;
                         }
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			///FIXME: deprecated method currentRCS->insert(rce);
+			currentRCS->set_union(rce);
                 }
                 else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
 			currentRCS->kill_forward(storeInst);
@@ -208,7 +208,7 @@ RangeCheckSet *AvailableAndVeryBusyCheckAnalysis::getVBIn(BasicBlock *BB, RangeC
 				continue;
 			}
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			///FIXME: deprecated method currentRCS->insert(rce);
+			currentRCS->set_union(rce);
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
 			currentRCS->kill_backward(storeInst);
