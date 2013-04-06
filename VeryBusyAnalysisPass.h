@@ -12,7 +12,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/InstIterator.h"
 #include "llvm/InstrTypes.h"
-#include "llvm/Pass.h"
 #include "llvm/Module.h"
 #include "llvm/Function.h"
 #include "llvm/DataLayout.h"
@@ -43,7 +42,7 @@ namespace llvm {
 			bool runOnFunction(Function *F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
 			{
-                     AU.addRequired<EffectGenPass>();
+                                AU.addRequired<EffectGenPass>();
 			}
 			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
 			void createUniverse();

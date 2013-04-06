@@ -32,6 +32,10 @@ case "$1" in
 	'-remove-global')
 		OPT_PASSES="-remove-global"
 		;;
+        '-loop-pass')
+		OPT_PASSES="-loop-pass"
+		;;
+
 	*)
 		echo "invalid argument,"
 		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available-analysis | -remove-global  ]"
