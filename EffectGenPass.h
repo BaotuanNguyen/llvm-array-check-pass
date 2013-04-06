@@ -32,13 +32,12 @@ namespace llvm
 			EffectGenPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<DataLayout>();
-				AU.addRequired<TargetLibraryInfo>();
+				AU.addRequired<ArrayBoundsCheckPass>();
 			}
 		private:
 			bool runOnFunction(Function* func);
 			bool runOnBasicBlock(BasicBlock* BB);
-			void generateMetadata(MDString* str, Value* variable, Instruction* inst, Module* M);
+			void generateMetadata(MDString* str, Value* variable, Value* n, Instruction* inst, Module* M);
 			Module* M;
 	};
 }

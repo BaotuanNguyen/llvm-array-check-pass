@@ -33,11 +33,14 @@ static RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
 
 static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSet*, RangeCheckSet*))
 {
-	RangeCheckSet* lastSet = new RangeCheckSet();
-	for(std::list<RangeCheckSet*>::iterator II = sets->begin(), IE = sets->end(); II != IE; II++){
+	if (sets->size() == 0)
+		return new RangeCheckSet();
+	
+	RangeCheckSet* lastSet = *(sets->begin());
+	
+	for(std::list<RangeCheckSet*>::iterator II = sets->begin(), IE = sets->end(); II != IE; II++)
+	{
 		RangeCheckSet* currentSet = meet(lastSet, *II);
-		//this may be a little slow but I am just trying to finish this
-		delete lastSet;
 		lastSet = currentSet;
 	}
 	return lastSet;
@@ -62,13 +65,17 @@ bool AvailableAnalysisPass::runOnFunction(Function* F)
 {
 	this->currentFunction = F;
 	this->createUniverse();
-	this->dataFlowAnalysis();
+
+	if (!F->isDeclaration())
+	{
+		this->dataFlowAnalysis();
+	}
 	return true;
 }
 
 void AvailableAnalysisPass::createUniverse()
 {		
-	this->universe = new RangeCheckSet();		
+	this->universe = new RangeCheckSet();	
 	
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
@@ -78,8 +85,10 @@ void AvailableAnalysisPass::createUniverse()
 			Instruction* inst = &*II;	
 			if(CallInst *ci = dyn_cast<CallInst> (inst)){
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-                        	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero")){
-					universe->set_union(new RangeCheckExpression(ci, this->module));
+                        	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTLimit")){
+					RangeCheckSet* tmpUniverse = universe->set_union(new RangeCheckExpression(ci, this->module));
+					delete this->universe;
+					this->universe = tmpUniverse;
 				}
 			}
 		}
@@ -91,62 +100,103 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 	///initialize all blocks sets
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
-		///in of the block is universe
+		///out of the block is universe
 		BasicBlock* BB = &*BBI;
 		this->BB_A_OUT->insert(PairBBAndRCS(BB, universe));
 	}
 
+	int i = 0;
 	bool isChanged = true;
-	while(isChanged){
+	errs() << "******************* AVAILABLE ANALYSIS *************************\n";
+	while (isChanged)
+	{
 		isChanged = false;
-		///go through each of Basic blocks
-		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++){
+		
+		///go throught all of the blocks
+		errs() << "******************* ROUND " << i << "*************************\n";
+		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
+		{
 			BasicBlock* BB = &*BBI;
+			errs() << "Basic Block: " << BB->getName() << "\n";
 			ListRCS predRCS;
+
 			///get a list of range check sets
-			for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++){
-				predRCS.push_back((*BB_A_OUT)[*PBBI]);
+			for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++)
+			{
+				predRCS.push_back((*BB_A_OUT)[(BasicBlock*)(*PBBI)]);
 			}
+
 			///calculate the OUT of the block, by intersecting all predecessors IN's
 			RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
+			errs() << "IN = "; C_IN->println();
+
 			///calculate the IN of the block, running the functions we already created
 			RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
+			errs() << "OUT = "; C_OUT->println();
+
 			RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
+			errs() << "OUT_PREV = "; C_OUT_P->println();
+
 			BB_A_OUT->erase(BB);
+
 			//compare C_OUT and C_OUT_PREV
 			if(!C_OUT_P->equal(C_OUT))
+			{
 				isChanged = true;	
+				errs() << "changed\n";
+			}
+			else
+			{
+				errs() << "unchanged\n";
+			}
+
 			BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
+
+			errs() << "\n";
 		}	
+		errs() << "***************************************************\n";
+		i++;
 	}
 }
 RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
 {
-        RangeCheckSet* currentRCS = cInOfBlock;
+    RangeCheckSet* currentRCS = cInOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
-	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++){
-                if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
-                        const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-                        if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
-                                continue;
-                        }
+	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++)
+	{
+		errs() << "Instruction: " << *II << "\n";
+        
+		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
+		{
+			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
+            
+			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
+			{
+				  errs() << "\t\tNot a Check Call: " << *II << "\n";
+                  continue;
+            }
 
-						//INSERT AVAILABLE INFORMATION FOR THIS CALL INSTRUCTION!
-						I_A_OUT->erase(callInst);
-						this->I_A_OUT->insert(PairIAndRCS(callInst, currentRCS));
+			//INSERT AVAILABLE INFORMATION FOR THIS CALL INSTRUCTION!
+			I_A_OUT->erase(callInst);
+			this->I_A_OUT->insert(PairIAndRCS(callInst, currentRCS));
 					
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			currentRCS->set_union(rce);
-                }
-				else if (false)
-				{
-					// NEED TO KILL VARIABLE OF WHICH ITS ADDRESS GETS LOADED
-				}
-                else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
-			currentRCS->kill_forward(storeInst);
-                }
+			errs() << "\t\tRCS Generated: "; rce->println();
+			RangeCheckSet* tmp = currentRCS->set_union(rce);
+			errs() << "\t\tOUT: "; tmp->println();
+			delete currentRCS;
+			currentRCS = tmp;
         }
-        return currentRCS;
+		else if (false)
+		{	
+			// NEED TO KILL VARIABLE OF WHICH ITS ADDRESS GETS LOADED
+		}
+        else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
+		{
+			currentRCS->kill_forward(storeInst);
+        }
+   }
+   return currentRCS;
 }
 
 template <typename T> void AvailableAnalysisPass::dumpSetOfPtr(std::set<T*> *set)

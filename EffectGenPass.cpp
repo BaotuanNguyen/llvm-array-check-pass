@@ -48,6 +48,8 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 	errs() << "Entering basic block\n";
 
 		LLVMContext& context = this->M->getContext();
+		ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
+		
 		MDString* unchangedString = MDString::get(context, "UNCHANGED");
 		MDString* incrementString = MDString::get(context, "INCREMENT");
 		MDString* decrementString = MDString::get(context, "DECREMENT");
@@ -61,7 +63,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 				{
 					if (dyn_cast<AllocaInst>(LI->getOperand(0)))
 					{
-						generateMetadata(unchangedString, LI->getOperand(0), LI, M);
+						generateMetadata(unchangedString, LI->getOperand(0), zero, LI, M);
 					}
 				}
 				
@@ -78,15 +80,15 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						
 					if (operandMetadata->getOperand(1) == NULL) // operand refers to changed variable
 					{
-						generateMetadata(changedString, NULL, CI, M);
+						generateMetadata(changedString, NULL, NULL, CI, M);
 					}
 					else
 					{
 						MDString* prev = (MDString*)(operand1->getMetadata("EFFECT")->getOperand(0));
 						Value* variable = operandMetadata->getOperand(1);
-						generateMetadata(prev, variable, CI, M);
+						Value* n = operandMetadata->getOperand(2);
+						generateMetadata(prev, variable, n, CI, M);
 					}
-
 				}
                 
 				if (BinaryOperator *BO = dyn_cast<BinaryOperator>(inst)) 
@@ -108,7 +110,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 					// if two operands of binary ops are non-constants, then the value is changed for both variables
 					if (!isOperand1Constant && !isOperand2Constant)
 					{
-						generateMetadata(changedString, NULL, BO, M);
+						generateMetadata(changedString, NULL, NULL, BO, M);
 						continue;
 					}
 					else
@@ -131,13 +133,13 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						if (operandMetadata == NULL) // variable reference is from another block
 						{
 							errs() << "VARIABLE REFERENCE IS FROM ANOTHER BLOCK!!\n";
-							generateMetadata(changedString, NULL, BO, M);
+							generateMetadata(changedString, NULL, NULL, BO, M);
 							continue;
 						}
 
 						if (operandMetadata->getOperand(1) == NULL) // operand refers to changed variable
 						{
-							generateMetadata(changedString, NULL, BO, M);
+							generateMetadata(changedString, NULL, NULL, BO, M);
 							continue;
 						}
 							
@@ -153,38 +155,43 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						{
 							case Instruction::Add:
 							case Instruction::FAdd:
-								{
 								errs() << *BO <<  " BINOP: ADD\n";
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{
 									int64_t constValue = CI->getSExtValue();
 									
-									if (constValue > 0)
+									if (!mdstr->getString().equals("CHANGED"))
 									{
-										if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
+										if (ConstantInt* ci = dyn_cast<ConstantInt>(metadata->getOperand(2)))
 										{
-											generateMetadata(incrementString, variable, BO, M);
+											int64_t constValue2 = ci->getSExtValue();
+											int64_t sum = constValue + constValue2;
+											ConstantInt* sumValue = ConstantInt::get(Type::getInt64Ty(context), sum);
+
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
+										}
+										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
+										{
+											double constValue2 = (cf->getValueAPF()).convertToDouble();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+											
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
 										}
 										else
 										{
-											generateMetadata(changedString, NULL, BO, M);
-										}
-									}
-									else if (constValue == 0)
-									{
-										MDString* prev = (MDString*)(operand->getMetadata("EFFECT")->getOperand(0));
-										generateMetadata(prev, variable, BO, M);
-									}
-									else
-									{
-										if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
-										{
-											generateMetadata(decrementString, variable, BO, M);
-										}
-										else
-										{
-											generateMetadata(changedString, NULL, BO, M);
+											generateMetadata(changedString, NULL, NULL, BO, M);
 										}
 									}
 								}
@@ -192,105 +199,122 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 								{
 									double constValue = (FP->getValueAPF()).convertToDouble();
 									
-									if (constValue > 0)
+									if (!mdstr->getString().equals("CHANGED"))
 									{
-										if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
+										if (ConstantInt* ci = dyn_cast<ConstantInt>(metadata->getOperand(2)))
 										{
-											generateMetadata(incrementString, variable, BO, M);
+											int64_t constValue2 = ci->getSExtValue();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
+										}
+										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
+										{
+											double constValue2 = (cf->getValueAPF()).convertToDouble();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+											
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
+											}
 										}
 										else
 										{
-											generateMetadata(changedString, NULL, BO, M);
+											generateMetadata(changedString, NULL, NULL, BO, M);
 										}
-									}
-									else if (constValue == 0)
-									{
-										MDString* prev = (MDString*)(operand->getMetadata("EFFECT")->getOperand(0));
-										generateMetadata(prev, variable, BO, M);
-									}
-									else
-									{
-										if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
-										{
-											generateMetadata(decrementString, variable, BO, M);
-										}
-										else
-										{
-											generateMetadata(changedString, NULL, BO, M);
-										}
-									}
 								}
 								else
 								{
 										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
 								}
 								break;
-								}
 							case Instruction::Sub:
 							case Instruction::FSub:
 								errs() << *BO <<  " BINOP: SUB\n";
-								
+
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{
-									int64_t constValue = CI->getSExtValue();
+									int64_t constValue = -(CI->getSExtValue());
 									
-									if (constValue > 0)
+									if (!mdstr->getString().equals("CHANGED"))
 									{
-										if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
+										if (ConstantInt* ci = dyn_cast<ConstantInt>(metadata->getOperand(2)))
 										{
-											generateMetadata(decrementString, variable, BO, M);
+											int64_t constValue2 = ci->getSExtValue();
+											int64_t sum = constValue + constValue2;
+											ConstantInt* sumValue = ConstantInt::get(Type::getInt64Ty(context), sum);
+
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
+										}
+										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
+										{
+											double constValue2 = (cf->getValueAPF()).convertToDouble();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+											
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
 										}
 										else
 										{
-											generateMetadata(changedString, NULL, BO, M);
-										}
-									}
-									else if (constValue == 0)
-									{
-										MDString* prev = (MDString*)(operand->getMetadata("EFFECT")->getOperand(0));
-										generateMetadata(prev, variable, BO, M);
-									}
-									else
-									{
-										if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
-										{
-											generateMetadata(incrementString, variable, BO, M);
-										}
-										else
-										{
-											generateMetadata(changedString, NULL, BO, M);
+											generateMetadata(changedString, NULL, NULL, BO, M);
 										}
 									}
 								}
 								else if (ConstantFP* FP = dyn_cast<ConstantFP>(constant))
 								{
-									double constValue = (FP->getValueAPF()).convertToDouble();
+									double constValue = -((FP->getValueAPF()).convertToDouble());
 									
-									if (constValue > 0)
+									if (!mdstr->getString().equals("CHANGED"))
 									{
-										if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
+										if (ConstantInt* ci = dyn_cast<ConstantInt>(metadata->getOperand(2)))
 										{
-											generateMetadata(decrementString, variable, BO, M);
+											int64_t constValue2 = ci->getSExtValue();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
+										}
+										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
+										{
+											double constValue2 = (cf->getValueAPF()).convertToDouble();
+											double sum = constValue + constValue2;
+											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
+											
+											if (sum > 0)
+												generateMetadata(incrementString, variable, sumValue, BO, M);
+											else if (sum == 0)
+												generateMetadata(unchangedString, variable, sumValue, BO, M);
+											else
+												generateMetadata(decrementString, variable, sumValue, BO, M);
 										}
 										else
 										{
-											generateMetadata(changedString, NULL, BO, M);
-										}
-									}
-									else if (constValue == 0)
-									{
-										MDString* prev = (MDString*)(operand->getMetadata("EFFECT")->getOperand(0));
-										generateMetadata(prev, variable, BO, M);
-									}
-									else
-									{
-										if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
-										{
-											generateMetadata(incrementString, variable, BO, M);
-										}
-										else
-										{
-											generateMetadata(changedString, NULL, BO, M);
+											generateMetadata(changedString, NULL, NULL, BO, M);
 										}
 									}
 								}
@@ -302,21 +326,19 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 							case Instruction::Mul:
 							case Instruction::FMul:
 								errs() << *BO <<  " BINOP: MUL\n";
-	//							generateMetadata(changedString, NULL, BO, M);
+								generateMetadata(changedString, NULL, NULL, BO, M);
 								break;
 							case Instruction::UDiv:
 							case Instruction::SDiv:
 							case Instruction::FDiv:
 								errs() << *BO <<  " BINOP: DIV\n";
-	//							generateMetadata(changedString, NULL, BO, M);
 								break;
 							default:
 								errs() << *BO <<  " BINOP: OTHER\n";
-	//							generateMetadata(changedString, NULL, BO, M);
+								generateMetadata(changedString, NULL, NULL, BO, M);
 								break;
+						}
 					}
-
-				}
 				}
         }
 
@@ -324,12 +346,13 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
         return true;
 }
 
-void EffectGenPass::generateMetadata(MDString* str, Value* variable, Instruction* inst, Module* M)
+void EffectGenPass::generateMetadata(MDString* str, Value* variable, Value* n, Instruction* inst, Module* M)
 {
 	LLVMContext& context = M->getContext();
 	std::vector<Value*> effect;
 	effect.push_back(str);
 	effect.push_back(variable);
+	effect.push_back(n);
 	MDNode* effects = MDNode::get(context, effect);
 	inst->setMetadata("EFFECT", effects);
 }

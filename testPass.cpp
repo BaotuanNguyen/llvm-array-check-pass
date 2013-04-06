@@ -56,7 +56,7 @@ bool testPass::runOnBasicBlock(BasicBlock* BB)
 		{
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
-			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTZero"))
+			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTLimit"))
 			{
 				RangeCheckExpression* rangeExpr = new RangeCheckExpression(CI, this->M);
 				errs() << "RangeExpr generated: ";

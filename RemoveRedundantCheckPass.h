@@ -32,7 +32,8 @@ namespace llvm
 			RemoveRedundantCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
-			{			
+			{
+				AU.addRequired<AvailableAnalysisPass>();	
 			}
 		private:
 			bool runOnFunction(Function* func);

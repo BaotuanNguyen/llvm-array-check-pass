@@ -1,10 +1,18 @@
 int main()
 {
-	int a[100];
+	int a[10];
 	int n = 4;
-	a[n] = 4;
-	int* b = &n;
-	int c = n;
-	*b = 10000;
-	a[n] = 10;
+	a[n] = 77;
+
+	if (n)
+	{
+		n--;
+		a[n] = 67;
+	}
+	else
+	{
+		a[n-4] = 88;
+	}
+
+	int z = 11;
 }

@@ -37,22 +37,23 @@ namespace llvm
 		private:
 			/*check insertion functions*/
 			//Constant* createGlobalString(const StringRef* str);
-			Instruction* checkGTZero(Value* index);
+			Instruction* checkGTLimit(Value* lb, Value* index);
 			Instruction* checkLTLimit(Value* index, Value* limit);
-			Instruction* insertGTZeroCheck(Value* index);
-			Instruction* insertLTLimitCheck(Value* index, Value* limit);
+			Instruction* insertGTLimitCheck(Value* lb, Value* index);
+			Instruction* insertLTLimitCheck(Value* index, Value* ub);
+			
 			/*gep checker functions*/
 			bool checkGEP(User* GEP, Instruction* currInst);
 			bool runOnInstruction(Instruction* inst);
 			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
 			bool runOnFunction(Function* F);
 
-			unsigned int checkNumber;
+			int checkNumber;
 			Module* M;
 			/*current function being checked*/
 			Function* currentFunction;
 			/*check function declared for check insertion*/
-			Function* checkGTZeroFunction;
+			Function* checkGTLimitFunction;
 			Function* checkLTLimitFunction;
 			/*instruction before which to insert instructions*/
 			Instruction* Inst;

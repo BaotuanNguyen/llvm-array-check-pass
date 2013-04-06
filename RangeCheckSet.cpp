@@ -34,7 +34,7 @@ RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
 RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
 	RangeCheckSet* unionedSet = this->copy();
-	
+
 	std::vector<RangeCheckExpression>::iterator it = unionedSet->checkSet->begin();
 
 	for (;it != unionedSet->checkSet->end(); ++it)
@@ -43,9 +43,12 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 
 		if (current.subsumes(expr))
 		{
+			errs() << "\t\t";
 			current.print();
 			errs() << " SUBSUMES ";
 			expr->println();
+			//if expr is not used then delete it
+			delete expr;
 			return unionedSet;
 		}	
 		else if (expr->subsumes(&current))
@@ -53,10 +56,12 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 			int index = (it - unionedSet->checkSet->begin());
 			unionedSet->checkSet->at(index) = *expr;
 
+			errs() << "\t\t";
 			expr->print();
 			errs() << " SUBSUMES ";
 			current.println();
-			
+			//if expr is not used then delete it
+			delete expr;	
 			return unionedSet;
 		}
 	}
@@ -108,25 +113,16 @@ bool RangeCheckSet::doValueKillCheckBackward(RangeCheckExpression* currentCheck,
 					if (variablePos == 0)
 					{
 						if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
-						{
 							return false;
-						}
 						else
-						{
 							return true;
-						}
-						
 					}
 					else
 					{
 						if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
-						{
 							return false;
-						}
 						else
-						{
 							return true;
-						}
 					}
 				}
 			}
@@ -147,59 +143,31 @@ void RangeCheckSet::kill_backward(Instruction* store)
 		erased = false;
 		RangeCheckExpression* currentCheck = &(*it);
 		
-		if (currentCheck->relOp == GTEQ)
+		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
 		{
-			if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2)) // this case must hold
+			if (op1 == variableBeingStored)
 			{
-				if (op2 == variableBeingStored)
+				if (doValueKillCheckBackward(currentCheck, valueBeingStored, 0))
 				{
-					if (doValueKillCheckBackward(currentCheck, valueBeingStored, 1))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
-				}
-			}
-			else
-			{
-				errs() << "ERROR! second operand of GTEQ check is not a variable\n";
-			}
-		}
-		else
-		{
-			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
-			{
-				if (op1 == variableBeingStored)
-				{
-					if (doValueKillCheckBackward(currentCheck, valueBeingStored, 0))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
-				}
-			}
-			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
-			{
-				if (op2 == variableBeingStored)
-				{
-					if (doValueKillCheckBackward(currentCheck, valueBeingStored, 1))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					this->checkSet->erase(it);
+					erased = true;
 				}
 			}
 		}
-
+		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+		{
+			if (op2 == variableBeingStored)
+			{
+				if (doValueKillCheckBackward(currentCheck, valueBeingStored, 1))
+				{
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+		}
+		
 		if (!erased)
 			it++;
 	}
@@ -249,25 +217,16 @@ bool RangeCheckSet::doValueKillCheckForward(RangeCheckExpression* currentCheck, 
 					if (variablePos == 0)
 					{
 						if (mdstr->getString().equals("DECREMENT") || mdstr->getString().equals("UNCHANGED"))
-						{
 							return false;
-						}
 						else
-						{
 							return true;
-						}
-						
 					}
 					else
 					{
 						if (mdstr->getString().equals("INCREMENT") || mdstr->getString().equals("UNCHANGED"))
-						{
 							return false;
-						}
 						else
-						{
 							return true;
-						}
 					}
 				}
 			}
@@ -286,60 +245,34 @@ void RangeCheckSet::kill_forward(Instruction* store)
 	{
 		erased = false;
 		RangeCheckExpression* currentCheck = &(*it);
-
-		if (currentCheck->relOp == GTEQ)
+			
+		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
 		{
-			if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2)) // this case must hold
+			if (op1 == variableBeingStored)
 			{
-				if (op2 == variableBeingStored)
+				if (doValueKillCheckForward(currentCheck, valueBeingStored, 0))
 				{
-					if (doValueKillCheckForward(currentCheck, valueBeingStored, 1))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
-				}
-			}
-			else
-			{
-				errs() << "ERROR! second operand of GTEQ check is not a variable\n";
-			}
-		}
-		else
-		{
-			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
-			{
-				if (op1 == variableBeingStored)
-				{
-					if (doValueKillCheckForward(currentCheck, valueBeingStored, 0))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
-				}
-			}
-			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
-			{
-				if (op2 == variableBeingStored)
-				{
-					if (doValueKillCheckForward(currentCheck, valueBeingStored, 1))
-					{
-						// KILL IT
-						errs() << "KILLED:";
-						(*it).println();
-						this->checkSet->erase(it);
-						erased = true;
-					}
+					// KILL IT
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					this->checkSet->erase(it);
+					erased = true;
 				}
 			}
 		}
-
+		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+		{
+			if (op2 == variableBeingStored)
+			{
+				if (doValueKillCheckForward(currentCheck, valueBeingStored, 1))
+				{
+					// KILL IT
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+		}
+	
 		if (!erased)
 			it++;
 	}

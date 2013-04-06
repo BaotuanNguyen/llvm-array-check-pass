@@ -33,9 +33,6 @@ class RangeCheckSet
 		void insert(RangeCheckExpression expr)
 		{
 			this->checkSet->push_back(expr);
-			std::vector<RangeCheckExpression>::iterator it;
-			it = std::unique(checkSet->begin(), checkSet->end());
-			checkSet->resize(std::distance(checkSet->begin(),it));
 		}
 
 		void println()
@@ -50,27 +47,13 @@ class RangeCheckSet
 			errs() << " }\n";
 		}
 
-		/*
-		RangeCheckSet& operator=(const RangeCheckSet& rhs)
-		{
-			if (this == &rhs)
-			{
-				return *this;
-			}
-			else
-			{
-				this->checkSet = new std::vector<RangeCheckExpression>(rhs.size());
-				std::copy(this->checkSet->begin(), this->checkSet->end(), rhs.checkSet->begin());
-				return *this;
-			}
-		}*/
-
 		void kill_forward(Instruction* var);
 		void kill_backward(Instruction* var);
 		RangeCheckSet* set_union(RangeCheckExpression* s);
 		RangeCheckSet* set_intersect(RangeCheckSet* s);
 		bool doValueKillCheckForward(RangeCheckExpression* currentCheck, Value* valueBeingStored, int variablePos);
 		bool doValueKillCheckBackward(RangeCheckExpression* currentCheck, Value* valueBeingStored, int variablePos);
+		
 		bool equal(RangeCheckSet* anotherRCS)
 		{
 			std::vector<RangeCheckExpression> *vecThis = this->checkSet, *vecThat = anotherRCS->checkSet;

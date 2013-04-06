@@ -52,7 +52,7 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 		{
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
-			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTZero"))
+			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTLimit"))
 			{				
 			}
 		}

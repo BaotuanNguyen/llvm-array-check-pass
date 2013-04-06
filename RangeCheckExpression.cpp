@@ -8,7 +8,6 @@ using namespace llvm;
 
 bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 {
-	errs() << "subsume?\n";
 	// a rangecheckexpression subsumes itself
 	if ((*this) == (*expr))
 	{
@@ -20,56 +19,58 @@ bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 	{
 		return false;
 	}
-	else
+
+	if ((this->relOp == GTEQ) && (expr->relOp == GTEQ)) // both are GT (operand1 is constant)
 	{
-		// GTEQ check expressions cannot subsume one another unless they are equal
-		if ((this->relOp == GTEQ) && (expr->relOp == GTEQ))
-		{
+		if (this->op2 != expr->op2)
 			return false;
-		}
-		else // both are LT expressions
+
+		ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op1);
+		ConstantInt* CI2 = dyn_cast<ConstantInt>(expr->op1);
+
+		int64_t val1 = CI1->getSExtValue();
+		int64_t val2 = CI2->getSExtValue();
+
+		return (val1 > val2);
+	}
+	else // both are LT expressions
+	{
+		if (this->op1 != expr->op1)
+			return false;
+		
+		if (ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op2))
 		{
-			if (this->op1 != expr->op1)
+			int64_t value1 = CI1->getSExtValue();
+			
+			if (ConstantInt* CI2 = dyn_cast<ConstantInt>(expr->op2))
 			{
+				int64_t value2 = CI2->getSExtValue();
+				return (value1 < value2);
+			}
+			else if (dyn_cast<Instruction>(expr->op2))
+			{
+				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
+				// Find the possible constant value of this inst!
+				// If not constant, return false
 				return false;
-			}	
+			}
 			else
 			{
-				if (ConstantInt* CI1 = dyn_cast<ConstantInt>(op1))
-				{
-					uint64_t value1 = CI1->getSExtValue();
-					
-					if (ConstantInt* CI2 = dyn_cast<ConstantInt>(op2))
-					{
-						uint64_t value2 = CI2->getSExtValue();
-						return (value1 < value2);
-					}
-					else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(op2))
-					{
-						double value2 = (CF2->getValueAPF()).convertToDouble();
-						return (value1 < value2);
-					}
-				}
-				else if (ConstantFP* CF1 = dyn_cast<ConstantFP>(op1))
-				{
-					double value1 = (CF1->getValueAPF()).convertToDouble();
-					
-					if (ConstantInt* CI2 = dyn_cast<ConstantInt>(op2))
-					{
-						uint64_t value2 = CI2->getSExtValue();
-						return (value1 < value2);
-					}
-					else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(op2))
-					{
-						double value2 = (CF2->getValueAPF()).convertToDouble();
-						return (value1 < value2);
-					}
-				}
-				else
-				{
-					return false;
-				}
+				errs() << "ERROR!! UNKNOWN OPERAND!!\n";
+				return false;
 			}
+		}
+		else if (dyn_cast<Instruction>(this->op2))
+		{
+			// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
+			// Find the possible constant value of this inst!
+			// If not constant, return false
+			return false;
+		}
+		else
+		{
+			errs() << "ERROR!! UNKNOWN OPERAND!!\n";
+			return false;
 		}
 	}
 
@@ -79,90 +80,80 @@ bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 		
 void RangeCheckExpression::print()
 {
-		std::string relOpStr;
-		if (this->relOp == GTEQ)
-		{
-			relOpStr = " <= ";
-			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
-			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str());
-		}
-		else
-		{
-			relOpStr = " < ";
-			
-			if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
-			{
-				errs() << CI->getSExtValue();															
-			}
-			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op1))
-			{
-				errs() << (CF->getValueAPF()).convertToDouble();
-			}
-			else
-			{
-				errs() << op1->getName().str();
-			}
-			
-			errs() << relOpStr;
+	std::string relOpStr;
+	
+	if (this->relOp == GTEQ)
+		relOpStr = " <= ";
+	else
+		relOpStr = " < ";
 
-			if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
-			{
-				errs() << CI->getSExtValue();															
-			}
-			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op2))
-			{
-				errs() << (CF->getValueAPF()).convertToDouble();
-			}
-			else
-			{
-				errs() << op2->getName().str();
-			}
-		}
+	if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
+	{
+		errs() << CI->getSExtValue();															
+	}
+	else
+	{
+		if (!(op1->hasName()))
+			errs() << "temp";
+		else
+			errs() << op1->getName().str();
+	}
+	
+	errs() << relOpStr;
+
+	if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
+	{
+		errs() << CI->getSExtValue();															
+	}
+	else
+	{
+		if (!(op2->hasName()))
+			errs() << "temp";
+		else
+			errs() << op2->getName().str();
+	}
 }
 
 void RangeCheckExpression::println()
 {
-		std::string relOpStr;
-		if (this->relOp == GTEQ)
+	std::string relOpStr;
+
+
+	if (this->relOp == GTEQ)
+		relOpStr = " <= ";
+	else
+		relOpStr = " < ";
+	
+
+	if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
+	{
+		errs() << CI->getSExtValue();															
+	}
+	else
+	{
+		if (!(op1->hasName()))
 		{
-			relOpStr = " <= ";
-			ConstantInt* zero = dyn_cast<ConstantInt>(op1);
-			errs() << (zero->getSExtValue()) << relOpStr << (op2->getName().str());
+			errs() << "temp";
 		}
 		else
-		{
-			relOpStr = " < ";
-			
-			if (ConstantInt* CI = dyn_cast<ConstantInt>(op1))
-			{
-				errs() << CI->getSExtValue();															
-			}
-			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op1))
-			{
-				errs() << (CF->getValueAPF()).convertToDouble();
-			}
-			else
-			{
-				errs() << op1->getName().str();
-			}
-			
-			errs() << relOpStr;
+			errs() << op1->getName().str();
+	}
+	
+	errs() << relOpStr;
 
-			if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
-			{
-				errs() << CI->getSExtValue();															
-			}
-			else if (ConstantFP* CF = dyn_cast<ConstantFP>(op2))
-			{
-				errs() << (CF->getValueAPF()).convertToDouble();
-			}
-			else
-			{
-				errs() << op2->getName().str();
-			}
-		}
+	if (ConstantInt* CI = dyn_cast<ConstantInt>(op2))
+	{
+		errs() << CI->getSExtValue();															
+	}
+	else
+	{
+		if (!(op2->hasName()))
+			errs() << "temp";
+		else
+			errs() << op2->getName().str();
+	}
 
-		errs() << "\n";
+	errs() << "\n";
 }
 
 RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
@@ -170,9 +161,9 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	StringRef funcName = inst->getCalledFunction()->getName();
 	LLVMContext& context = M->getContext();
 
-	if (!funcName.equals("checkLTLimit") && !funcName.equals("checkGTZero"))
+	if (!funcName.equals("checkLTLimit") && !funcName.equals("checkGTLimit"))
 	{
-		errs() << "ERROR! Can only create RangeCheckExpression from checkLTLimit call or checkGTZero call\n";
+		errs() << "ERROR! Can only create RangeCheckExpression from checkLTLimit call or checkGTLimit call\n";
 	}
 	
 	MDNode* metadata = inst->getMetadata("VarName");
@@ -181,18 +172,96 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	{
 		errs() << "ERROR! call inst does not have VarName metadata!\n";
 	}
-	
-	if (funcName.equals("checkGTZero"))
+
+	if (funcName.equals("checkGTLimit"))
 	{
-		this->op1 = ConstantInt::get(Type::getInt64Ty(context), 0);
-		this->op2 = metadata->getOperand(0);
-		this->relOp = GTEQ;
+		Value* operand2 = metadata->getOperand(1);
+
+		if (dyn_cast<AllocaInst>(operand2)) // operand 2 is a variable (not a temporary)
+		{
+			this->op1 = metadata->getOperand(0); // guaranteed to be a constant for GT checks
+			this->op2 = metadata->getOperand(1);
+			this->relOp = GTEQ;
+		}
+		else // operand is a temporary variable
+		{
+			Instruction* op2inst = dyn_cast<Instruction>(operand2);
+			MDNode* effects = op2inst->getMetadata("EFFECT");
+			MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
+
+			if (mdstr->getString().equals("CHANGED"))
+			{
+				this->op1 = metadata->getOperand(0); // guaranteed to be a constant for GT checks
+				this->op2 = metadata->getOperand(1);
+				this->relOp = GTEQ;
+			}
+			else
+			{
+				// transforms 0 < n+1 into -1 < n
+				ConstantInt* op1Int = dyn_cast<ConstantInt>(metadata->getOperand(0));
+				ConstantInt* addInt = dyn_cast<ConstantInt>(effects->getOperand(2));
+				int64_t op1IntVal = op1Int->getSExtValue();
+				int64_t addIntVal = addInt->getSExtValue();
+				int64_t newOp1Val = op1IntVal - addIntVal;
+			
+				ConstantInt* newVal = ConstantInt::get(Type::getInt64Ty(context), newOp1Val);
+				
+				this->op1 = newVal;
+				this->op2 = effects->getOperand(1);
+				this->relOp = GTEQ;
+			}
+			
+		}
 	}
 	else
 	{
-		this->op1 = metadata->getOperand(0);
-		this->op2 = metadata->getOperand(1);
-		this->relOp = LT;
+		Value* operand1 = metadata->getOperand(0);
+		Value* operand2 = metadata->getOperand(1);
+		
+		if (dyn_cast<AllocaInst>(operand1)) // operand 1 is a variable (not a temporary)
+		{
+			this->op1 = operand1;
+			this->op2 = operand2;
+			this->relOp = LT;
+		}
+		else // operand 1 is a temporary
+		{
+			Instruction* op1inst = dyn_cast<Instruction>(operand1);
+			MDNode* effects = op1inst->getMetadata("EFFECT");
+			MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
+			
+			
+			if (mdstr->getString().equals("CHANGED"))
+			{
+				this->op1 = operand1;
+				this->op2 = operand2;
+				this->relOp = LT;
+			}
+			else
+			{
+				if (dyn_cast<ConstantInt>(operand2)) // operand 2 is a constant
+				{
+					// transforms n+1 < 5 into n < 4
+					ConstantInt* op2Int = dyn_cast<ConstantInt>(metadata->getOperand(1));
+					ConstantInt* addInt = dyn_cast<ConstantInt>(effects->getOperand(2));
+					int64_t op2IntVal = op2Int->getSExtValue();
+					int64_t addIntVal = addInt->getSExtValue();
+					int64_t newOp2Val = op2IntVal - addIntVal;
+				
+					ConstantInt* newVal = ConstantInt::get(Type::getInt64Ty(context), newOp2Val);
+						
+					this->op1 = effects->getOperand(1);
+					this->op2 = newVal;
+					this->relOp = LT;
+				}
+				else
+				{
+					this->op1 = operand1;
+					this->op2 = operand2;
+					this->relOp = LT;
+				}
+			}
+		}
 	}
 }
 
@@ -202,67 +271,50 @@ bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
 	{
 		return false;
 	}
-	else if (this->relOp == GTEQ && other.relOp == GTEQ)
-	{
-		return (this->op2 == other.op2);
-	}
 	else // relop same
 	{
-		if (this->op1 != other.op1) // variables on LHS is different
+		if (dyn_cast<ConstantInt>(this->op1) && dyn_cast<ConstantInt>(other.op1)) // LHS consists of constants for both
 		{
-			return false;
-		}
-		else if (dyn_cast<Constant>(this->op2) && dyn_cast<Constant>(other.op2)) // RHS consists of constants for both
-		{
-			if (ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op2))
-			{
-				uint64_t intVal1 = CI1->getSExtValue();
-				
-				if (ConstantInt* CI2 = dyn_cast<ConstantInt>(other.op2))
-				{
-					uint64_t intVal2 = CI2->getSExtValue();
-					return (intVal1 == intVal2);	
-				}
-				else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(other.op2))
-				{
-					double doubleVal2 = (CF2->getValueAPF()).convertToDouble();
-					return (intVal1 == doubleVal2);
-				}	
-				else
-				{
-					errs() << "ERROR! UNKNOWN CONSTANT TYPE!!\n";
-					return false;
-				}
-			}
-			else if (ConstantFP* CF1 = dyn_cast<ConstantFP>(this->op2))
-			{
-				double doubleVal1 = (CF1->getValueAPF()).convertToDouble();
-				
-				if (ConstantInt* CI2 = dyn_cast<ConstantInt>(other.op2))
-				{
-					uint64_t intVal2 = CI2->getSExtValue();
-					return (doubleVal1 == intVal2);	
-				}
-				else if (ConstantFP* CF2 = dyn_cast<ConstantFP>(other.op2))
-				{
-					double doubleVal2 = (CF2->getValueAPF()).convertToDouble();
-					return (doubleVal1 == doubleVal2);
-				}	
-				else
-				{
-					errs() << "ERROR! UNKNOWN CONSTANT TYPE!!\n";
-					return false;
-				}
-			}
-			else
-			{
-				errs() << "ERROR! UNKNOWN CONSTANT TYPE!!\n";
+			ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op1);
+			ConstantInt* CI2 = dyn_cast<ConstantInt>(other.op1);
+
+			int64_t intVal1 = CI1->getSExtValue();
+			int64_t intVal2 = CI2->getSExtValue();
+			
+			if (!(intVal1 == intVal2))
 				return false;
-			}
+		}
+		else if (dyn_cast<Instruction>(this->op1) && dyn_cast<Instruction>(other.op1)) // LHS consists of variables
+		{
+			if (!(this->op1 == other.op1))
+				return false;
 		}
 		else
 		{
-			return this->op2 == other.op2;
+			return false;
+		}
+		
+		if (dyn_cast<Constant>(this->op2) && dyn_cast<Constant>(other.op2)) // RHS consists of constants for both
+		{
+			ConstantInt* CI1 = dyn_cast<ConstantInt>(this->op2);
+			ConstantInt* CI2 = dyn_cast<ConstantInt>(other.op2);
+				
+			int64_t intVal1 = CI1->getSExtValue();
+			int64_t intVal2 = CI2->getSExtValue();
+			
+			if (!(intVal1 == intVal2))
+				return false;
+		}
+		else if (dyn_cast<Instruction>(this->op2) && dyn_cast<Instruction>(other.op2)) // RHS consists of variables
+		{
+			if (!(this->op2 == other.op2))
+				return false;
+		}
+		else
+		{
+			return false;
 		}
 	}
+
+	return true;
 }
