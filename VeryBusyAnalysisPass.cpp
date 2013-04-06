@@ -77,7 +77,7 @@ bool VeryBusyAnalysisPass::runOnFunction(Function* F)
 }
 
 void VeryBusyAnalysisPass::createUniverse()
-{		
+{
 	this->universe = new RangeCheckSet();
 	
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
@@ -92,6 +92,7 @@ void VeryBusyAnalysisPass::createUniverse()
 				if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTLimit"))
 				{
 					RangeCheckSet* tmpUniverse = universe->set_union(new RangeCheckExpression(ci, this->module));
+					errs() << "union created: "; tmpUniverse->println();
 					delete this->universe;
 					this->universe = tmpUniverse;
 				}
@@ -105,7 +106,7 @@ void VeryBusyAnalysisPass::createUniverse()
 void VeryBusyAnalysisPass::dataFlowAnalysis()
 {
 	this->createUniverse();
-
+	
 	///initialize all blocks sets
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{

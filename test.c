@@ -14,5 +14,6 @@ int test(int a)
 {
 	int z[10];
 	z[a];
+	return 3;
 
 }

@@ -41,6 +41,8 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 	{
 		RangeCheckExpression current = *it;
 
+		errs() << "union: "; current.print(); errs() << " AND ";expr->println();
+		
 		if (current.subsumes(expr))
 		{
 			errs() << "\t\t";
