@@ -190,7 +190,7 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 			I_VB_IN->erase(callInst);
 			this->I_VB_IN->insert(PairIAndRCS(callInst, currentRCS));
 
-			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module);
 			errs() << "\t\tRCS Generated: "; rce->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
 			errs() << "\t\tIN: "; tmp->println();

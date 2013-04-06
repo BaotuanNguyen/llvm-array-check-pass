@@ -187,7 +187,7 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 			I_A_OUT->erase(callInst);
 			this->I_A_OUT->insert(PairIAndRCS(callInst, currentRCS));
 					
-			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module);
 			errs() << "\t\tRCS Generated: "; rce->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
 			errs() << "\t\tOUT: "; tmp->println();
