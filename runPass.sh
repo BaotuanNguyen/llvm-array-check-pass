@@ -30,12 +30,11 @@ case "$1" in
 		OPT_PASSES="-available-analysis"
 		;;
 	'-remove-global')
-		OPT_PASSES="-remove-redundant-check"
+		OPT_PASSES="-remove-global"
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check |
-	   		| -available-analysis | -remove-global  ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available-analysis | -remove-global  ]"
 		exit 1
 		;;
 esac

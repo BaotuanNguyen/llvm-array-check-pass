@@ -58,10 +58,10 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 		for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 		{
 				Instruction *inst = &*i;
-		 		
+
 				if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
 				{
-					if (dyn_cast<AllocaInst>(LI->getOperand(0)))
+					if (dyn_cast<AllocaInst>(LI->getOperand(0)) || dyn_cast<GlobalVariable>(LI->getOperand(0)))
 					{
 						generateMetadata(unchangedString, LI->getOperand(0), zero, LI, M);
 					}
@@ -170,7 +170,9 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantInt* sumValue = ConstantInt::get(Type::getInt64Ty(context), sum);
 
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+											}
 											else if (sum == 0)
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
 											else
@@ -341,6 +343,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 					}
 				}
         }
+
 
         errs() << "Exiting basic block\n\n";
         return true;

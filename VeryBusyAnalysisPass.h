@@ -47,13 +47,14 @@ namespace llvm {
 			}
 			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
 			void createUniverse();
+			MapInstToRCS *I_VB_IN;
+		
 		private:
 			void dataFlowAnalysis();
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 
-			MapInstToRCS *I_VB_IN;
 			MapBBToRCS *BB_VB_IN;
 
 			Module* module;

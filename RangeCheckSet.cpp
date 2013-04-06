@@ -81,6 +81,8 @@ bool RangeCheckSet::doValueKillCheckBackward(RangeCheckExpression* currentCheck,
 	{
 		Instruction* valueBeingStored = dyn_cast<Instruction>(v); // MUST hold
 	
+		//errs() << "Value being stored: " << *v << "\n";
+
 		if (!(valueBeingStored->getMetadata("EFFECT")))
 		{
 			return true; // no data available
@@ -137,6 +139,10 @@ void RangeCheckSet::kill_backward(Instruction* store)
 	
 	Value* valueBeingStored = store->getOperand(0);
 	Instruction* variableBeingStored = dyn_cast<Instruction>(store->getOperand(1));
+
+	// ignoer function arguments since they cannot possibly kill any checks
+	if (dyn_cast<Argument>(valueBeingStored))
+		return;
 
 	for (;it != this->checkSet->end();)
 	{
@@ -240,6 +246,10 @@ void RangeCheckSet::kill_forward(Instruction* store)
 	std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin();
 	Value* valueBeingStored = store->getOperand(0);
 	Instruction* variableBeingStored = dyn_cast<Instruction>(store->getOperand(1));
+	
+	// ignoer function arguments since they cannot possibly kill any checks
+	if (dyn_cast<Argument>(valueBeingStored))
+		return;
 
 	for (; it != this->checkSet->end(); )
 	{

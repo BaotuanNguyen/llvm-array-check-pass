@@ -10,9 +10,9 @@ using namespace llvm;
 
 class RangeCheckSet
 {
-	std::vector<RangeCheckExpression>* checkSet;
-
 	public:
+		std::vector<RangeCheckExpression>* checkSet;
+		
 		RangeCheckSet()
 		{
 			this->checkSet = new std::vector<RangeCheckExpression>();
@@ -32,6 +32,14 @@ class RangeCheckSet
 
 		void insert(RangeCheckExpression expr)
 		{
+			std::vector<RangeCheckExpression>::iterator it;
+
+			for (it = this->checkSet->begin(); it != this->checkSet->end(); it++)
+			{
+				if ((*it) == expr)
+					return;
+			}
+
 			this->checkSet->push_back(expr);
 		}
 

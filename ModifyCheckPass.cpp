@@ -11,10 +11,40 @@ using namespace llvm;
 
 char ModifyCheckPass::ID = 0;
 static RegisterPass<ModifyCheckPass> C("modify-check", "Modify Array Bound Checks using very busy checks", false, false);
+	
+void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
+{
+	RangeCheckExpression* expr = new RangeCheckExpression(callInst, M);
+		
+	for (std::vector<RangeCheckExpression>::iterator it = RCS->checkSet->begin(); it != RCS->checkSet->end(); ++it)
+	{
+		RangeCheckExpression* expr2 = &(*it);
+
+		if (expr2->subsumes(expr))
+		{
+			errs() << "Replacing "; expr->print();
+			errs() << " with "; expr2->println();
+
+			if (expr->relOp == GTEQ)
+			{
+				callInst->setArgOperand(0, expr2->op2); // replace first operand
+				callInst->getMetadata("VarName")->replaceOperandWith(0, expr2->op2);
+			}
+			else
+			{
+				callInst->setArgOperand(1, expr2->op2); // replace second operand
+				callInst->getMetadata("VarName")->replaceOperandWith(1, expr2->op2);
+			}
+			return;
+		}
+	}
+}
 
 bool ModifyCheckPass::runOnModule(Module& M)
 {
 	this->M = &M;
+	this->veryBusyAnalysis = &getAnalysis<VeryBusyAnalysisPass>();
+	this->veryBusyMap = this->veryBusyAnalysis->I_VB_IN;
 
 	errs() << "\n#########################################\n";
 	errs() << "MODIFYCHECK PASS\n";
@@ -44,6 +74,7 @@ bool ModifyCheckPass::runOnFunction(Function* F)
 
 bool ModifyCheckPass::runOnBasicBlock(BasicBlock* BB)
 {
+
 	for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 	{
 		Instruction *inst = &*i;
@@ -53,7 +84,10 @@ bool ModifyCheckPass::runOnBasicBlock(BasicBlock* BB)
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
 			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTLimit"))
-			{				
+			{
+				RangeCheckSet* current = (*veryBusyMap)[inst];
+				errs() << "Very Busy Expressions: "; current->println();
+				modify(CI, current, this->M);
 			}
 		}
 	}

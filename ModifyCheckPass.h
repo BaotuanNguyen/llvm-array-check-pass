@@ -25,12 +25,15 @@
 
 namespace llvm 
 {
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
+	
 	struct ModifyCheckPass : public ModulePass 
 	{
 		public: 
 			static char ID;
 			ModifyCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
+			void modify(CallInst* callInst, RangeCheckSet* RCS, Module* M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
 			{
 				AU.addRequired<VeryBusyAnalysisPass>();
@@ -39,6 +42,8 @@ namespace llvm
 			bool runOnFunction(Function* func);
 			bool runOnBasicBlock(BasicBlock* BB);
 			Module* M;
+			VeryBusyAnalysisPass* veryBusyAnalysis;
+			MapInstToRCS* veryBusyMap;
 	};
 }
 

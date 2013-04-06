@@ -1,18 +1,18 @@
+int a[10];
+int n;
+
 int main()
 {
-	int a[10];
-	int n = 4;
-	a[n] = 77;
+	int z = 4;
+	n = z + 7;
+	int b[10];
+	a[n] = 77; // n < 200
+	b[n] = 99; // n < 10
+}
 
-	if (n)
-	{
-		n--;
-		a[n] = 67;
-	}
-	else
-	{
-		a[n-4] = 88;
-	}
+int test(int a)
+{
+	int z[10];
+	z[a];
 
-	int z = 11;
 }

@@ -50,17 +50,18 @@ namespace llvm {
 
 			bool runOnFunction(Function *F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<EffectGenPass>();
+				AU.addRequired<ModifyCheckPass>();
 			}
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
+			MapInstToRCS *I_A_OUT;
+		
 		private:
 			void dataFlowAnalysis();
 			void findGenSets();
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 
-			MapInstToRCS *I_A_OUT;
 			MapBBToRCS *BB_A_OUT;
 			//private variables
 

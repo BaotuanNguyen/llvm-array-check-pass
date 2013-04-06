@@ -21,10 +21,13 @@
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Analysis/Dominators.h"
 #include "ArrayBoundsCheckPass.h"
+#include "VeryBusyAnalysisPass.h"
 #include "AvailableAnalysisPass.h"
 
 namespace llvm 
 {
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
+	
 	struct RemoveRedundantCheckPass : public ModulePass 
 	{
 		public: 
@@ -33,12 +36,16 @@ namespace llvm
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
 			{
-				AU.addRequired<AvailableAnalysisPass>();	
+				AU.addRequired<AvailableAnalysisPass>();
 			}
 		private:
 			bool runOnFunction(Function* func);
 			bool runOnBasicBlock(BasicBlock* BB);
 			Module* M;
+			AvailableAnalysisPass* availableAnalysis;
+			ArrayBoundsCheckPass* arrayBoundsCheckStat;
+			MapInstToRCS* availableMap;
+			int removedNum;
 	};
 }
 

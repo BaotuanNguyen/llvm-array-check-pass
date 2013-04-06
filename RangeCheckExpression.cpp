@@ -9,10 +9,10 @@ using namespace llvm;
 bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 {
 	// a rangecheckexpression subsumes itself
-	if ((*this) == (*expr))
-	{
-		return true;
-	}
+	//if ((*this) == (*expr))
+	//{
+	//	return true;
+	//}
 
 	// if relops are different, cannot subsume
 	if (this->relOp != expr->relOp)
@@ -177,7 +177,7 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	{
 		Value* operand2 = metadata->getOperand(1);
 
-		if (dyn_cast<AllocaInst>(operand2)) // operand 2 is a variable (not a temporary)
+		if (dyn_cast<AllocaInst>(operand2) || dyn_cast<GlobalVariable>(operand2)) // operand 2 is a variable (not a temporary)
 		{
 			this->op1 = metadata->getOperand(0); // guaranteed to be a constant for GT checks
 			this->op2 = metadata->getOperand(1);
@@ -218,7 +218,7 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 		Value* operand1 = metadata->getOperand(0);
 		Value* operand2 = metadata->getOperand(1);
 		
-		if (dyn_cast<AllocaInst>(operand1)) // operand 1 is a variable (not a temporary)
+		if (dyn_cast<AllocaInst>(operand1) || dyn_cast<GlobalVariable>(operand1)) // operand 1 is a variable (not a temporary)
 		{
 			this->op1 = operand1;
 			this->op2 = operand2;
@@ -267,6 +267,7 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 
 bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
 {
+	// cannot be equal if relops are different
 	if (this->relOp != other.relOp)
 	{
 		return false;

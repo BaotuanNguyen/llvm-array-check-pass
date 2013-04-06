@@ -1,4 +1,5 @@
 #include "RemoveRedundantCheckPass.h"
+#include "AvailableAnalysisPass.h"
 #include "RangeCheckExpression.h"
 #include "RangeCheckSet.h"
 #include "llvm/GlobalVariable.h"
@@ -10,11 +11,14 @@
 using namespace llvm;
 
 char RemoveRedundantCheckPass::ID = 0;
-static RegisterPass<RemoveRedundantCheckPass> C("remove-redundant-check", "Global Redundant Array Bound Check Removal", false, false);
-
+static RegisterPass<RemoveRedundantCheckPass> C("remove-global", "Global redundant array bounds check removal", false, false);
+	
 bool RemoveRedundantCheckPass::runOnModule(Module& M)
 {
 	this->M = &M;
+	this->availableAnalysis = &getAnalysis<AvailableAnalysisPass>();
+	this->availableMap = this->availableAnalysis->I_A_OUT;
+	this->removedNum = 0;
 
 	errs() << "\n#########################################\n";
 	errs() << "REMOVE REDUNDANT CHECK PASS\n";
@@ -26,9 +30,9 @@ bool RemoveRedundantCheckPass::runOnModule(Module& M)
 		runOnFunction(&(*func));
 	}
 	
-	errs() << "\n#########################################\n";
-	errs() << "DONE\n";
-	errs() << "#########################################\n";
+	errs() << "---------------------------------------------\n";
+	errs() << "REMOVED REDUNDANT CHECKS #: " << this->removedNum << "\n";
+	errs() << "---------------------------------------------\n";
 
 	return false;
 }
@@ -44,6 +48,7 @@ bool RemoveRedundantCheckPass::runOnFunction(Function* F)
 
 bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 {
+	std::vector<Instruction*> redundantList;
 	for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 	{
 		Instruction *inst = &*i;
@@ -53,9 +58,34 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
 			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTLimit"))
-			{				
+			{
+				RangeCheckSet* current = (*availableMap)[inst];
+				errs() << "Call: " << *CI << "\n";
+				errs() << "Available Expressions: "; current->println();
+
+				RangeCheckExpression* expr1 = new RangeCheckExpression(CI, M);
+				
+				for (std::vector<RangeCheckExpression>::iterator it = current->checkSet->begin(); it != current->checkSet->end(); ++it)
+				{
+					RangeCheckExpression* expr2 = &(*it);
+
+					if (*expr1 == *expr2)
+					{
+						errs() << "*** REMOVED ***\n";
+						redundantList.push_back(CI);
+					}
+				}				
 			}
 		}
 	}
+
+	std::vector<Instruction*>::iterator it;
+
+	for (it = redundantList.begin(); it != redundantList.end(); it++)
+	{
+		removedNum++;
+		(*it)->eraseFromParent();
+	}
+
     return true;
 }

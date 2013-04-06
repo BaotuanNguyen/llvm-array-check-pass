@@ -34,6 +34,8 @@ namespace llvm
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
 			}
+			int checkNumber;
+		
 		private:
 			/*check insertion functions*/
 			//Constant* createGlobalString(const StringRef* str);
@@ -48,7 +50,6 @@ namespace llvm
 			bool runOnConstantExpression(ConstantExpr* CE, Instruction* currInst);
 			bool runOnFunction(Function* F);
 
-			int checkNumber;
 			Module* M;
 			/*current function being checked*/
 			Function* currentFunction;

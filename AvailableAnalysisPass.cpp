@@ -48,7 +48,11 @@ static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSe
 
 bool AvailableAnalysisPass::runOnModule(Module& M)
 {
-    this->module = &M;        
+	errs() << "\n#########################################\n";
+	errs() << "AVAILABLE ANALYSIS\n";
+	errs() << "#########################################\n";
+    
+	this->module = &M;        
 	this->BB_A_OUT = new MapBBToRCS();
 	this->I_A_OUT = new MapInstToRCS();
 	
@@ -64,7 +68,6 @@ bool AvailableAnalysisPass::runOnModule(Module& M)
 bool AvailableAnalysisPass::runOnFunction(Function* F)
 {
 	this->currentFunction = F;
-	this->createUniverse();
 
 	if (!F->isDeclaration())
 	{
@@ -93,10 +96,14 @@ void AvailableAnalysisPass::createUniverse()
 			}
 		}
 	}
+	
+	errs() << "Universe: "; this->universe->println();
 }
 
 void AvailableAnalysisPass::dataFlowAnalysis()
 {
+	this->createUniverse();
+	
 	///initialize all blocks sets
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
@@ -184,7 +191,6 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 			errs() << "\t\tRCS Generated: "; rce->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
 			errs() << "\t\tOUT: "; tmp->println();
-			delete currentRCS;
 			currentRCS = tmp;
         }
 		else if (false)

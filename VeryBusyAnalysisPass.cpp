@@ -48,6 +48,10 @@ static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSe
 
 bool VeryBusyAnalysisPass::runOnModule(Module& M)
 {
+	errs() << "\n#########################################\n";
+	errs() << "VERY BUSY ANALYSIS\n";
+	errs() << "#########################################\n";
+    
      this->module = &M;
 	 this->BB_VB_IN = new MapBBToRCS();
 	 this->I_VB_IN = new MapInstToRCS();
@@ -64,7 +68,6 @@ bool VeryBusyAnalysisPass::runOnModule(Module& M)
 bool VeryBusyAnalysisPass::runOnFunction(Function* F)
 {
 	this->currentFunction = F;
-	this->createUniverse();
 
 	if (!F->isDeclaration())
 	{
@@ -95,11 +98,14 @@ void VeryBusyAnalysisPass::createUniverse()
 			}
 		}
 	}
-	this->universe->println();
+
+	errs() << "Universe: "; this->universe->println();
 }
 
 void VeryBusyAnalysisPass::dataFlowAnalysis()
 {
+	this->createUniverse();
+
 	///initialize all blocks sets
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
@@ -111,7 +117,6 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 	int i = 0;
 	bool isChanged = true;
 	
-	errs() << "******************* AVAILABLE ANALYSIS *************************\n";
 	while(isChanged)
 	{
 		isChanged = false;
@@ -128,7 +133,6 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 			
 			///get a list of range check sets
 			for(succ_iterator SBBI = succ_begin(BB), SBBE = succ_end(BB); SBBI != SBBE; SBBI++){
-				errs() << ", " << (*SBBI)->getName();
 				succsRCS.push_back((*BB_VB_IN)[*SBBI]);
 			}
 
@@ -163,17 +167,22 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 		errs() << "***************************************************\n";
 		i++;
 	}
-	//errs() << "VERY BUSY: " << *BB_VB_IN[*(this->currentFunction->begin())] << "\n";	
 }
 
 RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
 {
 	RangeCheckSet* currentRCS = cOutOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
-	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++){
-		if(CallInst* callInst = dyn_cast<CallInst>(&*II)){
+	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++)
+	{
+		errs() << "Instruction: " << *II << "\n";
+		
+		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
+		{
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit")){
+			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
+			{
+				errs() << "\t\tNot a Check Call: " << *II << "\n";
 				continue;
 			}
 			
@@ -181,11 +190,17 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 			this->I_VB_IN->insert(PairIAndRCS(callInst, currentRCS));
 
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
+			errs() << "\t\tRCS Generated: "; rce->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
-			delete currentRCS;
+			errs() << "\t\tIN: "; tmp->println();
 			currentRCS = tmp;
 		}
-		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
+		else if (false)
+		{	
+			// NEED TO KILL VARIABLE OF WHICH ITS ADDRESS GETS LOADED
+		}
+		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
+		{
 			currentRCS->kill_backward(storeInst);
 		}
 	}
