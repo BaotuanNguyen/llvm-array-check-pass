@@ -59,11 +59,14 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 		{
 				Instruction *inst = &*i;
 
+				errs() << "inst: " << *inst << "\n";
+				
 				if (LoadInst *LI = dyn_cast<LoadInst>(inst)) 
 				{
 					if (dyn_cast<AllocaInst>(LI->getOperand(0)) || dyn_cast<GlobalVariable>(LI->getOperand(0)))
 					{
 						generateMetadata(unchangedString, LI->getOperand(0), zero, LI, M);
+						continue;
 					}
 				}
 				
@@ -71,16 +74,25 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 				{
 					Instruction* operand1 = dyn_cast<Instruction>(CI->getOperand(0));
 
+					errs() << "operand: " << *operand1 << "\n";
+
 					if (operand1 == NULL)
 					{
 						errs() << "ERROR!! CastInst op1 is not a variable!\n";
 					}
-						
+
+					if (!(operand1->hasMetadata())) // some weird case.. just say that it was changed
+					{
+						generateMetadata(changedString, NULL, NULL, CI, M);
+						continue;
+					}
+					
 					MDNode* operandMetadata = operand1->getMetadata("EFFECT");
-						
+
 					if (operandMetadata->getOperand(1) == NULL) // operand refers to changed variable
 					{
 						generateMetadata(changedString, NULL, NULL, CI, M);
+						continue;
 					}
 					else
 					{
@@ -88,6 +100,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						Value* variable = operandMetadata->getOperand(1);
 						Value* n = operandMetadata->getOperand(2);
 						generateMetadata(prev, variable, n, CI, M);
+						continue;
 					}
 				}
                 
@@ -155,6 +168,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						{
 							case Instruction::Add:
 							case Instruction::FAdd:
+							{
 								errs() << *BO <<  " BINOP: ADD\n";
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
@@ -172,11 +186,18 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											if (sum > 0)
 											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
 											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
 										{
@@ -185,15 +206,25 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 											
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else
 										{
 											generateMetadata(changedString, NULL, NULL, BO, M);
+											continue;
 										}
 									}
 								}
@@ -210,11 +241,20 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
 										{
@@ -223,25 +263,37 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 											
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
 											}
 										}
 										else
 										{
 											generateMetadata(changedString, NULL, NULL, BO, M);
+											continue;
 										}
 								}
 								else
 								{
 										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
+										continue;
 								}
 								break;
+							}
 							case Instruction::Sub:
 							case Instruction::FSub:
+							{
 								errs() << *BO <<  " BINOP: SUB\n";
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
@@ -257,11 +309,20 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantInt* sumValue = ConstantInt::get(Type::getInt64Ty(context), sum);
 
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
 										{
@@ -270,15 +331,25 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 											
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else
 										{
 											generateMetadata(changedString, NULL, NULL, BO, M);
+											continue;
 										}
 									}
 								}
@@ -295,11 +366,20 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else if (ConstantFP* cf = dyn_cast<ConstantFP>(metadata->getOperand(2)))
 										{
@@ -308,42 +388,64 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 											ConstantFP* sumValue = dyn_cast<ConstantFP>(ConstantFP::get(Type::getDoubleTy(context), sum));
 											
 											if (sum > 0)
+											{
 												generateMetadata(incrementString, variable, sumValue, BO, M);
+												continue;
+											}
 											else if (sum == 0)
+											{
 												generateMetadata(unchangedString, variable, sumValue, BO, M);
+												continue;
+											}
 											else
+											{
 												generateMetadata(decrementString, variable, sumValue, BO, M);
+												continue;
+											}
 										}
 										else
 										{
 											generateMetadata(changedString, NULL, NULL, BO, M);
+											continue;
 										}
 									}
 								}
 								else
 								{
 										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
+										continue;
 								}
 								break;
+							}
 							case Instruction::Mul:
 							case Instruction::FMul:
+							{
 								errs() << *BO <<  " BINOP: MUL\n";
 								generateMetadata(changedString, NULL, NULL, BO, M);
+								continue;
 								break;
+							}
 							case Instruction::UDiv:
 							case Instruction::SDiv:
 							case Instruction::FDiv:
+							{
 								errs() << *BO <<  " BINOP: DIV\n";
+								generateMetadata(changedString, NULL, NULL, BO, M);
+								continue;
 								break;
+							}
 							default:
+							{
 								errs() << *BO <<  " BINOP: OTHER\n";
 								generateMetadata(changedString, NULL, NULL, BO, M);
+								continue;
 								break;
+							}
 						}
 					}
 				}
-        }
-
+				}
+		}
 
         errs() << "Exiting basic block\n\n";
         return true;

@@ -171,7 +171,7 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++)
 	{
-		errs() << "Instruction: " << *II << "\n";
+		//errs() << "Instruction: " << *II << "\n";
         
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{

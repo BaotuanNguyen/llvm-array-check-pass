@@ -176,7 +176,7 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++)
 	{
-		errs() << "Instruction: " << *II << "\n";
+//		errs() << "Instruction: " << *II << "\n";
 		
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
