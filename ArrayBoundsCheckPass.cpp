@@ -399,7 +399,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				{
 				   	if (CI->getZExtValue() > 0)
 					{
-							errs() << "First index " << firstIndex << " is greater than 0";
+							errs() << "First index " << firstIndex << " is greater than 0\n";
 							errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
 							exit(1);
 					}

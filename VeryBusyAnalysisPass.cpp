@@ -175,17 +175,16 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 	RangeCheckSet* currentRCS = cOutOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++)
-	{
-//		errs() << "Instruction: " << *II << "\n";
-		
+	{	
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
 			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
 			{
-				errs() << "\t\tNot a Check Call: " << *II << "\n";
 				continue;
 			}
+			
+			errs() << "Call Instruction: " << *callInst << "\n";
 			
 			I_VB_IN->erase(callInst);
 			this->I_VB_IN->insert(PairIAndRCS(callInst, currentRCS));
@@ -202,7 +201,8 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
 		{
-			currentRCS->kill_backward(storeInst);
+			errs() << "Store Instruction: " << *storeInst << "\n";
+			currentRCS->kill_backward(storeInst, this->module);
 		}
 	}
 	return currentRCS;

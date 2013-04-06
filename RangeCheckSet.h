@@ -55,8 +55,8 @@ class RangeCheckSet
 			errs() << " }\n";
 		}
 
-		void kill_forward(Instruction* var);
-		void kill_backward(Instruction* var);
+		void kill_forward(Instruction* var, Module* M);
+		void kill_backward(Instruction* var, Module* M);
 		RangeCheckSet* set_union(RangeCheckExpression* s);
 		RangeCheckSet* set_intersect(RangeCheckSet* s);
 		bool doValueKillCheckForward(RangeCheckExpression* currentCheck, Value* valueBeingStored, int variablePos);
