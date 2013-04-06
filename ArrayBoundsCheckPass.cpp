@@ -9,7 +9,7 @@
 using namespace llvm;
 
 char ArrayBoundsCheckPass::ID = 0;
-static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Array Access Checks Inserted", false, false);
+static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Insert Run-Time Array Bounds Checks", false, false);
 
 Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 {
@@ -67,33 +67,6 @@ Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 		return NULL;
 	}
 }
-
-/*
-Constant* ArrayBoundsCheckPass::createGlobalString(const StringRef* str)
-{
-	errs() << "passed str: " << *str << "\n";
-
-	//create string variable name
-	std::string globalVarName = (this->currentFunction->getName()).str() + "." + str->str() + "\n";
-	errs() << "global: " << globalVarName << "\n";
-	
-
-	///get the size of the variable name
-	int arraySize = globalVarName.size()+1;
-
-	///create an char array type
-	Type* charTy = Type::getInt8Ty(this->M->getContext());
-	ArrayType* strArrayTy = ArrayType::get(charTy, arraySize);
-
-	///create the global variable
-	GlobalVariable* globalStr = new GlobalVariable(*(this->M), strArrayTy, true, GlobalVariable::ExternalLinkage, 0, globalVarName, 0, GlobalVariable::NotThreadLocal, 0);
-	globalStr->setAlignment(1);
-
-	Constant* constStr = ConstantDataArray::getString(this->M->getContext(), globalVarName, true);
-	globalStr->setInitializer(constStr);
-	errs() << "created global variable: " << *globalStr << "\n";
-	return globalStr;
-}*/
 
 Instruction* ArrayBoundsCheckPass::checkGTZero(Value* index)
 {
@@ -221,7 +194,6 @@ bool ArrayBoundsCheckPass::doInitialization(Module& M)
 	
 	FunctionType* checkGTZeroFunctionType = FunctionType::get(voidTy, argArray1, false);
 	FunctionType* checkLTLimitFunctionType = FunctionType::get(voidTy, argArray2, false);
-	
 
 	//create functions
 	M.getOrInsertFunction("checkGTZero", checkGTZeroFunctionType);

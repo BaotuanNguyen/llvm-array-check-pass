@@ -10,7 +10,7 @@
 using namespace llvm;
 
 char ModifyCheckPass::ID = 0;
-static RegisterPass<ModifyCheckPass> C("modify-check", "MODIFY CHECKS USING AVAILABLE EXPRESSION INFORMATION", false, false);
+static RegisterPass<ModifyCheckPass> C("modify-check", "Modify Array Bound Checks using very busy checks", false, false);
 
 bool ModifyCheckPass::runOnModule(Module& M)
 {

@@ -25,16 +25,23 @@ case "$1" in
 		;;
 	'-modify-check')
 		OPT_PASSES="-modify-check"
+		;;	
+	'-local-available-analysis')
+		OPT_PASSES="-local-available-analysis"
 		;;
 	'-available-analysis')
 		OPT_PASSES="-available-analysis"
 		;;
-	'-remove-redundant-check')
+	'-remove-local')
+		OPT_PASSES="-local-remove-redundant-check"
+		;;
+	'-remove-global')
 		OPT_PASSES="-remove-redundant-check"
 		;;
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available-analysis | -remove-redundant-check  ]"
+		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -local-available-analysis |
+	   		| -available-analysis | -remove-local | -remove-global  ]"
 		exit 1
 		;;
 esac

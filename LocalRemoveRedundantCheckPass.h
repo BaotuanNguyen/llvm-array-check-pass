@@ -1,5 +1,5 @@
-#ifndef __TEST_PASS_H__
-#define __TEST_PASS_H__
+#ifndef __LOCAL_REMOVE_REDUNDANT_CHECK_PASS_H__
+#define __LOCAL_REMOVE_REDUNDANT_CHECK_PASS_H__
 
 #include "EffectGenPass.h"
 #include "llvm/User.h"
@@ -21,18 +21,20 @@
 #include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Analysis/Dominators.h"
 #include "ArrayBoundsCheckPass.h"
-//#include "RunTimeBoundsChecking.h"
+#include "AvailableAnalysisPass.h"
+#include "LocalAvailableAnalysisPass.h"
 
 namespace llvm 
 {
-	struct testPass : public ModulePass 
+	struct LocalRemoveRedundantCheckPass : public ModulePass 
 	{
 		public: 
 			static char ID;
-			testPass() : ModulePass(ID) {}
+			LocalRemoveRedundantCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
-			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<EffectGenPass>();
+			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
+			{
+				AU.addRequired<LocalAvailableAnalysisPass>();
 			}
 		private:
 			bool runOnFunction(Function* func);
@@ -41,4 +43,4 @@ namespace llvm
 	};
 }
 
-#endif /* __LOCAL_OPTIMIZATIONS_ON_ARRAY_CHECKS_H__ */
+#endif 

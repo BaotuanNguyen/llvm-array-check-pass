@@ -17,7 +17,7 @@
 using namespace llvm;
 
 char VeryBusyAnalysisPass::ID = 0;
-static RegisterPass<VeryBusyAnalysisPass> E("very-busy-analysis", "Very Busy Checks Analysis", false, false);
+static RegisterPass<VeryBusyAnalysisPass> E("very-busy-analysis", "Global Very Busy Array Bound Checks Analysis", false, false);
 
 /*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
   {
@@ -43,15 +43,28 @@ static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSe
 	return lastSet;
 }
 
-bool VeryBusyAnalysisPass::runOnFunction(Function& F)
+bool VeryBusyAnalysisPass::runOnModule(Module& M)
 {
-	this->currentFunction = &F;
+     this->module = &M;
+	 this->BB_VB_IN = new MapBBToRCS();
+	 this->I_VB_IN = new MapInstToRCS();
+
+	for (Module::iterator i = M.begin(), e = M.end(); i != e; ++i)
+	{
+		Function* func = &(*i);
+		runOnFunction(&(*func));
+	}
+
+	 return false;
+}
+
+bool VeryBusyAnalysisPass::runOnFunction(Function* F)
+{
+	this->currentFunction = F;
 	this->createUniverse();
 	this->dataFlowAnalysis();
 	return false;
 }
-
-
 
 void VeryBusyAnalysisPass::createUniverse()
 {		
@@ -76,7 +89,6 @@ void VeryBusyAnalysisPass::createUniverse()
 
 void VeryBusyAnalysisPass::dataFlowAnalysis()
 {
-	this->BB_VB_IN = new MapBBToRCS();
 	///initialize all blocks sets
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
@@ -93,8 +105,8 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 			BasicBlock* BB = &*BBI;
 			ListRCS succsRCS;
 			///get a list of range check sets
-			for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++){
-				succsRCS.push_back((*BB_VB_IN)[*PBBI]);
+			for(succ_iterator SBBI = succ_begin(BB), SBBE = succ_end(BB); SBBI != SBBE; SBBI++){
+				succsRCS.push_back((*BB_VB_IN)[*SBBI]);
 			}
 			///calculate the OUT of the block, by intersecting all successors IN's
 			RangeCheckSet *C_OUT = SetsMeet(&succsRCS, SetIntersection);
@@ -121,6 +133,10 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTZero")){
 				continue;
 			}
+			
+			I_VB_IN->erase(callInst);
+			this->I_VB_IN->insert(PairIAndRCS(callInst, currentRCS));
+
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
 			currentRCS->set_union(rce);
 		}
@@ -143,9 +159,4 @@ template <typename T> void VeryBusyAnalysisPass::dumpSetOfPtr(std::set<T*> *set)
 		llvm::errs() << "\tempty" << "\n";
 	}
 	llvm::errs() << "}\n";
-}
-
-bool VeryBusyAnalysisPass::doFinalization(Module& M)
-{
-	return false;	
 }

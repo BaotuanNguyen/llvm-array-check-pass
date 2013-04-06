@@ -1,4 +1,3 @@
-
 #ifndef __EFFECT_GEN_PASS_H__
 #define __EFFECT_GEN_PASS_H__
 
@@ -33,7 +32,8 @@ namespace llvm
 			EffectGenPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-                AU.addRequired<ArrayBoundsCheckPass>();
+				AU.addRequired<DataLayout>();
+				AU.addRequired<TargetLibraryInfo>();
 			}
 		private:
 			bool runOnFunction(Function* func);

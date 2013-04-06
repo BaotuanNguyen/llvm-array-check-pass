@@ -11,7 +11,7 @@
 using namespace llvm;
 
 char EffectGenPass::ID = 0;
-static RegisterPass<EffectGenPass> C("effect-gen", "Generate Effect gen for each Basic Block", false, false);
+static RegisterPass<EffectGenPass> C("effect-gen", "Effect Generation", false, false);
 
 bool EffectGenPass::runOnModule(Module& M)
 {

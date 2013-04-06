@@ -31,7 +31,8 @@ namespace llvm
 			static char ID;
 			ModifyCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
-			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
+			{
 				AU.addRequired<VeryBusyAnalysisPass>();
 			}
 		private:

@@ -33,7 +33,6 @@ namespace llvm
 			{
 				AU.addRequired<DataLayout>();
 				AU.addRequired<TargetLibraryInfo>();
-                //AU.addRequired<RunTimeBoundsChecking>();
 			}
 		private:
 			/*check insertion functions*/

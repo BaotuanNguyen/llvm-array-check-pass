@@ -1,4 +1,3 @@
-
 #ifndef __AVAILABLE_ANALYSIS_PASS_H__
 #define __AVAILABLE_ANALYSIS_PASS_H__
 
@@ -32,23 +31,27 @@
 namespace llvm {
 
 	typedef std::list<RangeCheckSet*> ListRCS;
-	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::pair<BasicBlock*, RangeCheckSet*> PairBBAndRCS;
+	typedef std::pair<Instruction*, RangeCheckSet*> PairIAndRCS;
 
-	struct AvailableAnalysisPass : public FunctionPass {
+	struct AvailableAnalysisPass : public ModulePass {
 		static char ID;
 		public: 
-			AvailableAnalysisPass() : FunctionPass(ID), module(NULL) {}
-			virtual bool doInitialization(Module &M) {
-                                this->module = &M;        
+			AvailableAnalysisPass() : ModulePass(ID){}
+			
+			virtual bool runOnModule(Module& M);
+			
+			virtual bool doInitialization(Module &M) 
+			{
 				return false;
-                        }
-			virtual bool runOnFunction(Function &F);
+            }
+
+			bool runOnFunction(Function *F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-                AU.addRequired<ModifyCheckPass>();
+				AU.addRequired<EffectGenPass>();
 			}
-			virtual bool doFinalization(Module& M);
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 		private:

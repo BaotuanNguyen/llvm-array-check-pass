@@ -10,7 +10,7 @@
 using namespace llvm;
 
 char testPass::ID = 0;
-static RegisterPass<testPass> C("test-pass", "TEST FOR FORWARD AND BACKWARD", false, false);
+static RegisterPass<testPass> C("test-pass", "Test Pass for removing Array Checks", false, false);
 
 bool testPass::runOnModule(Module& M)
 {

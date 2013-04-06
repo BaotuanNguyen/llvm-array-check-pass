@@ -1,5 +1,5 @@
 #ifndef __REMOVE_REDUNDANT_CHECK_PASS_H__
-#define __REMOVE_REDUNDANT_CHECK_PASS__
+#define __REMOVE_REDUNDANT_CHECK_PASS_H__
 
 #include "EffectGenPass.h"
 #include "llvm/User.h"
@@ -31,8 +31,8 @@ namespace llvm
 			static char ID;
 			RemoveRedundantCheckPass() : ModulePass(ID) {}
 			virtual bool runOnModule(Module& M);
-			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				AU.addRequired<AvailableAnalysisPass>();
+			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
+			{			
 			}
 		private:
 			bool runOnFunction(Function* func);

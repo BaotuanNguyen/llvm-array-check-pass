@@ -1,4 +1,4 @@
-#include "RemoveRedundantCheckPass.h"
+#include "LocalRemoveRedundantCheckPass.h"
 #include "RangeCheckExpression.h"
 #include "RangeCheckSet.h"
 #include "llvm/GlobalVariable.h"
@@ -9,10 +9,10 @@
 
 using namespace llvm;
 
-char RemoveRedundantCheckPass::ID = 0;
-static RegisterPass<RemoveRedundantCheckPass> C("remove-redundant-check", "Global Redundant Array Bound Check Removal", false, false);
+char LocalRemoveRedundantCheckPass::ID = 0;
+static RegisterPass<LocalRemoveRedundantCheckPass> C("local-remove-redundant-check", "Local Redundant Array Bound Check Removal", false, false);
 
-bool RemoveRedundantCheckPass::runOnModule(Module& M)
+bool LocalRemoveRedundantCheckPass::runOnModule(Module& M)
 {
 	this->M = &M;
 
@@ -33,7 +33,7 @@ bool RemoveRedundantCheckPass::runOnModule(Module& M)
 	return false;
 }
 
-bool RemoveRedundantCheckPass::runOnFunction(Function* F)
+bool LocalRemoveRedundantCheckPass::runOnFunction(Function* F)
 {
 	for (Function::iterator i = F->begin(), e = F->end(); i != e; ++i)
 	{
@@ -42,7 +42,7 @@ bool RemoveRedundantCheckPass::runOnFunction(Function* F)
 	return true;
 }
 
-bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
+bool LocalRemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 {
 	for (BasicBlock::iterator i = BB->begin(), e = BB->end(); i != e; ++i) 
 	{

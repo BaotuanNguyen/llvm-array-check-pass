@@ -12,25 +12,14 @@
 #include <algorithm>
 #include <iterator>
 #include "ArrayBoundsCheckPass.h"
-#include "AvailableAnalysisPass.h"
+#include "LocalAvailableAnalysisPass.h"
 
 using namespace llvm;
 
-char AvailableAnalysisPass::ID = 0;
-static RegisterPass<AvailableAnalysisPass> F("available-analysis", "Global Available Bound Checks Analysis", false, false);
+char LocalAvailableAnalysisPass::ID = 0;
+static RegisterPass<LocalAvailableAnalysisPass> F("local-available-analysis", "Local Available Bound Checks Analysis", false, false);
 
-/*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
-{
-	RangeCheckSet* unionSet = S1->set_union(S2);
-	return unionSet;
-}*/
-
-static RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
-{
-	RangeCheckSet* intersectSet = S1->set_intersect(S2);
-	return intersectSet;
-}
-
+/*
 static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSet*, RangeCheckSet*))
 {
 	RangeCheckSet* lastSet = new RangeCheckSet();
@@ -41,9 +30,9 @@ static RangeCheckSet* SetsMeet(ListRCS* sets, RangeCheckSet*(*meet)(RangeCheckSe
 		lastSet = currentSet;
 	}
 	return lastSet;
-}
+}*/
 
-bool AvailableAnalysisPass::runOnModule(Module& M)
+bool LocalAvailableAnalysisPass::runOnModule(Module& M)
 {
     this->module = &M;        
 	this->BB_A_OUT = new MapBBToRCS();
@@ -58,15 +47,14 @@ bool AvailableAnalysisPass::runOnModule(Module& M)
 	return false;
 }
 
-bool AvailableAnalysisPass::runOnFunction(Function* F)
+bool LocalAvailableAnalysisPass::runOnFunction(Function* F)
 {
 	this->currentFunction = F;
-	this->createUniverse();
 	this->dataFlowAnalysis();
 	return true;
 }
 
-void AvailableAnalysisPass::createUniverse()
+void LocalAvailableAnalysisPass::createUniverse()
 {		
 	this->universe = new RangeCheckSet();		
 	
@@ -86,41 +74,16 @@ void AvailableAnalysisPass::createUniverse()
 	}
 }
 
-void AvailableAnalysisPass::dataFlowAnalysis()
+void LocalAvailableAnalysisPass::dataFlowAnalysis()
 {
-	///initialize all blocks sets
+	// go through each of Basic blocks
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
-		///in of the block is universe
 		BasicBlock* BB = &*BBI;
-		this->BB_A_OUT->insert(PairBBAndRCS(BB, universe));
-	}
-
-	bool isChanged = true;
-	while(isChanged){
-		isChanged = false;
-		///go through each of Basic blocks
-		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++){
-			BasicBlock* BB = &*BBI;
-			ListRCS predRCS;
-			///get a list of range check sets
-			for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++){
-				predRCS.push_back((*BB_A_OUT)[*PBBI]);
-			}
-			///calculate the OUT of the block, by intersecting all predecessors IN's
-			RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
-			///calculate the IN of the block, running the functions we already created
-			RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
-			RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
-			BB_A_OUT->erase(BB);
-			//compare C_OUT and C_OUT_PREV
-			if(!C_OUT_P->equal(C_OUT))
-				isChanged = true;	
-			BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
-		}	
-	}
+		this->getAvailOut(BB, new RangeCheckSet());
+	}	
 }
-RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
+RangeCheckSet *LocalAvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
 {
         RangeCheckSet* currentRCS = cInOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
@@ -149,7 +112,7 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
         return currentRCS;
 }
 
-template <typename T> void AvailableAnalysisPass::dumpSetOfPtr(std::set<T*> *set)
+template <typename T> void LocalAvailableAnalysisPass::dumpSetOfPtr(std::set<T*> *set)
 {
 	llvm::errs() << "{\n";
 	for(typename std::set<T*>::iterator IP = set->begin(), EP = set->end(); IP != EP; IP++)

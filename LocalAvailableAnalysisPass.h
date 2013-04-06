@@ -1,5 +1,5 @@
-#ifndef __VERY_BUSY_ANALYSIS_PASS_H__
-#define __VERY_BUSY_ANALYSIS_PASS_H__
+#ifndef __LOCAL_AVAILABLE_ANALYSIS_PASS_H__
+#define __LOCAL_AVAILABLE_ANALYSIS_PASS_H__
 
 #include "llvm/User.h"
 #include "llvm/BasicBlock.h"
@@ -23,29 +23,36 @@
 #include "ArrayBoundsCheckPass.h"
 #include "EffectGenPass.h"
 #include "RangeCheckSet.h"
+#include "ModifyCheckPass.h"
 #include <set>
 #include <map>
+//#include "RunTimeBoundsChecking.h"
 
 namespace llvm {
 
 	typedef std::list<RangeCheckSet*> ListRCS;
-	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::map<BasicBlock*, RangeCheckSet*> MapBBToRCS;
-	typedef std::pair<Instruction*, RangeCheckSet*> PairIAndRCS;
+	typedef std::map<Instruction*, RangeCheckSet*> MapInstToRCS;
 	typedef std::pair<BasicBlock*, RangeCheckSet*> PairBBAndRCS;
+	typedef std::pair<Instruction*, RangeCheckSet*> PairIAndRCS;
 
-	struct VeryBusyAnalysisPass : public ModulePass {
+	struct LocalAvailableAnalysisPass : public ModulePass {
 		static char ID;
 		public: 
-			VeryBusyAnalysisPass() : ModulePass(ID){} 
+			LocalAvailableAnalysisPass() : ModulePass(ID){}
 			
 			virtual bool runOnModule(Module& M);
-			bool runOnFunction(Function *F);
-			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
+			
+			virtual bool doInitialization(Module &M) 
 			{
-                     AU.addRequired<EffectGenPass>();
+				return false;
+            }
+
+			bool runOnFunction(Function *F);
+			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+                AU.addRequired<EffectGenPass>();
 			}
-			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
+			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 		private:
 			void dataFlowAnalysis();
@@ -53,13 +60,15 @@ namespace llvm {
 			template <typename T>
 				void dumpSetOfPtr(std::set<T*>* set);
 
-			MapInstToRCS *I_VB_IN;
-			MapBBToRCS *BB_VB_IN;
+			MapInstToRCS *I_A_OUT;
+			MapBBToRCS *BB_A_OUT;
+			//private variables
 
 			Module* module;
 			Function* currentFunction;
+
 			RangeCheckSet *universe;
 	};
 }
 
-#endif /* __VERY_BUSY_ANALYSIS_PASS_H__ */
+#endif /* __AVAILABLE_ANALYSIS_PASS_H__ */
