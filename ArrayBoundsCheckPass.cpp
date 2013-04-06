@@ -395,12 +395,19 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					}
 				}		
 				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
-				else if (CI->getZExtValue() > 0)
+				else
 				{
-					errs() << "First index " << firstIndex << " is greater than 0";
-					errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
-					exit(1);
-				}				
+				   	if (CI->getZExtValue() > 0)
+					{
+							errs() << "First index " << firstIndex << " is greater than 0";
+							errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
+							exit(1);
+					}
+					else
+					{
+							errs() << "First index " << firstIndex << " passed compile-time check: 0 <= " << firstIndex << "\n";
+					}
+				}			
 			}
 			else // First index is in non-constant form
 			{
@@ -558,6 +565,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						errs() << "GEP index " << index << " is >= " << Aty->getNumElements() << "\n";
 						errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
 						exit(1);
+					}
+					else
+					{
+						errs() << "GEP index " << index << " passed compile-time check: " << index << " < " << Aty->getNumElements() << "\n";
 					}
 				}
 			}

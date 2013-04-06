@@ -27,8 +27,8 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 
 			if (expr->relOp == GTEQ)
 			{
-				callInst->setArgOperand(0, expr2->op2); // replace first operand
-				callInst->getMetadata("VarName")->replaceOperandWith(0, expr2->op2);
+				callInst->setArgOperand(0, expr2->op1); // replace first operand
+				callInst->getMetadata("VarName")->replaceOperandWith(0, expr2->op1);
 			}
 			else
 			{
