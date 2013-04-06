@@ -55,6 +55,7 @@ bool AvailableAnalysisPass::runOnFunction(Function& F)
 
 void AvailableAnalysisPass::createUniverse()
 {		
+	this->universe = new RangeCheckSet();	
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
 		BasicBlock* BB = &*BBI;
@@ -64,7 +65,9 @@ void AvailableAnalysisPass::createUniverse()
 			if(CallInst *ci = dyn_cast<CallInst> (inst)){
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
                         	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTZero")){
-					universe->set_union(new RangeCheckExpression(ci, this->module));
+					RangeCheckSet* tmpUniverse = universe->set_union(new RangeCheckExpression(ci, this->module));
+					delete this->universe;
+					this->universe = tmpUniverse;
 				}
 			}
 		}

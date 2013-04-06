@@ -33,8 +33,13 @@ RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
 
 RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
+	//errs() << "----> (RangeCheckSet.set_union)\n";
+
 	RangeCheckSet* unionedSet = this->copy();
-	
+
+	//errs() << "---------> (RangeCheckSet.set_union.unionedSet \\ )\n";
+	//this->println();
+	//unionedSet->println();
 	std::vector<RangeCheckExpression>::iterator it = unionedSet->checkSet->begin();
 
 	for (;it != unionedSet->checkSet->end(); ++it)
