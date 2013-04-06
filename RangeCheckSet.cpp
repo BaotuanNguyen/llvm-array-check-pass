@@ -51,6 +51,8 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 			current.print();
 			errs() << " SUBSUMES ";
 			expr->println();
+			//if expr is not used then delete it
+			delete expr;
 			return unionedSet;
 		}	
 		else if (expr->subsumes(&current))
@@ -61,7 +63,8 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 			expr->print();
 			errs() << " SUBSUMES ";
 			current.println();
-			
+			//if expr is not used then delete it
+			delete expr;	
 			return unionedSet;
 		}
 	}

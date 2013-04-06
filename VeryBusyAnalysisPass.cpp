@@ -92,28 +92,43 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 		this->BB_VB_IN->insert(PairBBAndRCS(BB, universe));
 	}
 
+	int i = 0;
 	bool isChanged = true;
+	errs() << "^^^^^^^^^^^^^^^^^^ AVAILABLE ANALYSIS ^^^^^^^^^^^^^^^^^^^^\n";
 	while(isChanged){
 		isChanged = false;
 		///go throught all of the blocks
+		errs() << "^^^^^^^^^^^^^^^^^^ ROUND " << i << "^^^^^^^^^^^^^^^^^^^^\n";
 		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++){
 			BasicBlock* BB = &*BBI;
+			errs() << " ---- on block " << BB->getName() << "\n";
 			ListRCS succsRCS;
 			///get a list of range check sets
-			for(pred_iterator PBBI = pred_begin(BB), PBBE = pred_end(BB); PBBI != PBBE; PBBI++){
-				succsRCS.push_back((*BB_VB_IN)[*PBBI]);
+			errs() << " ---------- with successors : ";
+			for(succ_iterator SBBI = succ_begin(BB), SBBE = succ_end(BB); SBBI != SBBE; SBBI++){
+				errs() << ", " << (*SBBI)->getName();
+				succsRCS.push_back((*BB_VB_IN)[*SBBI]);
 			}
+			errs() << "\n";
 			///calculate the OUT of the block, by intersecting all successors IN's
 			RangeCheckSet *C_OUT = SetsMeet(&succsRCS, SetIntersection);
+			errs() << "----------- C_OUT \n";
+			C_OUT->println();
 			///calculate the IN of the block, running the functions we already created
 			RangeCheckSet *C_IN = this->getVBIn(BB, C_OUT);
+			errs() << "----------- C_IN \n";
+			C_IN->println();
 			RangeCheckSet *C_IN_P = BB_VB_IN->find(BB)->second;
+			errs() << "----------- C_IN_P \n";
+			C_IN_P->println();
 			BB_VB_IN->erase(BB);
 			// compare C_IN with our previous C_IN
 			if(!C_IN_P->equal(C_IN))
 				isChanged = true;	
 			BB_VB_IN->insert(PairBBAndRCS(BB, C_IN));
 		}
+		errs() << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
+		i++;
 	}
 	//errs() << "VERY BUSY: " << *BB_VB_IN[*(this->currentFunction->begin())] << "\n";	
 }
@@ -129,7 +144,9 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 				continue;
 			}
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module); // FIXME ? local variable doesn't get destroyed after function return, does it?
-			currentRCS->set_union(rce);
+			RangeCheckSet* tmp = currentRCS->set_union(rce);
+			delete currentRCS;
+			currentRCS = tmp;
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II)){
 			currentRCS->kill_backward(storeInst);
