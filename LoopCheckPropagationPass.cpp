@@ -62,14 +62,13 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                                         if(isCandidate(loop, operandOne, operandTwo)){
                                                 // CallInst ci is a candidate check for BasicBlock block
                                                 bbToCheck->insert(PairBBAndCheck(block, ci));
+                                                errs() << "candidate ci " << *ci << "\n";
                                         }
                                 }
                         }
                 }
         }
 }
-
-
 
 
 void LoopCheckPropagationPass::hoist(Loop *loop)
@@ -81,7 +80,8 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                 //errs() << "hoisting\n";
                 std::vector<BasicBlock *> ND; 
                 // ND is the set of all blocks that do not dominate all loop exits
-                // Cn is the set of all checks in n, s.t. n is an element of ND, where each candidate check will be executed in n
+                // Cn is the set of candidate checks c, s.t. at the entry to n, we can assert that c will be executed in n
+                //   -- captured by this->bbToCheck
                 //
                 // first, get all loop exit blocks
                 // for every block, check if it dominates all those loop exit blocks
@@ -101,6 +101,12 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                         // block does not dominate all exiting blocks
                         ND.push_back(block);
                 }
+        }
+
+        bool changed = true;
+        while(changed){
+                changed = false;
+                // for each bb in bbToCheck
         }
 
 
