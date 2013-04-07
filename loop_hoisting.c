@@ -12,21 +12,24 @@ int main() {
                 /*for (int j = 0; j < 10; j++) {
                         a[j] = 2;
                 }*/
+                if (variant == invariant)
+                        break;
 
 	}	
-        funky();
+        //funky();
 
+        int oo = 0;
 	return 0;
 }
 
 
-void funky(void)
+/*void funky(void)
 {
         int ok;
         int arr[10];
         for(ok = 0; ok < 10; ++ok) {
                arr[ok] = 1; 
         }
-}
+}*/
 
 

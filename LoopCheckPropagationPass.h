@@ -23,6 +23,12 @@
 namespace llvm
 {
         typedef std::vector<BasicBlock *> LoopBlocks;
+        typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
+	typedef std::map<BasicBlock *, Value *> BBToCheck;
+	typedef std::pair<BasicBlock *, Value *> PairBBAndCheck;
+        typedef enum{
+                INVARIANT, INCREASING, DECREASING, WILD // TODO monotonic inc/dec?
+        }effect_t;
 	struct LoopCheckPropagationPass : public LoopPass {
 		public:
 			static char ID;
@@ -32,18 +38,19 @@ namespace llvm
                         virtual bool runOnLoop (Loop *L, LPPassManager &LPM);
 			virtual void getAnalysisUsage(AnalysisUsage& AU) const
 			{
-				//AU.addRequired<DataLayout>();
-				//AU.addRequired<TargetLibraryInfo>();
-				//AU.addRequired<LoopInfo>();
 				AU.addRequired<DominatorTree>();
 				AU.addRequired<EffectGenPass>();
 			}
 
                         void findCandidates(Loop *loop, LoopBlocks *blocks);
                         void hoist(Loop *loop, BasicBlock *block);
+                        bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
+                        bool isInvariant(Value *operand);
+                        effect_t getEffect(Loop *loop, Value *operand);
 		
 		private:
 
+                        BBToCheck *bbToCheck;
 	};
 
 }
