@@ -219,11 +219,6 @@ bool LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value 
 
 
 
-bool LoopCheckPropagationPass::isInvariant(Value *operand)
-{
-        return false;
-}
-
 
 
 // returns INVARIANT, INCREASING, DECREASING, or WILD

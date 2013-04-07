@@ -46,7 +46,6 @@ namespace llvm
                         void findCandidates(Loop *loop);
                         void hoist(Loop *loop);
                         bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
-                        bool isInvariant(Value *operand);
                         effect_t getEffect(Loop *loop, Value *operand);
 
                         std::string getEffectOfMeta(MDNode *meta);
