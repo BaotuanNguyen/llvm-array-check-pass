@@ -43,7 +43,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop, LoopBlocks *blocks)
 {
         for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
                 BasicBlock *block = *it;
-                hoist(block);
+                hoist(loop, block);
                 errs() << "\n--beginning new loop block--\n";
                 for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt){
                         Value *v = &*bbIt;
@@ -70,7 +70,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop, LoopBlocks *blocks)
         }
 }
 
-void LoopCheckPropagationPass::hoist(BasicBlock *block)
+void LoopCheckPropagationPass::hoist(Loop *loop, BasicBlock *block)
 {
 
 
@@ -79,6 +79,11 @@ void LoopCheckPropagationPass::hoist(BasicBlock *block)
         // for every block, check if it dominates all those loop exit blocks
         // if it does not, add it to ND
         DominatorTree &dt = getAnalysis<DominatorTree>();
+        //SmallVectorImpl<BasicBlock> &loopExitingBlocks = new SmallVectorImpl<BasicBlock>(10); // 10 is okay? these resize right?
+        //SmallVectorImpl<BasicBlock> loopExitingBlocks;
+        //SmallVector<BasicBlock> &loopExitingBlocks = new SmallVector<BasicBlock>(); // 10 is okay? these resize right?
+        SmallVector<BasicBlock *, 10> loopExitingBlocks;
+        loop->getExitingBlocks(loopExitingBlocks);
         errs() << *dt.getRoot();
         
         //BasicBlock *bb = dt.getRoot();

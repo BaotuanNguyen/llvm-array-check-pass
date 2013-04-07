@@ -40,7 +40,7 @@ namespace llvm
 			}
 
                         void findCandidates(Loop *loop, LoopBlocks *blocks);
-                        void hoist(BasicBlock *block);
+                        void hoist(Loop *loop, BasicBlock *block);
 		
 		private:
 
