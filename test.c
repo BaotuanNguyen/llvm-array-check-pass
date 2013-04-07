@@ -1,14 +1,17 @@
 int main()
 {
-	int i = 1;
-	int a[100];
-	a[i] = 4;
+        int n = 10;
+        int six = 6;
+        int a[n];
 
-	if (i)
-	{
-		a[i] = a[i] + 1;
-	}
-
-	a[i+1] = 77;
+        if(n > 20){
+                a[six] = 1;
+        }else{
+                a[six] = 2;
+        }
+	//int z = 4;
+	//n = z + 7;
+	//int b[10];
+	//a[n] = 77; // n < 200
+	//b[n] = 99; // n < 10
 }
-

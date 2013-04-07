@@ -6,6 +6,7 @@
 *.ll
 *.dot
 *.pdf
+*.txt
 *~
 tags
 Release*
