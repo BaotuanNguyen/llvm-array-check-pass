@@ -86,13 +86,15 @@ void AvailableAnalysisPass::createUniverse()
 		for(BasicBlock::iterator II = BB->begin(), IE = BB->end(); II != IE; II++)
 		{
 			Instruction* inst = &*II;	
-			if(CallInst *ci = dyn_cast<CallInst> (inst)){
+			if (CallInst *ci = dyn_cast<CallInst> (inst))
+			{
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-                        	if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTLimit")){
+               if (callFunctionName.equals("checkLessThan"))
+			   {
 					RangeCheckSet* tmpUniverse = universe->set_union(new RangeCheckExpression(ci, this->module));
 					delete this->universe;
 					this->universe = tmpUniverse;
-				}
+			   }
 			}
 		}
 	}
@@ -175,7 +177,7 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 		{
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
             
-			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
+			if(!callFunctionName.equals("checkLessThan"))
 			{
                   continue;
             }

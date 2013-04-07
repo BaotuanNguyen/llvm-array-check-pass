@@ -57,7 +57,7 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 		{
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
-			if (funcName.equals("checkLTLimit") || funcName.equals("checkGTLimit"))
+			if (funcName.equals("checkLessThan"))
 			{
 				RangeCheckSet* current = (*availableMap)[inst];
 				errs() << "Call: " << *CI << "\n";
@@ -70,6 +70,11 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 					RangeCheckExpression* expr2 = &(*it);
 
 					if (*expr1 == *expr2)
+					{
+						errs() << "*** REMOVED ***\n";
+						redundantList.push_back(CI);
+					}
+					else if (expr2->subsumes(expr1))
 					{
 						errs() << "*** REMOVED ***\n";
 						redundantList.push_back(CI);

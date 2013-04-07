@@ -1,0 +1,123 @@
+Pass Arguments:  -targetlibinfo -datalayout -array-check -effect-gen -preverify -domtree -verify -print-module
+Target Library Information
+Data Layout
+  ModulePass Manager
+    Insert Run-Time Array Bounds Checks
+    Effect Generation
+    FunctionPass Manager
+      Preliminary module verification
+      Dominator Tree Construction
+      Module Verifier
+    Print module to stderr
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom
+Base Pointer Type: [100 x i32]*
+Base Pointer   %a = alloca [100 x i32], align 16
+Origin Base Pointer:   %a = alloca [100 x i32], align 16
+
+First Index (Constant): 0
+Bound Check: 0 < 1 passed at compile-time
+
+Index (Non-constant):   %idxprom = sext i32 %add to i64
+NumElements: 100
+Origin Index:   %add = add nsw i32 %0, 1
+var1:   %add = add nsw i32 %0, 1
+var2: i64 100
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx2 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom1
+Base Pointer Type: [100 x i32]*
+Base Pointer   %a = alloca [100 x i32], align 16
+Origin Base Pointer:   %a = alloca [100 x i32], align 16
+
+First Index (Constant): 0
+Bound Check: 0 < 1 passed at compile-time
+
+Index (Non-constant):   %idxprom1 = sext i32 %2 to i64
+NumElements: 100
+Origin Index:   %2 = load i32* %i, align 4
+var1:   %i = alloca i32, align 4
+var2: i64 100
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx5 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom4
+Base Pointer Type: [100 x i32]*
+Base Pointer   %a = alloca [100 x i32], align 16
+Origin Base Pointer:   %a = alloca [100 x i32], align 16
+
+First Index (Constant): 0
+Bound Check: 0 < 1 passed at compile-time
+
+Index (Non-constant):   %idxprom4 = sext i32 %add3 to i64
+NumElements: 100
+Origin Index:   %add3 = add nsw i32 %4, 1
+var1:   %add3 = add nsw i32 %4, 1
+var2: i64 100
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx7 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom6
+Base Pointer Type: [100 x i32]*
+Base Pointer   %a = alloca [100 x i32], align 16
+Origin Base Pointer:   %a = alloca [100 x i32], align 16
+
+First Index (Constant): 0
+Bound Check: 0 < 1 passed at compile-time
+
+Index (Non-constant):   %idxprom6 = sext i32 %6 to i64
+NumElements: 100
+Origin Index:   %6 = load i32* %i, align 4
+var1:   %i = alloca i32, align 4
+var2: i64 100
+----------------------------------------------------------------------
+-------------------------------------------------------
+Number of checks inserted: 8
+-------------------------------------------------------
+
+#########################################
+Generating Effects
+#########################################
+Entering basic block
+inst:   %i = alloca i32, align 4
+inst:   %a = alloca [100 x i32], align 16
+inst:   %temp = alloca i32, align 4
+inst:   %0 = load i32* %i, align 4
+inst:   %add = add nsw i32 %0, 1
+  %add = add nsw i32 %0, 1 BINOP: ADD
+inst:   %idxprom = sext i32 %add to i64
+operand:   %add = add nsw i32 %0, 1, !EFFECT !{metadata !"INCREMENT", i32* %i, i64 1}
+inst:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32 %add}
+inst:   call void @checkLessThan(i64 %idxprom, i64 100), !VarName !{i32 %add, i64 100}
+inst:   %arrayidx = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom
+inst:   %1 = load i32* %arrayidx, align 4
+inst:   store i32 %1, i32* %temp, align 4
+inst:   %2 = load i32* %i, align 4
+inst:   %idxprom1 = sext i32 %2 to i64
+operand:   %2 = load i32* %i, align 4, !EFFECT !{metadata !"UNCHANGED", i32* %i, i64 0}
+inst:   call void @checkLessThan(i64 -1, i64 %idxprom1), !VarName !{i64 -1, i32* %i}
+inst:   call void @checkLessThan(i64 %idxprom1, i64 100), !VarName !{i32* %i, i64 100}
+inst:   %arrayidx2 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom1
+inst:   %3 = load i32* %arrayidx2, align 4
+inst:   %4 = load i32* %i, align 4
+inst:   %add3 = add nsw i32 %4, 1
+  %add3 = add nsw i32 %4, 1 BINOP: ADD
+inst:   %idxprom4 = sext i32 %add3 to i64
+operand:   %add3 = add nsw i32 %4, 1, !EFFECT !{metadata !"INCREMENT", i32* %i, i64 1}
+inst:   call void @checkLessThan(i64 -1, i64 %idxprom4), !VarName !{i64 -1, i32 %add3}
+inst:   call void @checkLessThan(i64 %idxprom4, i64 100), !VarName !{i32 %add3, i64 100}
+inst:   %arrayidx5 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom4
+inst:   store i32 %3, i32* %arrayidx5, align 4
+inst:   %5 = load i32* %temp, align 4
+inst:   %6 = load i32* %i, align 4
+inst:   %idxprom6 = sext i32 %6 to i64
+operand:   %6 = load i32* %i, align 4, !EFFECT !{metadata !"UNCHANGED", i32* %i, i64 0}
+inst:   call void @checkLessThan(i64 -1, i64 %idxprom6), !VarName !{i64 -1, i32* %i}
+inst:   call void @checkLessThan(i64 %idxprom6, i64 100), !VarName !{i32* %i, i64 100}
+inst:   %arrayidx7 = getelementptr inbounds [100 x i32]* %a, i32 0, i64 %idxprom6
+inst:   store i32 %5, i32* %arrayidx7, align 4
+inst:   ret i32 0
+Exiting basic block
+
+
+#########################################
+DONE
+#########################################

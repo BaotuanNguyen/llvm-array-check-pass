@@ -1,6 +1,3 @@
-int a[10];
-int n;
-
 int main()
 {
         int n = 10;
@@ -18,11 +15,3 @@ int main()
 	//a[n] = 77; // n < 200
 	//b[n] = 99; // n < 10
 }
-
-/*int test(int a)
-{
-	int z[10];
-	z[a];
-	return 3;
-
-}*/

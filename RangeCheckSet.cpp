@@ -104,9 +104,9 @@ bool RangeCheckSet::doValueKillCheckBackward(RangeCheckExpression* currentCheck,
 				Instruction* variableBeingChecked;
 				
 				if (variablePos == 0)
-					variableBeingChecked = dyn_cast<Instruction>(currentCheck->op1);
+					variableBeingChecked = dyn_cast<Instruction>(currentCheck->left);
 				else
-					variableBeingChecked = dyn_cast<Instruction>(currentCheck->op2);
+					variableBeingChecked = dyn_cast<Instruction>(currentCheck->right);
 
 				if (variableAffected != variableBeingChecked)
 				{
@@ -148,7 +148,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 			erased = false;
 			RangeCheckExpression* currentCheck = &(*it);
 			
-			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->left))
 			{
 				if (op1 == valueBeingStored)
 				{
@@ -157,7 +157,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 					erased = true;
 				}
 			}
-			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->right))
 			{
 				if (op2 == valueBeingStored)
 				{
@@ -184,7 +184,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 		erased = false;
 		RangeCheckExpression* currentCheck = &(*it);
 		
-		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->left))
 		{
 			if (op1 == variableBeingStored)
 			{
@@ -196,7 +196,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 				}
 			}
 		}
-		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->right))
 		{
 			if (op2 == variableBeingStored)
 			{
@@ -245,9 +245,9 @@ bool RangeCheckSet::doValueKillCheckForward(RangeCheckExpression* currentCheck, 
 				Instruction* variableBeingChecked;
 				
 				if (variablePos == 0)
-					variableBeingChecked = dyn_cast<Instruction>(currentCheck->op1);
+					variableBeingChecked = dyn_cast<Instruction>(currentCheck->left);
 				else
-					variableBeingChecked = dyn_cast<Instruction>(currentCheck->op2);
+					variableBeingChecked = dyn_cast<Instruction>(currentCheck->right);
 
 				if (variableAffected != variableBeingChecked)
 				{
@@ -289,7 +289,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 			erased = false;
 			RangeCheckExpression* currentCheck = &(*it);
 			
-			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->left))
 			{
 				if (op1 == valueBeingStored)
 				{
@@ -298,7 +298,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 					erased = true;
 				}
 			}
-			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->right))
 			{
 				if (op2 == valueBeingStored)
 				{
@@ -323,7 +323,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 		erased = false;
 		RangeCheckExpression* currentCheck = &(*it);
 			
-		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+		if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->left))
 		{
 			if (op1 == variableBeingStored)
 			{
@@ -336,7 +336,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 				}
 			}
 		}
-		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+		else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->right))
 		{
 			if (op2 == variableBeingStored)
 			{
