@@ -1,7 +1,7 @@
 #!/bin/sh
-ccWOpts="-Wcomment -Wstring-plus-int -Wformat -S -emit-llvm"
-LibFile="../LibArrayCheck.c"
-LibFileLL="${LibFile%.c}.ll"
+ccWOpts="-w -S -emit-llvm"
+LibFile="../LibArrayCheck.cpp"
+LibFileLL="${LibFile%.cpp}.ll"
 LLVM_LIBRARY=../../../Release+Asserts/
 cd benchmarks/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
@@ -12,6 +12,44 @@ PASSES="-loop-unroll"
 shopt -s dotglob
 shopt -s nullglob
 
+
+PASSES=""	#no optimizations
+VERBOSE=0
+
+usage() {
+	usageMsg="usage TestBenchmarks [options]
+options
+	-1	unoptimized checks inserted
+	-2	optimized using global check removal
+	-3 	optimized using loop check removal
+	-v	verbose output
+	-h	help"
+	echo "$usageMsg"
+}
+
+
+#parse the options
+while getopts "123avh" OPTION
+do
+	case "$OPTION" in
+		"1")	PASSES="-array-check"
+			;;
+		"2")	PASSES="-remove-global"
+			;;
+		"3") 	PASSES="-loop-pass"
+			;;
+		"a")	;;
+		"v")	VERBOSE=1
+			;;
+		"h")	usage
+			exit 1
+			;;
+		"?")	
+			usage
+			exit 1
+			;;
+esac
+done
 
 getMakeOption(){
 	#echo "----"
@@ -26,11 +64,14 @@ getMakeOption(){
 	fi
 }
 
+#compileBenchmark
+#	$1 	folder name
+#	$2 	optimization pass options
 compileBenchmark(){
-	echo "--compiling benchmark ${1}"
-	cat "${1}Makefile"
+	#echo "--compiling benchmark ${1}"
+	#cat "${1}Makefile"
 	#echo "--"
-	echo "\n"
+	#echo "\n"
 	ccOpts=$(getMakeOption ${1} "CPPFLAGS")
 	progOpt=$(getMakeOption ${1} "PROG")
 	ldOpts=$(getMakeOption ${1} "LDFLAGS")
@@ -45,45 +86,53 @@ compileBenchmark(){
 		llModFile=${cFile%.c}".mod.ll"
 		#oFiles=$oFiles" "$oFile
 		llModFiles=$llModFiles" "$llModFile
-		#echo "-> compiling ${cFile} into ${llFile} with in (${1}) options (${ccOpts} <> ${ccWOpts})"
-		echo "-> compiling ${cFile} into ${llFile}"
+
 		#emitting intermediate llvm IR code
-		clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile} 2> /dev/null
+		clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile}
 		#echo "clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile} 2> /dev/null"
-		#optimize intermediate llvm code
-		echo "-> optimizing ${llFile} into ${llModFile} with (${PASSES})"
+		#echo "-> compiling ${cFile} into ${llFile} with in (${1}) options (${ccOpts} <> ${ccWOpts})"
+		#echo "-> compiling ${cFile} into ${llFile}"
+
+		#collect statistics of optimizations here
+		$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null
+		#echo "-> optimizing ${llFile} into ${llModFile} with (${2})"
 		#echo "$OPT -load ${MODULE_LIB} $PASSES -S -o $llModFile < $llFile > /dev/null"
-		$OPT -load ${MODULE_LIB} $PASSES -S -o $llModFile < $llFile > /dev/null
 	done
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${oFiles})"
-	echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${llModFiles})"
+	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${llModFiles})"
 	#link all benchmarks 
-	clang -o ${1}${progOpt} ${llModFiles} ${ldOpts} -lstdc++
-	echo "--"
-	echo "cpp flags : ${cppOpts}"
-	echo "program   : ${progOpt}"
-	echo "ld flags  : ${ldOpts}"
-	echo "\n\n"
+	clang -o ${1}${progOpt} ${LibFileLL} ${llModFiles} ${ldOpts} -lstdc++
+	#echo "--"
+	#echo "cpp flags : ${cppOpts}"
+	#echo "program   : ${progOpt}"
+	#echo "ld flags  : ${ldOpts}"
+	#echo "\n\n"
 }
 
+#inputs are
+#$1	program folder
+#$2	program name
+#$3 	program options
 runBenchmark () {
-	progOpt=$(getMakeOption ${1} "PROG")
-	runOpt=$(getMakeOption ${1} "RUN_OPTIONS")
+	progOpt="${2}"
+	runOpt="${3}"
+	#program executable with path
 	prog="./${1}${progOpt}"
+	#subtitute in program program options
 	sedDir=${1%\/}
 	sedOpts="s/\$(PROJ_SRC_DIR)/"$sedDir"/gp"
 	runOpts=$(echo $runOpt | sed -n $sedOpts)
-	echo "\n\n--"
-	echo "->running ${prog} ${runOpts}"
+	#echo "\n\n--"
+	#echo "->running ${prog} ${runOpts}"
 	#run the application to obtain any output
 	$prog $runOpts &> "$sedDir.txt"
 	#run the application for timing
 	#timeOutput=`/usr/bin/time $prog $runOpts 2>&1 >/dev/null`
 	timeOutput=$((time $prog $runOpts >/dev/null) 2>&1 | awk '/[0-9]*\.[0-9]*/{print;}' )
 	#timeExec=$( echo $timeOutput | awk '/^user/ { print "$0" }' )
-	echo "*"
-	echo "$timeOutput"
-	echo "*"
+	execSize=$( wc -c $prog | awk '{print $1;}' )
+	echo "RunTime  (secs) : ${timeOutput}"
+	echo "ExecSize (bytes): ${execSize}"
 	#remove executable
 	rm ${1}${progOpt}
 }
@@ -103,30 +152,31 @@ rm -rf *.stat.txt
 cd ../
 
 #compile library file
+cd benchmarks/
+echo "clang++ -D__DEBUG__=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}"
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}
-clang -emit-llvm -c -o ${LibFileLL} ${LibFile}
-echo "clang -emit-llvm -c -o ${LibFileLL} ${LibFile}"
+cd ../
 
 #get a lof of all the benchmarks
 cd benchmarks
 BenchmarkFolders=(*/)
 
+#create benchmark output folder
+mkdir Output
+
 #compile every benchmark
 for BenchmarkFolder in ${BenchmarkFolders[@]}
 do
 	echo $BenchmarkFolder
-	compileBenchmark $BenchmarkFolder
-done
+	compileBenchmark "$BenchmarkFolder" "$PASSES"
+	echo "compiled and linked \"${BenchmarkFolder%/}\" with optimizations (${PASSES})"
 
-#create benchmark output folder
-mkdir Output
-
-#run every benchmark
-pwd
-for BenchmarkFolder in ${BenchmarkFolders[@]}
-do
-	echo $BenchmarkFolder
-	runBenchmark $BenchmarkFolder
+	progOpt=$(getMakeOption ${BenchmarkFolder} "PROG")
+	runOpt=$(getMakeOption ${BenchmarkFolder} "RUN_OPTIONS")
+	#run the actualy benchmark
+	echo "running ${BenchmarkFolder%/}"
+	runBenchmark "$BenchmarkFolder" "$progOpt" "$runOpt"
+	echo "\n\n"
 done
 
 #main end ]
