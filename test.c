@@ -1,19 +1,14 @@
-int a[10];
-int n;
-
 int main()
 {
-	int z = 4;
-	n = z + 7;
-	int b[10];
-	a[n] = 77; // n < 200
-	b[n] = 99; // n < 10
+	int i = 1;
+	int a[100];
+	a[i] = 4;
+
+	if (i)
+	{
+		a[i] = a[i] + 1;
+	}
+
+	a[i+1] = 77;
 }
 
-int test(int a)
-{
-	int z[10];
-	z[a];
-	return 3;
-
-}

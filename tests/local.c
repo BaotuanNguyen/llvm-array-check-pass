@@ -9,6 +9,10 @@ struct st {
 	float float_arr[200][300];
 };
 
+struct st st_array[99];
+
+
+
 int main() {
 	int a[300];
 	int n = 50;
@@ -20,8 +24,8 @@ int main() {
 	a[i] = 100;
 	b[i+1] = 100;
 	a[i] = b[i] = 0;
-	strt.arr[i] = 0;
-	strt.float_arr[i][i+1] = 0;	
+	st_array[99].arr[i] = 0;
+	st_array[99].float_arr[i][i+1] = 0;	
 
 	return 0;
 }
