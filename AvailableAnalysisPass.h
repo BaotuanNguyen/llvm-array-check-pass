@@ -63,7 +63,6 @@ namespace llvm {
 				void dumpSetOfPtr(std::set<T*>* set);
 
 			MapBBToRCS *BB_A_OUT;
-			//private variables
 
 			Module* module;
 			Function* currentFunction;
