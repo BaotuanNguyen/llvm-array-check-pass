@@ -1,3 +1,4 @@
+void funky(void);
 int main() {
 	int a[100];
 	int i;
@@ -13,6 +14,19 @@ int main() {
                 }*/
 
 	}	
+        funky();
 
 	return 0;
 }
+
+
+void funky(void)
+{
+        int ok;
+        int arr[10];
+        for(ok = 0; ok < 10; ++ok) {
+               arr[ok] = 1; 
+        }
+}
+
+

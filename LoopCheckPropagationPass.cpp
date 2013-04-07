@@ -14,11 +14,10 @@ static RegisterPass<LoopCheckPropagationPass> Y("loop-pass", "Propagate of check
 
 
 
-
 bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
 {
-        //FIXME
-        //DominatorTree dt = getAnalysis<DominatorTree>();
+        //this->domTree = &getAnalysis<DominatorTree>();
+        errs() << "end dt dump\n";
         errs() << "\n";
         errs() << "\n";
         errs() << "++++++++++++++++++++++++++++++++++++++++++++\n";
@@ -30,10 +29,6 @@ bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
 
 bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 {
-        BasicBlock *bb = L->getUniqueExitBlock();
-        errs() << *bb;
-        errs() << *L;
-        errs() << L->getLoopDepth() << "\n";
         LoopBlocks blocks = L->getBlocksVector();
         findCandidates(L, &blocks);
         return true;
@@ -46,9 +41,9 @@ bool LoopCheckPropagationPass::doFinalization(void)
 
 void LoopCheckPropagationPass::findCandidates(Loop *loop, LoopBlocks *blocks)
 {
-        hoist();
         for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
                 BasicBlock *block = *it;
+                hoist(block);
                 errs() << "\n--beginning new loop block--\n";
                 for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt){
                         Value *v = &*bbIt;
@@ -75,15 +70,20 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop, LoopBlocks *blocks)
         }
 }
 
-void LoopCheckPropagationPass::hoist(void)
+void LoopCheckPropagationPass::hoist(BasicBlock *block)
 {
+
+
         // ND is the set of all blocks that do not dominate all loop exits
         // first, get all loop exit blocks
         // for every block, check if it dominates all those loop exit blocks
         // if it does not, add it to ND
-        // TODO 
-        //DominatorTree *dt = new DominatorTree();
-        //BasicBlock *bb = dt->getRoot();
+        DominatorTree &dt = getAnalysis<DominatorTree>();
+        errs() << *dt.getRoot();
+        
+        //BasicBlock *bb = dt.getRoot();
+        //BasicBlock *bb = domTree->getRoot();
         //errs() << "bb not knowing shit: " << *bb;
+        //errs() << "LEAVING\n";
 
 }

@@ -32,11 +32,15 @@ namespace llvm
                         virtual bool runOnLoop (Loop *L, LPPassManager &LPM);
 			virtual void getAnalysisUsage(AnalysisUsage& AU) const
 			{
+				//AU.addRequired<DataLayout>();
+				//AU.addRequired<TargetLibraryInfo>();
+				//AU.addRequired<LoopInfo>();
+				AU.addRequired<DominatorTree>();
 				AU.addRequired<EffectGenPass>();
 			}
 
                         void findCandidates(Loop *loop, LoopBlocks *blocks);
-                        void hoist(void);
+                        void hoist(BasicBlock *block);
 		
 		private:
 
