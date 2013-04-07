@@ -23,7 +23,7 @@ bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
         errs() << "++++++++++++++++++++++++++++++++++++++++++++\n";
         errs() << "\n";
 
-        this->bbToCheck = new BBToCheck();
+        this->bbToCheck = new BBToCheckSet();
 
         return true;
 }
@@ -60,9 +60,33 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                                         Value *operandTwo = metadata->getOperand(1);
 
                                         if(isCandidate(loop, operandOne, operandTwo)){
+
                                                 // CallInst ci is a candidate check for BasicBlock block
-                                                bbToCheck->insert(PairBBAndCheck(block, ci));
-                                                errs() << "candidate ci " << *ci << "\n";
+                                                // look up the basic block
+                                                // if it doesn't exist,
+                                                //      create a new set
+                                                // add the call instruction to the set
+                                                // if it didnt exist,
+                                                //      insert the mapping
+                                                BBToCheckSet::iterator it = bbToCheck->find(block);
+                                                CheckSet *cs;
+                                                if(it != bbToCheck->end())
+                                                {
+                                                        // element found
+                                                        // set the checkset var
+                                                        cs = it->second;
+                                                }else{
+                                                        // element not found
+                                                        // create the checkste and the mapping
+                                                        cs = new CheckSet();
+                                                        bbToCheck->insert(PairBBAndCheckSet(block, cs));
+                                                }
+
+                                                // insert the call instruction to the set of candidate checks
+                                                cs->insert(ci);
+
+                                                //bbToCheck->insert(PairBBAndCheck(block, ci));
+                                                //errs() << "candidate ci " << *ci << "\n";
                                         }
                                 }
                         }
@@ -97,16 +121,31 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                                 break;
                         }
                 }
-                if(numDominated == loopExitingBlocks.size()){
+                if(numDominated != loopExitingBlocks.size()){
                         // block does not dominate all exiting blocks
                         ND.push_back(block);
                 }
         }
 
-        bool changed = true;
-        while(changed){
-                changed = false;
-                // for each bb in bbToCheck
+
+        // adjust the paper's algorithm:
+        //  grab the header of the loop.
+        //  try hoisting all candidate checks into the header and go from there.
+        //
+        if(BasicBlock *headerPred = loop->getHeader()->getUniquePredecessor()){
+                for(BBToCheckSet::iterator it = bbToCheck->begin(), ie = bbToCheck->end(); it != ie; ++it){
+                        //BasicBlock *bb =  it->first;
+                        CheckSet *checkSet =  it->second;
+                        
+                        // iterate over the candidate checks
+                        for(CheckSet::iterator csIt = checkSet->begin(), csIe = checkSet->end(); csIt != csIe; ++csIt){
+                                // remove the instruction from bb
+                                // add the instruction to header's predecessor -- we're just going to skip everything in the paper
+                                errs() << "BIG STINKING MAMAAAAAAAAAAAAAAAAAAAAAAAAA\n";
+                                (*csIt)->eraseFromParent();
+                                headerPred->getInstList().push_back(*csIt);
+                        }
+                }
         }
 
 
