@@ -79,19 +79,24 @@ bool VeryBusyAnalysisPass::runOnFunction(Function* F)
 void VeryBusyAnalysisPass::createUniverse()
 {
 	this->universe = new RangeCheckSet();
-	
+
 	for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 	{
 		BasicBlock* BB = &*BBI;
+		
 		for(BasicBlock::iterator II = BB->begin(), IE = BB->end(); II != IE; II++)
 		{
 			Instruction* inst = &*II;	
+
 			if(CallInst *ci = dyn_cast<CallInst> (inst))
 			{
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-				if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTLimit"))
+
+				if(callFunctionName.equals("checkLessThan"))
 				{
-					RangeCheckSet* tmpUniverse = universe->set_union(new RangeCheckExpression(ci, this->module));
+					RangeCheckExpression* newExpr = new RangeCheckExpression(ci, this->module);
+					errs() << "being unioned: "; newExpr->println();
+					RangeCheckSet* tmpUniverse = universe->set_union(newExpr);
 					errs() << "union created: "; tmpUniverse->println();
 					delete this->universe;
 					this->universe = tmpUniverse;
@@ -179,7 +184,8 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
-			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
+			
+			if(!callFunctionName.equals("checkLessThan"))
 			{
 				continue;
 			}
@@ -191,6 +197,7 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module);
 			errs() << "\t\tRCS Generated: "; rce->println();
+			errs() << "\t\tCurrent RCS "; currentRCS->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
 			errs() << "\t\tIN: "; tmp->println();
 			currentRCS = tmp;

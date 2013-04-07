@@ -42,11 +42,14 @@ namespace llvm
 				AU.addRequired<EffectGenPass>();
 			}
 
-                        void findCandidates(Loop *loop, LoopBlocks *blocks);
-                        void hoist(Loop *loop, BasicBlock *block);
+                        void findCandidates(Loop *loop);
+                        void hoist(Loop *loop);
                         bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         bool isInvariant(Value *operand);
                         effect_t getEffect(Loop *loop, Value *operand);
+
+                        std::string getEffectOfMeta(MDNode *meta);
+                        Value *getAffectedOperandOfMeta(MDNode *meta);
 		
 		private:
 

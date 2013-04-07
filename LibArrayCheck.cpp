@@ -2,23 +2,11 @@
 #include <iostream>
 #include <stdint.h>
 
-extern "C" void checkGTLimit(int64_t limit, int64_t index)
-{
-//	std::cout << "checking: " << index << " >= 0\n";
-	
-	if(index < limit)
-	{
-//		std::cout << "DETECT:" << index << " < 0\n";
-//		std::cout << "Run-time Analysis detected an out-of-bound access! Terminating...\n";
-		exit(1);
-	}
-}
-
-extern "C" void checkLTLimit(int64_t index, int64_t limit)
+extern "C" void checkLessThan(int64_t left, int64_t right)
 {
 //	std::cout << "checking: " << index << " < " << limit << "\n";
 	
-	if(index >= limit)
+	if(left >= right)
 	{
 //		std::cout << "DETECT: " << index << " >= " << limit << "\n";
 //		std::cout << "Run-time Analysis detected an out-of-bound access! Terminating...\n";
