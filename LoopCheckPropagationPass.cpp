@@ -30,7 +30,13 @@ bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
 
 bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 {
-        findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to its candidate checks)
+        errs() << "\n***\n";
+        errs() << "Finding candidates\n";
+        errs() << "***\n";
+        findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to their candidate checks)
+        errs() << "\n***\n";
+        errs() << "Hoisting, good sirs\n";
+        errs() << "***\n";
         hoist(L);
         return true;
 }
@@ -60,6 +66,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                                         Value *operandTwo = metadata->getOperand(1);
 
                                         if(isCandidate(loop, operandOne, operandTwo)){
+                                                errs() << "so, i got this candidate...\n";
 
                                                 // CallInst ci is a candidate check for BasicBlock block
                                                 // look up the basic block
@@ -97,7 +104,8 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
 void LoopCheckPropagationPass::hoist(Loop *loop)
 {
-        LoopBlocks *blocks = &loop->getBlocksVector();
+        // DO NOT DELETE... may want this later if we follow the paper more closely
+        /*LoopBlocks *blocks = &loop->getBlocksVector();
         for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
                 BasicBlock *block = *it;
 
@@ -123,27 +131,46 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                 }
                 if(numDominated != loopExitingBlocks.size()){
                         // block does not dominate all exiting blocks
+                        errs() << "ND pushing back\n";
                         ND.push_back(block);
                 }
-        }
+        }*/
 
 
         // adjust the paper's algorithm:
         //  grab the header of the loop.
         //  try hoisting all candidate checks into the header and go from there.
-        //
-        if(BasicBlock *headerPred = loop->getHeader()->getUniquePredecessor()){
+
+        // all predecessors going into the loop need to add the instruction...
+        // but if the predecessor is in the loop, we don't include it
+        typedef std::vector<BasicBlock *> PredBlocks;
+        //std::vector<BasicBlock *> *validPredecessorBlocks = new std::vector<BasicBlock *>();
+        PredBlocks *validPredecessorBlocks = new PredBlocks();
+
+        BasicBlock *header = loop->getHeader();//->getUniquePredecessor();
+        for(pred_iterator it = pred_begin(header), ie = pred_end(header); it != ie; ++it){
+                LoopBlocks *loopBlocks = &loop->getBlocksVector();
+                if(std::find(loopBlocks->begin(), loopBlocks->end(), *it) == loopBlocks->end()) {
+                        // loopBlocks does not contain the predecessor
+                        validPredecessorBlocks->push_back(*it);
+                }
+        }
+        // insert candidate checks into predecessor blocks
+        // remove them from their current blocks
+        if(validPredecessorBlocks->size() > 0){
+                // iterate over candidate blocks
                 for(BBToCheckSet::iterator it = bbToCheck->begin(), ie = bbToCheck->end(); it != ie; ++it){
-                        //BasicBlock *bb =  it->first;
+                        // iterate over the candidate checks within a given block
+                        errs() << "yo\n"; 
                         CheckSet *checkSet =  it->second;
-                        
-                        // iterate over the candidate checks
                         for(CheckSet::iterator csIt = checkSet->begin(), csIe = checkSet->end(); csIt != csIe; ++csIt){
-                                // remove the instruction from bb
-                                // add the instruction to header's predecessor -- we're just going to skip everything in the paper
+                                // remove the instruction from its current block
+                                // add the instruction to header's predecessors -- we're just going to skip everything in the paper
                                 errs() << "BIG STINKING MAMAAAAAAAAAAAAAAAAAAAAAAAAA\n";
                                 (*csIt)->eraseFromParent();
-                                headerPred->getInstList().push_back(*csIt);
+                                for(PredBlocks::iterator predIt = validPredecessorBlocks->begin(), predIe = validPredecessorBlocks->end(); predIt != predIe; ++predIt){
+                                        (*predIt)->getInstList().push_back(*csIt);
+                                }
                         }
                 }
         }
