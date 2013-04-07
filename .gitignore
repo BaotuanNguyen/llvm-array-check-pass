@@ -13,3 +13,5 @@ Release*
 Debug*
 .DS_Store
 *.out
+m.o
+benchmarks/Output/

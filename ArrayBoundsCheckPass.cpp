@@ -79,13 +79,17 @@ Instruction* ArrayBoundsCheckPass::checkLessThan(Value* left, Value* right)
 
 			if (leftInt >= rightInt)
 			{
+#ifndef	__NOT_VERBOSE__
 					errs() << "Left index " << leftInt << " is greater than " << rightInt << "\n";
 					errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
+#endif
 					exit(1);
 			}
 			else
 			{
+#ifndef	__NOT_VERBOSE__
 					errs() << "Bound Check: " << leftInt << " < " << rightInt << " passed at compile-time\n";
+#endif
 					return NULL;
 			}
 		}
@@ -155,9 +159,13 @@ bool ArrayBoundsCheckPass::doInitialization(Module& M)
 
 bool ArrayBoundsCheckPass::doFinalization(Module& M)
 {
+#ifndef	__NOT_VERBOSE__
 	errs() << "-------------------------------------------------------\n";
+#endif
 	errs() << "Number of checks inserted: " <<  this->checkNumber << "\n";
+#ifndef	__NOT_VERBOSE__
 	errs() << "-------------------------------------------------------\n";
+#endif
 	return true;
 }
 
@@ -186,8 +194,10 @@ bool ArrayBoundsCheckPass::runOnFunction(Function* F)
 		// if an instruction itself is GEP, you need to check the array bounds of it
 		if (GetElementPtrInst* GEP = dyn_cast<GetElementPtrInst>(instr))
 		{
+#ifndef	__NOT_VERBOSE__
 			errs() << "----------------------------------------------------------------------\n";
 			errs() << "[GEP instruction detected]: " << *GEP << "\n";
+#endif
 			checkGEP(GEP, GEP); // check array bounds for GEP Instruction as well as examine operands
 		}
 		else
@@ -231,8 +241,10 @@ bool ArrayBoundsCheckPass::runOnConstantExpression(ConstantExpr* CE, Instruction
 	// if this expression is a GEP expression, check the array bounds
 	if (CE->getOpcode() == Instruction::GetElementPtr)
 	{
+#ifndef	__NOT_VERBOSE__
 		errs() << "----------------------------------------------------------------------\n";
 		errs() << "[GEP expression detected]: " << *currInst << "\n";
+#endif
 
 		checkGEP(CE, currInst);
 	}
@@ -270,12 +282,16 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			
 			if (!originPointer)
 			{
+#ifndef	__NOT_VERBOSE__
 				errs() << "origin pointer returned NULL. SHOULD NOT HAPPEN!!!\n";
+#endif
 			}
 			
+#ifndef	__NOT_VERBOSE__
 			errs() << "Base Pointer Type: " << **GEPI << "\n";
 			errs() << "Base Pointer " << *basePointer << "\n";
 			errs() << "Origin Base Pointer: " << *originPointer << "\n";
+#endif
 		
 			OI++; // now OI points to the first index position
 			
@@ -283,14 +299,18 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI))
 			{
 				int64_t firstIndex = CI->getSExtValue();
+#ifndef	__NOT_VERBOSE__
 				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+#endif
 			
 				// if there is only one index in GEP and Base Pointer is alloca, then this must be a VLA
 				if ((OI+1) == user->op_end())
 				{
 					if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(basePointer))
 					{
+#ifndef	__NOT_VERBOSE__
 						errs() << "VLA Detected1\n";
+#endif
 						this->Inst = currInst;
 						
 						Value* limit = allocaInst->getOperand(0);
@@ -301,11 +321,13 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				//		else
 				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 
+#ifndef	__NOT_VERBOSE__
 						errs() << "index: " << *CI << "\n";
 						errs() << "limit: " << *limit << "\n";
 						
 						errs() << "var1: " << *CI << "\n";
 						errs() << "var2: " << *originLimit << "\n";
+#endif
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -332,7 +354,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
 						// Insert runtime check 
+#ifndef	__NOT_VERBOSE__
 						errs() << "VLA Chain Detected1\n";
+#endif
 						this->Inst = currInst;
 						StringRef* indexName = new StringRef((basePointer->getName()).str() + ".idx");
 
@@ -346,6 +370,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					//		errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 						
 						//firstOperand of basePointer + index < limit;
+#ifndef	__NOT_VERBOSE__
 						errs() << "Origin Pointer: " << *originPointer << "\n";
 						
 						errs() << "index: " << *index << "\n";
@@ -353,6 +378,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						
 						errs() << "var1: " << *index << "\n";
 						errs() << "var2: " << *originLimit << "\n";
+#endif
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -378,7 +404,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					}
 					else
 					{
+#ifndef	__NOT_VERBOSE__
 						errs() << "This GEP is not an array access\n";
+#endif
 					}
 				}		
 				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
@@ -390,7 +418,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			}
 			else // First index is in non-constant form
 			{
+#ifndef	__NOT_VERBOSE__
 				errs() << "\nFirst Index (Non-constant): " << **OI << "\n";
+#endif
 		
 				// if there is only one index in GEP and Base Pointer is alloca, then this must be a VLA
 				if ((OI+1) == user->op_end())
@@ -398,7 +428,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(basePointer))
 					{
 						// Insert runtime check 
+#ifndef	__NOT_VERBOSE__
 						errs() << "VLA Detected2\n";
+#endif
 						this->Inst = currInst;
 
 						Value* originIndex = findOriginOfPointer(*OI);
@@ -415,11 +447,13 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				//		else
 				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 						
+#ifndef	__NOT_VERBOSE__
 						errs() << "index: " << **OI << "\n";
 						errs() << "limit: " << *limit << "\n";
 						
 						errs() << "var1: " << *originIndex << "\n";
 						errs() << "var2: " << *originLimit << "\n";
+#endif
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -445,7 +479,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
 						// Insert runtime check 
+#ifndef	__NOT_VERBOSE__
 						errs() << "VLA Chain Detected2\n";
+#endif
 						this->Inst = currInst;
 						StringRef* indexName = new StringRef((basePointer->getName()).str() + ".idx");
 						
@@ -466,6 +502,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				//			errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 					
 						//firstOperand of basePointer + index < limit;
+#ifndef	__NOT_VERBOSE__
 						errs() << "Origin Pointer: " << *originPointer << "\n";
 						
 						errs() << "index: " << *index << "\n";
@@ -473,6 +510,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						
 						errs() << "var1: " << *originIndex << "\n";
 						errs() << "var2: " << *originLimit << "\n";
+#endif
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -497,7 +535,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					}
 					else
 					{
+#ifndef	__NOT_VERBOSE__
 						errs() << "This GEP is not an array access\n";
+#endif
 					}
 				}
 				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
@@ -509,7 +549,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					if (dyn_cast<LoadInst>(originIndex))
 						originIndex = ((LoadInst*)originIndex)->getOperand(0);
 					
+#ifndef	__NOT_VERBOSE__
 					errs() << "var1: " << originIndex << "\n";
+#endif
 					
 					LLVMContext& context = this->M->getContext();
 					std::vector<Value*> varNames;
@@ -536,8 +578,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					int64_t index = CI->getSExtValue();
 					int64_t numElements = Aty->getNumElements();
 
+#ifndef	__NOT_VERBOSE__
 					errs() << "\nIndex (Constant): " << index << "\n";
 					errs() << "numElements: " << numElements << "\n"; // number of elements in this part of array
+#endif
 	
 					ConstantInt* arraySize = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), numElements);
 	
@@ -548,8 +592,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			{
 				if (ArrayType *Aty = dyn_cast<ArrayType>(*GEPI))
 				{
+#ifndef	__NOT_VERBOSE__
 					errs() << "\nIndex (Non-constant): " << **OI << "\n";
 					errs() << "NumElements: " << Aty->getNumElements() << "\n";
+#endif
 			
 					this->Inst = currInst;
 					LLVMContext& context = this->M->getContext();
@@ -557,15 +603,19 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 					Value* originIndex = findOriginOfPointer(*OI);
 					
+#ifndef	__NOT_VERBOSE__
 					errs() << "Origin Index: " << *originIndex << "\n";
+#endif
 
 					if (dyn_cast<LoadInst>(originIndex))
 						originIndex = ((LoadInst*)originIndex)->getOperand(0);
 				//	else
 				//		errs() << "ORIGIN OF RANGE VARIABLE SHOULD BE LOAD INSTRUCTION!\n";
 					
+#ifndef	__NOT_VERBOSE__
 					errs() << "var1: " << *originIndex << "\n";
 					errs() << "var2: " << *arraySizeCI << "\n";
+#endif
 
 					std::vector<Value*> varNames1;
 					std::vector<Value*> varNames2;
@@ -591,7 +641,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 		}
 	}
 
+#ifndef	__NOT_VERBOSE__
 	errs() << "----------------------------------------------------------------------\n";
+#endif
 
 	return true;
 }
