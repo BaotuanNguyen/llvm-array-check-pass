@@ -39,10 +39,8 @@ namespace llvm
 		private:
 			/*check insertion functions*/
 			//Constant* createGlobalString(const StringRef* str);
-			Instruction* checkGTLimit(Value* lb, Value* index);
-			Instruction* checkLTLimit(Value* index, Value* limit);
-			Instruction* insertGTLimitCheck(Value* lb, Value* index);
-			Instruction* insertLTLimitCheck(Value* index, Value* ub);
+			Instruction* checkLessThan(Value* left, Value* right);
+			Instruction* insertLessThanCheck(Value* left, Value* right);
 			
 			/*gep checker functions*/
 			bool checkGEP(User* GEP, Instruction* currInst);
@@ -54,11 +52,10 @@ namespace llvm
 			/*current function being checked*/
 			Function* currentFunction;
 			/*check function declared for check insertion*/
-			Function* checkGTLimitFunction;
-			Function* checkLTLimitFunction;
+			Function* checkLessThanFunction;
 			/*instruction before which to insert instructions*/
 			Instruction* Inst;
-			std::vector<Constant*> gepFirstCharIndices;
+			ConstantInt* negone;
 	};
 
 }

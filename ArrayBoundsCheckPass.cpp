@@ -68,63 +68,55 @@ Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 	}
 }
 
-Instruction* ArrayBoundsCheckPass::checkGTLimit(Value* lb, Value* index)
+Instruction* ArrayBoundsCheckPass::checkLessThan(Value* left, Value* right)
 {
-	return this->insertGTLimitCheck(lb, index);
+	if (ConstantInt* leftCI = dyn_cast<ConstantInt>(left))
+	{
+		if (ConstantInt* rightCI = dyn_cast<ConstantInt>(right))
+		{
+			int64_t leftInt = leftCI->getSExtValue();
+			int64_t rightInt = rightCI->getSExtValue();
+
+			if (leftInt >= rightInt)
+			{
+					errs() << "Left index " << leftInt << " is greater than " << rightInt << "\n";
+					errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
+					exit(1);
+			}
+			else
+			{
+					errs() << "Bound Check: " << leftInt << " < " << rightInt << " passed at compile-time\n";
+					return NULL;
+			}
+		}
+	}
+
+	return this->insertLessThanCheck(left, right);	
 }
 
-Instruction* ArrayBoundsCheckPass::checkLTLimit(Value* index, Value* ub)
-{
-	return this->insertLTLimitCheck(index, ub);	
-}
-
-Instruction* ArrayBoundsCheckPass::insertGTLimitCheck(Value* lv, Value* index)
-{
-	this->checkNumber++;
-	LLVMContext& context = this->M->getContext();
-	
-	if (index->getType() == Type::getInt32Ty(context))
-		index = llvm::CastInst::CreateIntegerCast(index, Type::getInt64Ty(context), true, "", Inst);
-	
-	std::vector<Value*> argValuesV;
-	argValuesV.push_back(lv);
-	argValuesV.push_back(index);
-	
-	///create array ref to vector or arguments
-	ArrayRef<Value*> argValuesA(argValuesV);
-
-	///create call in code
-	CallInst* allocaCall = CallInst::Create(this->checkGTLimitFunction, argValuesA, "", Inst);
-	
-	allocaCall->setCallingConv(CallingConv::C);
-	allocaCall->setTailCall(false);
-	
-	return allocaCall;
-}
-
-Instruction* ArrayBoundsCheckPass::insertLTLimitCheck(Value* index, Value* limit)
+Instruction* ArrayBoundsCheckPass::insertLessThanCheck(Value* left, Value* right)
 {
 	this->checkNumber++;
 	
 	///create types of the arguments
 	LLVMContext& context = this->M->getContext();
 	
-	if (index->getType() == Type::getInt32Ty(context))
-		index = llvm::CastInst::CreateIntegerCast(index, Type::getInt64Ty(context), true, "", Inst);
+	if (left->getType() == Type::getInt32Ty(context))
+		left = llvm::CastInst::CreateIntegerCast(left, Type::getInt64Ty(context), true, "", Inst);
 	
-	if (limit->getType() == Type::getInt32Ty(context))
-		limit = llvm::CastInst::CreateIntegerCast(limit, Type::getInt64Ty(context), true, "", Inst);
+	if (right->getType() == Type::getInt32Ty(context))
+		right = llvm::CastInst::CreateIntegerCast(right, Type::getInt64Ty(context), true, "", Inst);
 	
 	///create vector with values which containts arguments values
 	std::vector<Value*> argValuesV;
-	argValuesV.push_back(index);
-	argValuesV.push_back(limit);
+	argValuesV.push_back(left);
+	argValuesV.push_back(right);
 	
 	///create array ref to vector or arguments
 	ArrayRef<Value*> argValuesA(argValuesV);
 
 	///create call in code
-	CallInst* allocaCall = CallInst::Create(this->checkLTLimitFunction, argValuesA, "", Inst);
+	CallInst* allocaCall = CallInst::Create(this->checkLessThanFunction, argValuesA, "", Inst);
 	
 	allocaCall->setCallingConv(CallingConv::C);
 	allocaCall->setTailCall(false);
@@ -134,37 +126,30 @@ Instruction* ArrayBoundsCheckPass::insertLTLimitCheck(Value* index, Value* limit
 
 bool ArrayBoundsCheckPass::doInitialization(Module& M)
 {
-	std::vector<Type*> argTypes1;
-	std::vector<Type*> argTypes2;
+	std::vector<Type*> argTypes;
 
 	this->checkNumber = 0;
 	this->M = &M;
+	this->negone = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), -1);
 
 	Type* voidTy = Type::getVoidTy(M.getContext());
 	Type* intTy = Type::getInt64Ty(M.getContext());
 	//Type* charPtrTy = Type::getInt8PtrTy(M.getContext());
 
-	argTypes1.push_back(intTy);
-	argTypes1.push_back(intTy);
-	
-	argTypes2.push_back(intTy);
-	argTypes2.push_back(intTy);
-
+	argTypes.push_back(intTy);
+	argTypes.push_back(intTy);
 
 	//declared functions type calls
-	ArrayRef<Type*> argArray1(argTypes1);
-	ArrayRef<Type*> argArray2(argTypes2);
+	ArrayRef<Type*> argArray(argTypes);
 	
-	FunctionType* checkGTLimitFunctionType = FunctionType::get(voidTy, argArray1, false);
-	FunctionType* checkLTLimitFunctionType = FunctionType::get(voidTy, argArray2, false);
+	FunctionType* checkLessThanFunctionType = FunctionType::get(voidTy, argArray, false);
 
 	//create functions
-	M.getOrInsertFunction("checkGTLimit", checkGTLimitFunctionType);
-	M.getOrInsertFunction("checkLTLimit", checkLTLimitFunctionType);
+	M.getOrInsertFunction("checkLessThan", checkLessThanFunctionType);
 	
 	//store Value to function
-	this->checkGTLimitFunction = M.getFunction("checkGTLimit");
-	this->checkLTLimitFunction = M.getFunction("checkLTLimit");
+	this->checkLessThanFunction = M.getFunction("checkLessThan");
+
 	return true;
 }
 
@@ -325,23 +310,24 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
 						std::vector<Value*> varNames2;
-						
+					
+						varNames1.push_back(negone);
 						varNames1.push_back(CI);
-						varNames1.push_back(originLimit);
-
-						ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
 						
-						varNames2.push_back(zero);
 						varNames2.push_back(CI);
+						varNames2.push_back(originLimit);
 						
-						MDNode* meta_LT = MDNode::get(context, varNames1);
-						MDNode* meta_GT = MDNode::get(context, varNames2);
+						MDNode* meta_lowerBound = MDNode::get(context, varNames1);
+						MDNode* meta_upperBound = MDNode::get(context, varNames2);
 
-						Instruction* callLTLimit = this->checkLTLimit(CI, limit);
-						Instruction* callGTZero = this->checkGTLimit(zero, CI);
+						Instruction* lowerBoundCheck = this->checkLessThan(negone, CI);
+						Instruction* upperBoundCheck = this->checkLessThan(CI, limit);
 						
-						callLTLimit->setMetadata("VarName", meta_LT);
-						callGTZero->setMetadata("VarName", meta_GT);
+						if (lowerBoundCheck)
+							lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
+						
+						if (upperBoundCheck)
+							upperBoundCheck->setMetadata("VarName", meta_upperBound);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
@@ -371,23 +357,24 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
 						std::vector<Value*> varNames2;
-
+						
+						varNames1.push_back(negone);
 						varNames1.push_back(index);
-						varNames1.push_back(limit);
 						
-						ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
-						
-						varNames2.push_back(zero);
 						varNames2.push_back(index);
+						varNames2.push_back(limit);
 						
-						MDNode* meta_LT = MDNode::get(context, varNames1);
-						MDNode* meta_GT = MDNode::get(context, varNames2);
+						MDNode* meta_lowerBound = MDNode::get(context, varNames1);
+						MDNode* meta_upperBound = MDNode::get(context, varNames2);
 
-						Instruction* callLTLimit = this->checkLTLimit(index, limit);
-						Instruction* callGTZero = this->checkGTLimit(zero, index);
+						Instruction* lowerBoundCheck = this->checkLessThan(negone, index);
+						Instruction* upperBoundCheck = this->checkLessThan(index, limit);
 						
-						callLTLimit->setMetadata("VarName", meta_LT);
-						callGTZero->setMetadata("VarName", meta_GT);
+						if (lowerBoundCheck)
+							lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
+						
+						if (upperBoundCheck)
+							upperBoundCheck->setMetadata("VarName", meta_upperBound);
 					}
 					else
 					{
@@ -397,16 +384,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				// Otherwise, if "first" index is greater than 0, then this array access is out of bound
 				else
 				{
-				   	if (CI->getZExtValue() > 0)
-					{
-							errs() << "First index " << firstIndex << " is greater than 0\n";
-							errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
-							exit(1);
-					}
-					else
-					{
-							errs() << "First index " << firstIndex << " passed compile-time check: 0 <= " << firstIndex << "\n";
-					}
+					ConstantInt* one = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), 1); // index should be < 1
+					this->checkLessThan(CI, one); // guaranteed to be checked at compile-time;
 				}			
 			}
 			else // First index is in non-constant form
@@ -446,22 +425,22 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						std::vector<Value*> varNames1;
 						std::vector<Value*> varNames2;
 						
+						varNames1.push_back(negone);
 						varNames1.push_back(originIndex);
-						varNames1.push_back(originLimit);
 						
-						ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
-						
-						varNames2.push_back(zero);
 						varNames2.push_back(originIndex);
+						varNames2.push_back(originLimit);
 						
-						MDNode* meta_LT = MDNode::get(context, varNames1);
-						MDNode* meta_GT = MDNode::get(context, varNames2);
+						MDNode* meta_lowerBound = MDNode::get(context, varNames1);
+						MDNode* meta_upperBound = MDNode::get(context, varNames2);
 
-						Instruction* callLTLimit = this->checkLTLimit(*OI, limit);
-						Instruction* callGTZero = this->checkGTLimit(zero, *OI);
-						
-						callLTLimit->setMetadata("VarName", meta_LT);
-						callGTZero->setMetadata("VarName", meta_GT);
+						Instruction* lowerBoundCheck = this->checkLessThan(negone, *OI);
+						Instruction* upperBoundCheck = this->checkLessThan(*OI, limit);
+					
+						if (lowerBoundCheck)
+							lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
+						if (upperBoundCheck)
+							upperBoundCheck->setMetadata("VarName", meta_upperBound);
 					}
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
@@ -499,22 +478,22 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						std::vector<Value*> varNames1;
 						std::vector<Value*> varNames2;
 						
+						varNames1.push_back(negone);
 						varNames1.push_back(originIndex);
-						varNames1.push_back(originLimit);
 						
-						ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
-						
-						varNames2.push_back(zero);
 						varNames2.push_back(originIndex);
+						varNames2.push_back(originLimit);
 					
-						MDNode* meta_LT = MDNode::get(context, varNames1);
-						MDNode* meta_GT = MDNode::get(context, varNames2);
+						MDNode* meta_lowerBound = MDNode::get(context, varNames1);
+						MDNode* meta_upperBound = MDNode::get(context, varNames2);
 
-						Instruction* callLTLimit = this->checkLTLimit(*OI, limit);
-						Instruction* callGTZero = this->checkGTLimit(zero, *OI);
-						
-						callLTLimit->setMetadata("VarName", meta_LT);
-						callGTZero->setMetadata("VarName", meta_GT);
+						Instruction* lowerBoundCheck = this->checkLessThan(negone, *OI);
+						Instruction* upperBoundCheck = this->checkLessThan(*OI, limit);
+					
+						if (lowerBoundCheck)
+							lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
+						if (upperBoundCheck)
+							upperBoundCheck->setMetadata("VarName", meta_upperBound);
 					}
 					else
 					{
@@ -525,6 +504,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				else
 				{
 					Value* originIndex = findOriginOfPointer(*OI);
+					ConstantInt* one = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), 1); // index should be < 1
 					
 					if (dyn_cast<LoadInst>(originIndex))
 						originIndex = ((LoadInst*)originIndex)->getOperand(0);
@@ -532,17 +512,17 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					errs() << "var1: " << originIndex << "\n";
 					
 					LLVMContext& context = this->M->getContext();
-					std::vector<Value*> varNames2;
+					std::vector<Value*> varNames;
 						
-					ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
-						
-					varNames2.push_back(zero);
-					varNames2.push_back(originIndex);
+					varNames.push_back(originIndex);
+					varNames.push_back(one);
 		
-					MDNode* meta_GT = MDNode::get(context, varNames2);
+					MDNode* meta_upperBound = MDNode::get(context, varNames);
 					
-					Instruction* callGTZero = this->checkGTLimit(zero, *OI);
-					callGTZero->setMetadata("VarName", meta_GT);
+					Instruction* upperBoundCheck = this->checkLessThan(*OI, one);
+					
+					if (upperBoundCheck)
+						upperBoundCheck->setMetadata("VarName", meta_upperBound);
 				}					
 			}
 		}
@@ -558,18 +538,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 					errs() << "\nIndex (Constant): " << index << "\n";
 					errs() << "numElements: " << numElements << "\n"; // number of elements in this part of array
-				
-					// index cannot go above number of elements - 1
-					if (CI->getZExtValue() >= Aty->getNumElements())
-					{
-						errs() << "GEP index " << index << " is >= " << Aty->getNumElements() << "\n";
-						errs() << "Compile-time analysis detected an out-of-bound access! Terminating...\n";
-						exit(1);
-					}
-					else
-					{
-						errs() << "GEP index " << index << " passed compile-time check: " << index << " < " << Aty->getNumElements() << "\n";
-					}
+	
+					ConstantInt* arraySize = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), numElements);
+	
+					this->checkLessThan(CI, arraySize); // guaranteed to be checked at compile-time
 				}
 			}
 			else // index is in non-constant form
@@ -598,22 +570,22 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					std::vector<Value*> varNames1;
 					std::vector<Value*> varNames2;
 						
+					varNames1.push_back(negone);
 					varNames1.push_back(originIndex);
-					varNames1.push_back(arraySizeCI);
 					
-					ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
-						
-					varNames2.push_back(zero);
 					varNames2.push_back(originIndex);
+					varNames2.push_back(arraySizeCI);
 						
-					MDNode* meta_LT = MDNode::get(context, varNames1);
-					MDNode* meta_GT = MDNode::get(context, varNames2);
+					MDNode* meta_lowerBound = MDNode::get(context, varNames1);
+					MDNode* meta_upperBound = MDNode::get(context, varNames2);
 
-					Instruction* callLTLimit = this->checkLTLimit(*OI, arraySizeCI);
-					Instruction* callGTZero = this->checkGTLimit(zero, *OI);
-					
-					callLTLimit->setMetadata("VarName", meta_LT);
-					callGTZero->setMetadata("VarName", meta_GT);
+					Instruction* lowerBoundCheck = this->checkLessThan(negone, *OI);
+					Instruction* upperBoundCheck = this->checkLessThan(*OI, arraySizeCI);
+				
+					if (lowerBoundCheck)
+						lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
+					if (upperBoundCheck)
+						upperBoundCheck->setMetadata("VarName", meta_upperBound);
 				}
 			}
 		}

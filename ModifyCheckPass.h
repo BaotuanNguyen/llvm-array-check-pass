@@ -44,6 +44,7 @@ namespace llvm
 			Module* M;
 			VeryBusyAnalysisPass* veryBusyAnalysis;
 			MapInstToRCS* veryBusyMap;
+			void generateMetadata(MDString* str, Value* variable, Value* n, Instruction* inst, Module* M);
 	};
 }
 

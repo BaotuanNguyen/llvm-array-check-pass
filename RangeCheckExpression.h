@@ -9,32 +9,25 @@
 
 using namespace llvm;
 
-enum RelOps
+enum VALUE_STATUS
 {
-	GTEQ, LT
+	UNKNOWN, LT, EQ, GT
 };
 
 class RangeCheckExpression
 {
 	public:
-		Value* op1;
-		Value* op2;
-		RelOps relOp;
+		Value* left;
+		Value* right;
+		CallInst* origin; // instruction where this RCE originated from
 
 		RangeCheckExpression()
 		{
-			this->op1 = NULL;
-			this->op2 = NULL;
-			this->relOp = LT;
+			this->left = NULL;
+			this->right = NULL;
+			this->origin = NULL;
 		}
 		
-		RangeCheckExpression(Value* op1, RelOps relOp, Value* op2)
-		{
-			this->op1 = op1;
-			this->op2 = op2;
-			this->relOp = relOp;
-		}
-
 		RangeCheckExpression(CallInst* Inst, Module* M);
 		
 		bool operator==(const RangeCheckExpression& other) const;
@@ -42,11 +35,7 @@ class RangeCheckExpression
 		void print();
 		void println();
 
-		RelOps getRelOp()
-		{
-			return relOp;
-		}
-
+		VALUE_STATUS compare(Value* var1, Value* var2);
 		bool subsumes(RangeCheckExpression* expr);
 };
 
