@@ -24,6 +24,7 @@ bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
         errs() << "\n";
 
         this->bbToCheck = new BBToCheckSet();
+        this->bbAndInstVec = new BBAndInstVec();
 
         return true;
 }
@@ -43,6 +44,18 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 
 bool LoopCheckPropagationPass::doFinalization(void)
 {
+        for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
+                errs() << "remove it\n";
+
+                PairBBAndInst *bni = *it;
+                BasicBlock *block = bni->first;
+                Instruction *inst = bni->second;
+                Instruction *back = &block->back();
+
+                inst->removeFromParent();
+                //inst->eraseFromParent();
+                block->getInstList().insert(back, inst);
+        }
 	return true;
 }
 
@@ -57,7 +70,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                         errs() << *v << "\n";
                         if(CallInst *ci = dyn_cast<CallInst> (v)){
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-				if(callFunctionName.equals("checkLTLimit") || callFunctionName.equals("checkGTLimit")){
+				if(callFunctionName.equals("checkLessThan")){
                                         errs() << "callinst: " << *ci << "\n";
                                         MDNode* metadata = ci->getMetadata("VarName");
                                         errs() << "metadata: " << *metadata;
@@ -66,7 +79,6 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                                         Value *operandTwo = metadata->getOperand(1);
 
                                         if(isCandidate(loop, operandOne, operandTwo)){
-                                                errs() << "so, i got this candidate...\n";
 
                                                 // CallInst ci is a candidate check for BasicBlock block
                                                 // look up the basic block
@@ -161,15 +173,28 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                 // iterate over candidate blocks
                 for(BBToCheckSet::iterator it = bbToCheck->begin(), ie = bbToCheck->end(); it != ie; ++it){
                         // iterate over the candidate checks within a given block
-                        errs() << "yo\n"; 
                         CheckSet *checkSet =  it->second;
+                        int once = 1;
                         for(CheckSet::iterator csIt = checkSet->begin(), csIe = checkSet->end(); csIt != csIe; ++csIt){
                                 // remove the instruction from its current block
                                 // add the instruction to header's predecessors -- we're just going to skip everything in the paper
                                 errs() << "BIG STINKING MAMAAAAAAAAAAAAAAAAAAAAAAAAA\n";
-                                (*csIt)->eraseFromParent();
+                                errs() << **csIt << "\n";
+
+                                if(once == 1){
+                                        --once;
+                                }else{
+                                        errs() << "BREAKING\n";
+                                        break;
+                                }
+
+                                //(*csIt)->eraseFromParent();
+                                //(*csIt)->removeFromParent();
+
                                 for(PredBlocks::iterator predIt = validPredecessorBlocks->begin(), predIe = validPredecessorBlocks->end(); predIt != predIe; ++predIt){
-                                        (*predIt)->getInstList().push_back(*csIt);
+                                        //Instruction *back = &(*predIt)->back();
+                                        //(*predIt)->getInstList().insert(back, *csIt);
+                                        bbAndInstVec->push_back(new PairBBAndInst(*predIt, *csIt));
                                 }
                         }
                 }
