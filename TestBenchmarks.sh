@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 ccWOpts="-Wcomment -Wstring-plus-int -Wformat -S -emit-llvm"
 LibFile="../LibArrayCheck.c"
 LibFileLL="${LibFile%.c}.ll"
@@ -12,10 +12,6 @@ PASSES="-loop-unroll"
 shopt -s dotglob
 shopt -s nullglob
 
-rm -rf Output/
-cd benchmarks/
-mkdir Output/
-cd ../
 
 getMakeOption(){
 	#echo "----"
@@ -77,26 +73,55 @@ runBenchmark () {
 	sedDir=${1%\/}
 	sedOpts="s/\$(PROJ_SRC_DIR)/"$sedDir"/gp"
 	runOpts=$(echo $runOpt | sed -n $sedOpts)
+	echo "\n\n--"
 	echo "->running ${prog} ${runOpts}"
-	$prog $runOpts 1&> "$sedDir.txt"
-	time $prog $runOpts 1&> /dev/null	
+	#run the application to obtain any output
+	$prog $runOpts &> "$sedDir.txt"
+	#run the application for timing
+	#timeOutput=`/usr/bin/time $prog $runOpts 2>&1 >/dev/null`
+	timeOutput=$((time $prog $runOpts >/dev/null) 2>&1 | awk '/[0-9]*\.[0-9]*/{print;}' )
+	#timeExec=$( echo $timeOutput | awk '/^user/ { print "$0" }' )
+	echo "*"
+	echo "$timeOutput"
+	echo "*"
+	#remove executable
 	rm ${1}${progOpt}
 }
-#main
+
+
+
+#MAIN() {
 #setup library file
+
+#remove Output folder, output.txt, and stat.txt (contains all important statistics
+TIMEFORMAT=%R
+
+cd benchmarks/
+rm -rf Output/
+rm -rf *.txt
+rm -rf *.stat.txt
+cd ../
+
+#compile library file
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}
 clang -emit-llvm -c -o ${LibFileLL} ${LibFile}
 echo "clang -emit-llvm -c -o ${LibFileLL} ${LibFile}"
 
+#get a lof of all the benchmarks
 cd benchmarks
 BenchmarkFolders=(*/)
 
+#compile every benchmark
 for BenchmarkFolder in ${BenchmarkFolders[@]}
 do
 	echo $BenchmarkFolder
 	compileBenchmark $BenchmarkFolder
 done
 
+#create benchmark output folder
+mkdir Output
+
+#run every benchmark
 pwd
 for BenchmarkFolder in ${BenchmarkFolders[@]}
 do
@@ -104,10 +129,4 @@ do
 	runBenchmark $BenchmarkFolder
 done
 
-
-echo "MODULE_LIB=ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*"
-
-
-
-
-
+#main end ]
