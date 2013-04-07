@@ -1,0 +1,76 @@
+Pass Arguments:  -targetlibinfo -datalayout -array-check -preverify -domtree -verify -print-module
+Target Library Information
+Data Layout
+  ModulePass Manager
+    Insert Run-Time Array Bounds Checks
+    FunctionPass Manager
+      Preliminary module verification
+      Dominator Tree Construction
+      Module Verifier
+    Print module to stderr
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arr = getelementptr inbounds %struct.st* %strt, i32 0, i32 0
+Base Pointer Type: %struct.st*
+Base Pointer   %strt = alloca %struct.st, align 4
+Origin Base Pointer:   %strt = alloca %struct.st, align 4
+
+First Index (Constant): 0
+First index 0 passed compile-time check: 0 <= 0
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx = getelementptr inbounds [100 x i8]* %arr, i32 0, i64 %idxprom
+Base Pointer Type: [100 x i8]*
+Base Pointer   %arr = getelementptr inbounds %struct.st* %strt, i32 0, i32 0
+Origin Base Pointer:   %strt = alloca %struct.st, align 4
+
+First Index (Constant): 0
+First index 0 passed compile-time check: 0 <= 0
+
+Index (Non-constant):   %idxprom = zext i32 %0 to i64
+NumElements: 100
+Origin Index:   %0 = load i32* %i, align 4
+var1:   %i = alloca i32, align 4
+var2: i64 100
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %float_arr = getelementptr inbounds %struct.st* %strt, i32 0, i32 1
+Base Pointer Type: %struct.st*
+Base Pointer   %strt = alloca %struct.st, align 4
+Origin Base Pointer:   %strt = alloca %struct.st, align 4
+
+First Index (Constant): 0
+First index 0 passed compile-time check: 0 <= 0
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx3 = getelementptr inbounds [200 x [300 x float]]* %float_arr, i32 0, i64 %idxprom2
+Base Pointer Type: [200 x [300 x float]]*
+Base Pointer   %float_arr = getelementptr inbounds %struct.st* %strt, i32 0, i32 1
+Origin Base Pointer:   %strt = alloca %struct.st, align 4
+
+First Index (Constant): 0
+First index 0 passed compile-time check: 0 <= 0
+
+Index (Non-constant):   %idxprom2 = zext i32 %2 to i64
+NumElements: 200
+Origin Index:   %2 = load i32* %i, align 4
+var1:   %i = alloca i32, align 4
+var2: i64 200
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+[GEP instruction detected]:   %arrayidx4 = getelementptr inbounds [300 x float]* %arrayidx3, i32 0, i64 %idxprom1
+Base Pointer Type: [300 x float]*
+Base Pointer   %arrayidx3 = getelementptr inbounds [200 x [300 x float]]* %float_arr, i32 0, i64 %idxprom2
+Origin Base Pointer:   %strt = alloca %struct.st, align 4
+
+First Index (Constant): 0
+First index 0 passed compile-time check: 0 <= 0
+
+Index (Non-constant):   %idxprom1 = zext i32 %add to i64
+NumElements: 300
+Origin Index:   %add = add i32 %1, 1
+var1:   %add = add i32 %1, 1
+var2: i64 300
+----------------------------------------------------------------------
+-------------------------------------------------------
+Number of checks inserted: 6
+-------------------------------------------------------

@@ -171,17 +171,16 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++)
 	{
-		//errs() << "Instruction: " << *II << "\n";
-        
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
             
 			if(!callFunctionName.equals("checkLTLimit") && !callFunctionName.equals("checkGTLimit"))
 			{
-				  errs() << "\t\tNot a Check Call: " << *II << "\n";
                   continue;
             }
+			
+			errs() << "Call Instruction: " << *callInst << "\n";
 
 			//INSERT AVAILABLE INFORMATION FOR THIS CALL INSTRUCTION!
 			I_A_OUT->erase(callInst);
@@ -199,7 +198,8 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 		}
         else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
 		{
-			currentRCS->kill_forward(storeInst);
+			errs() << "Store Instruction: " << *storeInst << "\n";
+			currentRCS->kill_forward(storeInst, this->module);
         }
    }
    return currentRCS;

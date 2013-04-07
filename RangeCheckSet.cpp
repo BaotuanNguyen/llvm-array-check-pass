@@ -41,7 +41,7 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 	{
 		RangeCheckExpression current = *it;
 
-		errs() << "union: "; current.print(); errs() << " AND ";expr->println();
+		//errs() << "union: "; current.print(); errs() << " AND ";expr->println();
 		
 		if (current.subsumes(expr))
 		{
@@ -134,19 +134,52 @@ bool RangeCheckSet::doValueKillCheckBackward(RangeCheckExpression* currentCheck,
 	}
 }
 
-void RangeCheckSet::kill_backward(Instruction* store)
+void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 {
 	bool erased = false;
-	std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin();
 	
 	Value* valueBeingStored = store->getOperand(0);
 	Instruction* variableBeingStored = dyn_cast<Instruction>(store->getOperand(1));
+
+	if (valueBeingStored->getType()->isPointerTy())
+	{
+		for (std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin(); it != this->checkSet->end();)
+		{
+			erased = false;
+			RangeCheckExpression* currentCheck = &(*it);
+			
+			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+			{
+				if (op1 == valueBeingStored)
+				{
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+			{
+				if (op2 == valueBeingStored)
+				{
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+			
+			if (!erased)
+				it++;
+		}
+		return; // a pointer cannot be a part of any range checks. Just quit now
+	}
+
+	erased = false;
 
 	// ignoer function arguments since they cannot possibly kill any checks
 	if (dyn_cast<Argument>(valueBeingStored))
 		return;
 
-	for (;it != this->checkSet->end();)
+	for (std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin();it != this->checkSet->end();)
 	{
 		erased = false;
 		RangeCheckExpression* currentCheck = &(*it);
@@ -242,12 +275,44 @@ bool RangeCheckSet::doValueKillCheckForward(RangeCheckExpression* currentCheck, 
 	}
 }
 
-void RangeCheckSet::kill_forward(Instruction* store)
+void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 {
 	bool erased = false;
 	std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin();
 	Value* valueBeingStored = store->getOperand(0);
 	Instruction* variableBeingStored = dyn_cast<Instruction>(store->getOperand(1));
+	
+	if (valueBeingStored->getType()->isPointerTy())
+	{
+		for (std::vector<RangeCheckExpression>::iterator it = this->checkSet->begin();it != this->checkSet->end();)
+		{
+			erased = false;
+			RangeCheckExpression* currentCheck = &(*it);
+			
+			if (Instruction* op1 = dyn_cast<Instruction>(currentCheck->op1))
+			{
+				if (op1 == valueBeingStored)
+				{
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+			else if (Instruction* op2 = dyn_cast<Instruction>(currentCheck->op2))
+			{
+				if (op2 == valueBeingStored)
+				{
+					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					this->checkSet->erase(it);
+					erased = true;
+				}
+			}
+			
+			if (!erased)
+				it++;
+		}
+		return; // a pointer cannot be a part of any range checks. Just quit now
+	}
 	
 	// ignoer function arguments since they cannot possibly kill any checks
 	if (dyn_cast<Argument>(valueBeingStored))
