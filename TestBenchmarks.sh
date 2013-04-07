@@ -7,7 +7,7 @@ cd benchmarks/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
 cd ../
 OPT="./${LLVM_LIBRARY}bin/opt"
-PASSES="-loop-unroll"
+PASSES=""
 
 shopt -s dotglob
 shopt -s nullglob
@@ -38,7 +38,7 @@ do
 			;;
 		"3") 	PASSES="-loop-pass"
 			;;
-		"a")	;;
+		"a")	usage; exit 1;;	#no used currently
 		"v")	VERBOSE=1
 			;;
 		"h")	usage
@@ -50,6 +50,26 @@ do
 			;;
 esac
 done
+
+#compile file with flags
+if [[ $VERBOSE -eq 1 ]]
+then
+	in=$( cat "m.o" )
+	if [[ $in != "1" ]]; then
+		make clean
+	fi
+	echo "make"
+	make 
+	echo "1" > "m.o"
+else
+	in=$( cat "m.o" )
+	if [[ $in != "0" ]]; then
+		make clean
+	fi
+	echo "make CPPFLAGS:=\"-D__NOT_VERBOSE__ -w\""
+	make CPPFLAGS:="-D__NOT_VERBOSE__=1 -w"
+	echo "0" > "m.o"
+fi
 
 getMakeOption(){
 	#echo "----"
@@ -78,6 +98,12 @@ compileBenchmark(){
 	cFiles=(${1}*.c)
 	#oFiles=""
 	llModFiles=""
+	if [[ $VERBOSE == 1 ]]; then
+		echo "!!!!!!!!!!!!compiling and optimizing ${1}"
+		if [[ $2 != "" ]]; then
+ 			echo "\n\n\n\n\n"
+		fi
+	fi
 	#compile all benchmarks
 	for cFile in ${cFiles[@]}
 	do
@@ -90,13 +116,35 @@ compileBenchmark(){
 		#emitting intermediate llvm IR code
 		clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile}
 		#echo "clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile} 2> /dev/null"
-		#echo "-> compiling ${cFile} into ${llFile} with in (${1}) options (${ccOpts} <> ${ccWOpts})"
+		if [[ $VERBOSE == 1 ]]; then
+			echo "!!!!compiling ${cFile} into ${llFile} with in (${1}) options (${ccOpts} <> ${ccWOpts})"
+		fi
 		#echo "-> compiling ${cFile} into ${llFile}"
 
 		#collect statistics of optimizations here
-		$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null
+		if [[ $VERBOSE == 1 ]]; then
+			echo "!!!!optimizing ${llFile} into ${llModFile} with (${2})"
+		fi
+
+		#if there are no passes assigned to run, then don't load library
+		if [[ $2 == "" ]]; then
+			if [[ $VERBOSE == 1 ]]; then
+				echo "$OPT -S -o $llModFile < $llFile > /dev/null"
+			fi
+			$OPT -S -o $llModFile < $llFile > /dev/null
+		else
+			if [[ $VERBOSE == 1 ]]; then
+				echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
+			fi
+			$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null
+		fi
 		#echo "-> optimizing ${llFile} into ${llModFile} with (${2})"
 		#echo "$OPT -load ${MODULE_LIB} $PASSES -S -o $llModFile < $llFile > /dev/null"
+		if [[ $VERBOSE == 1 ]]; then
+			if [[ $2 != "" ]]; then
+				echo "\n\n\n\n\n\n\n\n\n\n"
+			fi
+		fi
 	done
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${oFiles})"
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${llModFiles})"
