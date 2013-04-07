@@ -24,8 +24,9 @@ namespace llvm
 {
         typedef std::vector<BasicBlock *> LoopBlocks;
         typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
-	typedef std::map<BasicBlock *, Value *> BBToCheck;
-	typedef std::pair<BasicBlock *, Value *> PairBBAndCheck;
+        typedef std::set<Instruction *> CheckSet;
+	typedef std::map<BasicBlock *, CheckSet *> BBToCheckSet;
+	typedef std::pair<BasicBlock *, CheckSet *> PairBBAndCheckSet;
         typedef enum{
                 INVARIANT, INCREASING, DECREASING, WILD // TODO monotonic inc/dec?
         }effect_t;
@@ -53,7 +54,7 @@ namespace llvm
 		
 		private:
 
-                        BBToCheck *bbToCheck;
+                        BBToCheckSet *bbToCheck;
 	};
 
 }
