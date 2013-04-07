@@ -8,7 +8,7 @@ int main() {
 
 	for (i = 0; i < 100; ++i) {
                 variant = invariant;
-		a[i] = 10;
+		a[invariant] = 10;
                 /*for (int j = 0; j < 10; j++) {
                         a[j] = 2;
                 }*/
