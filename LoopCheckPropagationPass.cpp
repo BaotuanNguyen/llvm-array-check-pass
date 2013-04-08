@@ -181,6 +181,13 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
 
 
 
+                // TODO right now this code is blindly applying the same rules
+                // for an invariant case as it is for an increasing or decreasing
+                // one. 
+                // more logic is needed to determine which case we are in.
+                // a different kind of hoist needs to be written for each case
+                //
+                //
                 // create a list of the instructions we are hoisting
                 moveVec->push_back(inst);
                 CallInst *ci = dyn_cast<CallInst>(inst);
