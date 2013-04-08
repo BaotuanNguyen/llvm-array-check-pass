@@ -48,6 +48,8 @@ namespace llvm
 				AU.addRequired<EffectGenPass>();
 			}
 
+						bool isInvariant(Value* operand, Loop* L);
+
                         void findCandidates(Loop *loop);
                         void hoistTo(BasicBlock* preheader);
                         bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);

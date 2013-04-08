@@ -46,6 +46,45 @@ bool LoopCheckPropagationPass::doFinalization(void)
 	return true;
 }
 
+bool LoopCheckPropagationPass::isInvariant(Value* operand, Loop* L)
+{
+	Instruction* inst = dyn_cast<Instruction>(operand);
+	
+	if (!inst)
+	{
+		return true;
+	}
+
+    MDNode* metadata = inst->getMetadata("EFFECT");
+
+	if (metadata == NULL)
+	{
+		return true;
+	}
+
+	Value* origin = metadata->getOperand(1);
+
+	Instruction* originInst = dyn_cast<Instruction>(origin);
+
+	if (!originInst)
+	{
+		return true;
+	}
+								  
+	BasicBlock* originBlock = originInst->getParent();
+    LoopBlocks *blocks = &L->getBlocksVector();
+    
+	for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it)
+	{
+		if (originBlock == *it)
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
 bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 {
         errs() << "\n***\n";
@@ -63,7 +102,6 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
                 for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt)
 				{
                         Value *v = &*bbIt;
-                        errs() << *v << "\n";
 
                         if(CallInst *ci = dyn_cast<CallInst> (v))
 						{
@@ -74,10 +112,12 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 							
 							if(callFunctionName.equals("checkLessThan"))
 							{
-                                  Value *operandOne = ci->getOperand(0);
-                                  Value *operandTwo = ci->getOperand(1);
+                                  MDNode* metadata = ci->getMetadata("VarName");
+							  
+								  Value* operand1 = metadata->getOperand(0);
+								  Value* operand2 = metadata->getOperand(1);
 
-								  if (L->isLoopInvariant(operandOne) && L->isLoopInvariant(operandTwo))
+								  if (isInvariant(operand1, L) && isInvariant(operand2, L))
 								  {
                                       errs() << "Callinst: " << *ci << "is loop invariant!\n";
 									  candidates->push_back(ci);
@@ -157,6 +197,7 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 void LoopCheckPropagationPass::hoistTo(BasicBlock *preheader)
 {
 	// append to this basic block! oy oy!! hosing sir!!!
+	/*
 	for (std::vector<CallInst*>::iterator it = candidates->begin(); it != candidates->end(); it++)
 	{
 		CallInst* hoistedInst = *it;
@@ -167,7 +208,7 @@ void LoopCheckPropagationPass::hoistTo(BasicBlock *preheader)
 
 	   	preheader->getInstList().insert(rt, hoistedInst);
 		errs() << *hoistedInst << " Hoisted!!! oy oy!\n";
-	}
+	}*/
 
 	return;	
 }
