@@ -42,7 +42,7 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
         prepHoist(L); // populates bbAndInstVec
 
         errs() << "\n***\n";
-        errs() << "Hoisting, good sirs\n";
+        errs() << "Hoisting, good lads\n";
         errs() << "***\n";
         hoist();
 
@@ -60,31 +60,34 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
         LoopBlocks *blocks = &loop->getBlocksVector();
         for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
                 BasicBlock *block = *it;
-                errs() << "\n--beginning new loop block--\n";
+                //errs() << "\n--beginning new loop block--\n";
                 for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt){
                         Value *v = &*bbIt;
-                        errs() << *v << "\n";
+                        //errs() << *v << "\n";
                         if(CallInst *ci = dyn_cast<CallInst> (v)){
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
 				if(callFunctionName.equals("checkLessThan")){
-                                        errs() << "callinst: " << *ci << "\n";
+                                        //errs() << "callinst: " << *ci << "\n";
                                         MDNode* metadata = ci->getMetadata("VarName");
-                                        errs() << "metadata: " << *metadata;
+                                        //errs() << "metadata: " << *metadata;
 
                                         Value *operandOne = metadata->getOperand(0);
                                         Value *operandTwo = metadata->getOperand(1);
 
                                         if(effect_t candidacy = isCandidate(loop, operandOne, operandTwo)){
 
+                                                errs() << "candidacy: " << candidacy << "\n";
                                                 errs() << "candidate operandOne: " << *operandOne << "\n";
                                                 errs() << "candidate operandTwo: " << *operandTwo << "\n";
+
                                                 // CallInst ci is a candidate check for BasicBlock block
                                                 // look up the basic block
+                                                // if it exists
+                                                //      get the checkset
                                                 // if it doesn't exist,
                                                 //      create a new set
-                                                // add the call instruction to the set
-                                                // if it didnt exist,
                                                 //      insert the mapping
+                                                // add the call instruction to the set of checks for this block
                                                 BBToCheckSet::iterator it = bbToCheck->find(block);
                                                 CheckSet *cs;
                                                 if(it != bbToCheck->end())
@@ -101,9 +104,6 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
                                                 // insert the call instruction to the set of candidate checks
                                                 cs->insert(ci);
-
-                                                //bbToCheck->insert(PairBBAndCheck(block, ci));
-                                                //errs() << "candidate ci " << *ci << "\n";
                                         }
                                 }
                         }
@@ -112,20 +112,23 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 }
 
 
+/*
+ * two parts to this function:
+ *  1. find all valid predecessor blocks into which we can hoist candidate checks
+ *  2. populate bbAndInstVec with pairs of predBlocks with candidate checks
+ */
 void LoopCheckPropagationPass::prepHoist(Loop *loop)
 {
-
-        // adjust the paper's algorithm:
+        // does not follow the paper's algorithm at this point
         //  grab the header of the loop.
-        //  try hoisting all candidate checks into the header and go from there.
+        //  iterate over all predecessors of the loop's header
+        //  we'll be hoisting all candidate checks into these blocks
+        //  ignore predecessors of the loop's header that are part of the loop
 
-        // all predecessors going into the loop need to add the instruction...
-        // but if the predecessor is in the loop, we don't include it
         typedef std::vector<BasicBlock *> PredBlocks;
-        //std::vector<BasicBlock *> *validPredecessorBlocks = new std::vector<BasicBlock *>();
-        PredBlocks *validPredecessorBlocks = new PredBlocks();
+        PredBlocks *validPredecessorBlocks = new PredBlocks(); // all predecessors of loop header not part of the loop blocks
 
-        BasicBlock *header = loop->getHeader();//->getUniquePredecessor();
+        BasicBlock *header = loop->getHeader();
         for(pred_iterator it = pred_begin(header), ie = pred_end(header); it != ie; ++it){
                 LoopBlocks *loopBlocks = &loop->getBlocksVector();
                 if(std::find(loopBlocks->begin(), loopBlocks->end(), *it) == loopBlocks->end()) {
@@ -154,20 +157,18 @@ void LoopCheckPropagationPass::prepHoist(Loop *loop)
 
 }
 
-
+/*
+ * AHOY!
+ */
 void LoopCheckPropagationPass::hoist(void)
 {
 
-        // remove and insert instructions
+        // iterate over every pair of predecessor block with a candidate check
         for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
-                errs() << "remove it\n";
 
                 /*
-                 * the check call is dependent on several instructions.
-                 * to simplify the algorithm, we make the assumption that those dependencies
-                 * directly precede the instruction.
-                 * because there is another check call that may rely on those same instructions, we
-                 * can first check to see if those instructions have been moved already
+                 * the check call is dependent on its arguments, whose definitions
+                 * may be dependent on other instructions, making this part difficult
                  */
 
                 PairBBAndInst *bni = *it;
@@ -178,12 +179,12 @@ void LoopCheckPropagationPass::hoist(void)
                 typedef std::vector<Instruction *> MoveVec;
                 MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
                 std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
-                //inst->eraseFromParent(); // this, without the other two calls, works
 
-                // these two calls together dont work because %idxprom is referenced by the call
-                //inst->removeFromParent();
-                //block->getInstList().insert(back, inst);
-
+                // start from the end of the check instruction's block
+                // iterate until we find our check instruction
+                // at that point, push our instruction onto the moveVec
+                // and mark a flag variable, keepPushing
+                // continue iterating, except now, we are pushing until we see a load instruction
 	        llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
                 bool keepPushing = false;
                 for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
@@ -208,9 +209,7 @@ void LoopCheckPropagationPass::hoist(void)
                                 }
                         }
                         if(instTemp == inst){
-                                errs() << "Yo wuddup yo\n";
                                 moveVec->push_back(instTemp);
-                                // find the values it needs
                                 keepPushing = true;
                         }
                 }
@@ -251,10 +250,14 @@ void LoopCheckPropagationPass::hoist(void)
  */
 effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value *operandTwo)
 {
+
+        operandOne = swapFakeOperand(operandOne);
+        operandTwo = swapFakeOperand(operandTwo);
+
         effect_t operandOneEffect = getEffect(loop, operandOne);
         effect_t operandTwoEffect = getEffect(loop, operandTwo);
-        errs() << "operandOneEffect: " << operandOneEffect << "\n";
-        errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
+        //errs() << "operandOneEffect: " << operandOneEffect << "\n";
+        //errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
 
         // invariant
         if(operandOneEffect == INVARIANT && operandTwoEffect == INVARIANT){
@@ -356,6 +359,30 @@ effect_t LoopCheckPropagationPass::getEffect(Loop *loop, Value *operand)
 
 
 
+Value *LoopCheckPropagationPass::swapFakeOperand(Value *operand)
+{
+        // apparently the IR produces an instruction like this:
+        // %2 = add 0, %idxprom   (UNCHANGED $i)
+        //  -- or something to this effect.
+        // it then passes %2 to checkLessThan, changing the VarName
+        // metadata to use %2 instead of %i
+        // obviously %2 is invariant within the loop, when we don't even
+        // care -- we need to know about %i, not %2
+        //
+        // swap %i for %2 if something like that happened
+
+        errs() << *operand << "\n";
+        if(operand->getNumUses() <= 2){
+                if(Instruction *inst = dyn_cast<Instruction>(operand)){
+                        if(inst->getOpcode() == Instruction::Add){
+                                return getAffectedOperandOfMeta(inst->getMetadata("EFFECT"));
+                        }
+                }
+
+        }
+        return operand;
+
+}
 
 
 std::string LoopCheckPropagationPass::getEffectOfMeta(MDNode *meta)

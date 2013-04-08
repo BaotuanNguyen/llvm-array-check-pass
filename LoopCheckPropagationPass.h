@@ -50,6 +50,7 @@ namespace llvm
                         void hoist(void);
                         effect_t isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         effect_t getEffect(Loop *loop, Value *operand);
+                        Value *swapFakeOperand(Value *operand);
 
                         std::string getEffectOfMeta(MDNode *meta);
                         Value *getAffectedOperandOfMeta(MDNode *meta);
