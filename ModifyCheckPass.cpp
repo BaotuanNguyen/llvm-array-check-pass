@@ -44,10 +44,13 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			
 			if (dyn_cast<ConstantInt>(expr2->left) && dyn_cast<ConstantInt>(expr->left)) // LHS contains a constant
 			{
+				Value* arguement = expr2->left;
+				if ((expr2->left->getType()) != Type::getInt64Ty(this->M->getContext()))
+					arguement = CastInst::CreateIntegerCast(expr2->left, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 //				errs() << "func arg0: " << *(expr2->left) << "\n";
 //				errs() << "func meta0: " << *(expr2->left) << "\n";
-				callInst->setArgOperand(0, expr2->left);
-				effect.push_back(expr2->left);
+				callInst->setArgOperand(0, arguement);
+				effect.push_back(arguement);
 			}
 			else if (dyn_cast<AllocaInst>(expr2->left) || dyn_cast<GlobalVariable>(expr2->left)) // LHS contains a named variable
 			{
@@ -103,9 +106,12 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			{
 //				errs() << "func arg1: " << *(expr2->right) << "\n";
 //				errs() << "func meta1: " << *(expr2->right) << "\n";
+				Value* arguement = expr2->right;
+				if ((expr2->right->getType()) != Type::getInt64Ty(this->M->getContext()))
+					arguement = CastInst::CreateIntegerCast(expr2->right, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 
-				callInst->setArgOperand(1, expr2->right);
-				effect.push_back(expr2->right);
+				callInst->setArgOperand(1, arguement);
+				effect.push_back(arguement);
 			
 			}
 			else if (dyn_cast<AllocaInst>(expr2->right) || dyn_cast<GlobalVariable>(expr2->right)) // RHS contains a named variable

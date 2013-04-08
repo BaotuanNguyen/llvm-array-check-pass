@@ -58,7 +58,7 @@ then
 	if [[ $in != "1" ]]; then
 		make clean
 	fi
-	echo "make"
+	#echo "make"
 	make 
 	echo "1" > "m.o"
 else
@@ -66,7 +66,7 @@ else
 	if [[ $in != "0" ]]; then
 		make clean
 	fi
-	echo "make CPPFLAGS:=\"-D__NOT_VERBOSE__ -w\""
+	#echo "make CPPFLAGS:=\"-D__NOT_VERBOSE__ -w\""
 	make CPPFLAGS:="-D__NOT_VERBOSE__=1 -w"
 	echo "0" > "m.o"
 fi
@@ -105,6 +105,8 @@ compileBenchmark(){
 		fi
 	fi
 	#compile all benchmarks
+	sumAdded="0"
+	sumDeleted="0"
 	for cFile in ${cFiles[@]}
 	do
 		oFile="${cFile%.c}.o"
@@ -127,6 +129,7 @@ compileBenchmark(){
 		fi
 
 		#if there are no passes assigned to run, then don't load library
+		checksAdded=""
 		if [[ $2 == "" ]]; then
 			if [[ $VERBOSE == 1 ]]; then
 				echo "$OPT -S -o $llModFile < $llFile > /dev/null"
@@ -136,7 +139,25 @@ compileBenchmark(){
 			if [[ $VERBOSE == 1 ]]; then
 				echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
 			fi
-			$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null
+			#get number of checks interted
+			#Number of checks inserted
+			checksAdded=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/\ Number\ of\ checks\ inserted:(.*)/\1/p')
+			checksDeleted=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/REMOVED\ REDUNDANT\ CHECKS\ #:(.*)/\1/p') 
+			#echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
+			#if [[ ! -e ${llModFile} ]]; then
+			#	echo $llModFile
+			#	echo "!!aa!!does not exist"
+			#fi
+
+			if [[ $checksDeleted == "" ]]; then
+				checksDeleted="0"
+			fi
+			#process the numbers found
+			sumAdded=$(echo "${sumAdded}+${checksAdded}" | bc)
+			sumDeleted=$(echo "${sumDeleted}+${checksDeleted}" | bc)
+			#echo "current sumAdded: ${sumAdded}"
+			#echo "current sumDeleted: ${sumDeleted}"
+			#$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile &> sed -n 's/Number\ of\ checks\ inserted:\ \(.*\)/\1/gp'
 		fi
 		#echo "-> optimizing ${llFile} into ${llModFile} with (${2})"
 		#echo "$OPT -load ${MODULE_LIB} $PASSES -S -o $llModFile < $llFile > /dev/null"
@@ -146,6 +167,15 @@ compileBenchmark(){
 			fi
 		fi
 	done
+	totalChecks=$( echo "${sumAdded}-${sumDeleted}" | bc )
+	percentageDeleted=" 0"
+	if [[ ${sumAdded} != "0" ]]; then
+		percentageDeleted=$( echo "scale=4; ${sumDeleted}/${sumAdded}" | bc )
+	fi
+	echo "checks added      :  ${sumAdded}"
+	echo "checks deleted    :  ${sumDeleted}"
+	echo "checks total      :  ${totalChecks}"
+	echo "percentage deleted: ${percentageDeleted}"
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${oFiles})"
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${llModFiles})"
 	#link all benchmarks 
@@ -171,7 +201,9 @@ runBenchmark () {
 	sedOpts="s/\$(PROJ_SRC_DIR)/"$sedDir"/gp"
 	runOpts=$(echo $runOpt | sed -n $sedOpts)
 	#echo "\n\n--"
-	#echo "->running ${prog} ${runOpts}"
+	if [[ $VERBOSE == 1 ]]; then
+		echo "->running ${prog} ${runOpts}"
+	fi
 	#run the application to obtain any output
 	$prog $runOpts &> "$sedDir.txt"
 	#run the application for timing
@@ -179,8 +211,8 @@ runBenchmark () {
 	timeOutput=$((time $prog $runOpts >/dev/null) 2>&1 | awk '/[0-9]*\.[0-9]*/{print;}' )
 	#timeExec=$( echo $timeOutput | awk '/^user/ { print "$0" }' )
 	execSize=$( wc -c $prog | awk '{print $1;}' )
-	echo "RunTime  (secs) : ${timeOutput}"
-	echo "ExecSize (bytes): ${execSize}"
+	echo "RunTime  (secs)   : ${timeOutput}"
+	echo "ExecSize (bytes)  : ${execSize}"
 	#remove executable
 	rm ${1}${progOpt}
 }
@@ -201,7 +233,7 @@ cd ../
 
 #compile library file
 cd benchmarks/
-echo "clang++ -D__DEBUG__=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}"
+#echo "clang++ -D__DEBUG__=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}"
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o ${LibFileLL} ${LibFile}
 cd ../
 
@@ -216,13 +248,20 @@ mkdir Output
 for BenchmarkFolder in ${BenchmarkFolders[@]}
 do
 	echo $BenchmarkFolder
+	#if [[ $BenchmarkFolder != "telecomm-gsm/" ]]; then
+	#	continue;	
+	#fi
 	compileBenchmark "$BenchmarkFolder" "$PASSES"
-	echo "compiled and linked \"${BenchmarkFolder%/}\" with optimizations (${PASSES})"
+	if [[ $VERBOSE == 1 ]]; then
+		echo "compiled and linked \"${BenchmarkFolder%/}\" with optimizations (${PASSES})"
+	fi
 
 	progOpt=$(getMakeOption ${BenchmarkFolder} "PROG")
 	runOpt=$(getMakeOption ${BenchmarkFolder} "RUN_OPTIONS")
 	#run the actualy benchmark
-	echo "running ${BenchmarkFolder%/}"
+	if [[ $VERBOSE == 1 ]]; then
+		echo "running ${BenchmarkFolder%/}"
+	fi
 	runBenchmark "$BenchmarkFolder" "$progOpt" "$runOpt"
 	echo "\n\n"
 done
