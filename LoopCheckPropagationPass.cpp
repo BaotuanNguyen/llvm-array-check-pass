@@ -44,7 +44,6 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
         errs() << "\n***\n";
         errs() << "Hoisting, good sirs\n";
         errs() << "***\n";
-
         hoist();
 
 
@@ -75,7 +74,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
                                         Value *operandOne = metadata->getOperand(0);
                                         Value *operandTwo = metadata->getOperand(1);
 
-                                        if(isCandidate(loop, operandOne, operandTwo)){
+                                        if(effect_t candidacy = isCandidate(loop, operandOne, operandTwo)){
 
                                                 errs() << "candidate operandOne: " << *operandOne << "\n";
                                                 errs() << "candidate operandTwo: " << *operandTwo << "\n";
@@ -115,7 +114,6 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
 void LoopCheckPropagationPass::prepHoist(Loop *loop)
 {
-
 
         // adjust the paper's algorithm:
         //  grab the header of the loop.
@@ -251,7 +249,7 @@ void LoopCheckPropagationPass::hoist(void)
  * called by findCandidates()
  * operandOne and operandTwo are the two operands of a checkLTLimit or checkGTZero call
  */
-bool LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value *operandTwo)
+effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value *operandTwo)
 {
         effect_t operandOneEffect = getEffect(loop, operandOne);
         effect_t operandTwoEffect = getEffect(loop, operandTwo);
@@ -260,28 +258,28 @@ bool LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value 
 
         // invariant
         if(operandOneEffect == INVARIANT && operandTwoEffect == INVARIANT){
-                return true;
+                return INVARIANT;
         }
 
         // increasing
-        if(operandOneEffect == INCREASING && operandTwoEffect == INVARIANT){
-                return true;
+        /*if(operandOneEffect == INCREASING && operandTwoEffect == INVARIANT){
+                return INCREASING;
         }
         if(operandTwoEffect == INCREASING && operandOneEffect == INVARIANT){
-                return true;
+                return INCREASING;
         }
 
         // decreasing
         if(operandOneEffect == DECREASING && operandTwoEffect == INVARIANT){
-                return true;
+                return DECREASING;
         }
         if(operandTwoEffect == DECREASING && operandOneEffect == INVARIANT){
-                return true;
-        }
+                return DECREASING;
+        }*/
 
         // TODO monotonic increase and decrease
 
-        return false;
+        return WILD;
 }
 
 

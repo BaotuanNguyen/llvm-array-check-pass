@@ -30,7 +30,7 @@ namespace llvm
 	typedef std::pair<BasicBlock *, Instruction *> PairBBAndInst;
 	typedef std::vector<PairBBAndInst *> BBAndInstVec;
         typedef enum{
-                INVARIANT, INCREASING, DECREASING, WILD // TODO monotonic inc/dec?
+                WILD, INVARIANT, INCREASING, DECREASING // TODO monotonic inc/dec?
         }effect_t;
 	struct LoopCheckPropagationPass : public LoopPass {
 		public:
@@ -48,7 +48,7 @@ namespace llvm
                         void findCandidates(Loop *loop);
                         void prepHoist(Loop *loop);
                         void hoist(void);
-                        bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
+                        effect_t isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         effect_t getEffect(Loop *loop, Value *operand);
 
                         std::string getEffectOfMeta(MDNode *meta);
