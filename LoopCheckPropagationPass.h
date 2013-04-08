@@ -46,7 +46,8 @@ namespace llvm
 			}
 
                         void findCandidates(Loop *loop);
-                        void hoist(Loop *loop);
+                        void prepHoist(Loop *loop);
+                        void hoist(void);
                         bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         effect_t getEffect(Loop *loop, Value *operand);
 

@@ -37,86 +37,15 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
         findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to their candidate checks)
 
         errs() << "\n***\n";
+        errs() << "Preparing for hoist\n";
+        errs() << "***\n";
+        prepHoist(L); // populates bbAndInstVec
+
+        errs() << "\n***\n";
         errs() << "Hoisting, good sirs\n";
         errs() << "***\n";
-        hoist(L);
-        
 
-        // remove instructions
-        for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
-                errs() << "remove it\n";
-
-                /*
-                 * the check call is dependent on several instructions.
-                 * to simplify the algorithm, we make the assumption that those dependencies
-                 * directly precede the instruction.
-                 * because there is another check call that may rely on those same instructions, we
-                 * can first check to see if those instructions have been moved already
-                 */
-
-                PairBBAndInst *bni = *it;
-                BasicBlock *predBlock = bni->first; // the predecessor block into which we are hoisting
-                Instruction *inst = bni->second; // the check instruction we are hoisting
-                BasicBlock *instBlock = inst->getParent(); // the block of the check instruction
-                Instruction *back = &predBlock->back(); // the last instruction in the block into which we are hoisting
-                typedef std::vector<Instruction *> MoveVec;
-                MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
-                std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
-                //inst->eraseFromParent(); // this, without the other two calls, works
-
-                // these two calls together dont work because %idxprom is referenced by the call
-                //inst->removeFromParent();
-                //block->getInstList().insert(back, inst);
-
-	        llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
-                bool keepPushing = false;
-                for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
-                        Instruction *instTemp = &*rStart;
-                        errs() << "instTemp: " << *instTemp << "\n";
-                        if(keepPushing){
-                                if(CallInst *ci = dyn_cast<CallInst> (instTemp)){
-                                        const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-                                        if(callFunctionName.equals("checkLessThan")){
-                                                continue;
-                                        }else{
-                                                // impossible
-                                        }
-                                }else{
-                                        // instTemp is needed by the check call
-                                        errs() << "pushing: " << *instTemp << "\n";
-                                        // we want to push all instructions up to the load of the invariant
-                                        moveVec->push_back(instTemp);
-                                        if(LoadInst *li = dyn_cast<LoadInst>(instTemp)) {
-                                                keepPushing = false;
-                                        }
-                                }
-                        }
-                        if(instTemp == inst){
-                                errs() << "Yo wuddup yo\n";
-                                moveVec->push_back(instTemp);
-                                // find the values it needs
-                                keepPushing = true;
-                        }
-                }
-
-                // remove!
-                while(moveVec->size() > 0){
-                        Instruction *instToRemove = moveVec->back();
-                        errs() << "instToRemove: " << *instToRemove << "\n";
-                        moveVec->pop_back();
-                        /*Instruction *clonedInst = instToRemove->clone();
-                        if(!clonedInst->getType()->isVoidTy()){
-                                //clonedInst->setName("yo");
-                                clonedInst->setName(instToRemove->getName());
-                        }
-                        errs() << clonedInst->getName().str() << "\n";
-                        predBlock->getInstList().insert(back, clonedInst);*/
-
-                        instToRemove->removeFromParent();
-                        predBlock->getInstList().insert(back, instToRemove);
-                }
-
-        }
+        hoist();
 
 
         return true;
@@ -184,7 +113,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 }
 
 
-void LoopCheckPropagationPass::hoist(Loop *loop)
+void LoopCheckPropagationPass::prepHoist(Loop *loop)
 {
         // DO NOT DELETE... may want this later if we follow the paper more closely
         /*LoopBlocks *blocks = &loop->getBlocksVector();
@@ -237,20 +166,17 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                         validPredecessorBlocks->push_back(*it);
                 }
         }
-        // insert candidate checks into predecessor blocks
+
+        // gather all candidate checks and th
         // remove them from their current blocks
         if(validPredecessorBlocks->size() > 0){
                 // iterate over candidate blocks
                 for(BBToCheckSet::iterator it = bbToCheck->begin(), ie = bbToCheck->end(); it != ie; ++it){
                         // iterate over the candidate checks within a given block
                         CheckSet *checkSet =  it->second;
-                        //int once = 1;
                         for(CheckSet::iterator csIt = checkSet->begin(), csIe = checkSet->end(); csIt != csIe; ++csIt){
                                 // remove the instruction from its current block
                                 // add the instruction to header's predecessors -- we're just going to skip everything in the paper
-                                errs() << "BIG STINKING MAMAAAAAAAAAAAAAAAAAAAAAAAAA\n";
-                                errs() << **csIt << "\n";
-
                                 for(PredBlocks::iterator predIt = validPredecessorBlocks->begin(), predIe = validPredecessorBlocks->end(); predIt != predIe; ++predIt){
                                         bbAndInstVec->push_back(new PairBBAndInst(*predIt, *csIt));
                                 }
@@ -260,6 +186,95 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
 
 
 }
+
+
+void LoopCheckPropagationPass::hoist(void)
+{
+
+        // remove and insert instructions
+        for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
+                errs() << "remove it\n";
+
+                /*
+                 * the check call is dependent on several instructions.
+                 * to simplify the algorithm, we make the assumption that those dependencies
+                 * directly precede the instruction.
+                 * because there is another check call that may rely on those same instructions, we
+                 * can first check to see if those instructions have been moved already
+                 */
+
+                PairBBAndInst *bni = *it;
+                BasicBlock *predBlock = bni->first; // the predecessor block into which we are hoisting
+                Instruction *inst = bni->second; // the check instruction we are hoisting
+                BasicBlock *instBlock = inst->getParent(); // the block of the check instruction
+                Instruction *back = &predBlock->back(); // the last instruction in the block into which we are hoisting
+                typedef std::vector<Instruction *> MoveVec;
+                MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
+                std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
+                //inst->eraseFromParent(); // this, without the other two calls, works
+
+                // these two calls together dont work because %idxprom is referenced by the call
+                //inst->removeFromParent();
+                //block->getInstList().insert(back, inst);
+
+	        llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
+                bool keepPushing = false;
+                for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
+                        Instruction *instTemp = &*rStart;
+                        errs() << "instTemp: " << *instTemp << "\n";
+                        if(keepPushing){
+                                if(CallInst *ci = dyn_cast<CallInst> (instTemp)){
+                                        const StringRef& callFunctionName = ci->getCalledFunction()->getName();
+                                        if(callFunctionName.equals("checkLessThan")){
+                                                continue;
+                                        }else{
+                                                // impossible
+                                        }
+                                }else{
+                                        // instTemp is needed by the check call
+                                        errs() << "pushing: " << *instTemp << "\n";
+                                        // we want to push all instructions up to the load of the invariant
+                                        moveVec->push_back(instTemp);
+                                        if(LoadInst *li = dyn_cast<LoadInst>(instTemp)) {
+                                                keepPushing = false;
+                                        }
+                                }
+                        }
+                        if(instTemp == inst){
+                                errs() << "Yo wuddup yo\n";
+                                moveVec->push_back(instTemp);
+                                // find the values it needs
+                                keepPushing = true;
+                        }
+                }
+
+                // remove and insert
+                while(moveVec->size() > 0){
+                        Instruction *instToRemove = moveVec->back();
+                        errs() << "instToRemove: " << *instToRemove << "\n";
+                        moveVec->pop_back();
+
+                        // DO NOT DELETE: example code for cloning
+                        // this has problems because the names of the 
+                        // variables in the instructions stay the same,
+                        // so the definition of those variables may not come
+                        // until later
+                        /*Instruction *clonedInst = instToRemove->clone();
+                        if(!clonedInst->getType()->isVoidTy()){
+                                //clonedInst->setName("yo");
+                                clonedInst->setName(instToRemove->getName());
+                        }
+                        errs() << clonedInst->getName().str() << "\n";
+                        predBlock->getInstList().insert(back, clonedInst);*/
+
+                        instToRemove->removeFromParent();
+                        predBlock->getInstList().insert(back, instToRemove);
+                }
+
+        }
+}
+
+
 
 
 
@@ -319,7 +334,7 @@ effect_t LoopCheckPropagationPass::getEffect(Loop *loop, Value *operand)
         // if increment
         //      if >=0, inc                     |
         //      else wild                    <--| opportunities for more optimiziation here
-        // if decrement                      <--| by tracking more accurately the changes
+        // if decrement                      <--| by tracking the changes more accurately
         //      if <=0, dec                     |
         //      else wild
         // if increment and -1, return wild
