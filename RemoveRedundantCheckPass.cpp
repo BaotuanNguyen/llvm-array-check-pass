@@ -55,13 +55,16 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 		 		
 		if (CallInst *CI = dyn_cast<CallInst>(inst)) 
 		{
+			if (CI->getCalledFunction() == NULL)
+				continue;
+
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
 			if (funcName.equals("checkLessThan"))
 			{
 				RangeCheckSet* current = (*availableMap)[inst];
-				errs() << "Call: " << *CI << "\n";
-				errs() << "Available Expressions: "; current->println();
+				//errs() << "Call: " << *CI << "\n";
+				//errs() << "Available Expressions: "; current->println();
 
 				RangeCheckExpression* expr1 = new RangeCheckExpression(CI, M);
 				
@@ -71,12 +74,12 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 
 					if (*expr1 == *expr2)
 					{
-						errs() << "*** REMOVED ***\n";
+						//errs() << "*** REMOVED ***\n";
 						redundantList.push_back(CI);
 					}
 					else if (expr2->subsumes(expr1))
 					{
-						errs() << "*** REMOVED ***\n";
+						//errs() << "*** REMOVED ***\n";
 						redundantList.push_back(CI);
 					}
 				}				

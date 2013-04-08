@@ -52,7 +52,7 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			else if (dyn_cast<AllocaInst>(expr2->left) || dyn_cast<GlobalVariable>(expr2->left)) // LHS contains a named variable
 			{
 				Instruction* loadInst = new LoadInst(expr2->left, "", callInst);
-				if (expr2->left->getType() == Type::getInt32PtrTy(this->M->getContext()))
+				if (expr2->left->getType() != Type::getInt64PtrTy(this->M->getContext()))
 					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 				
 //				errs() << "func arg0: " << *loadInst << "\n";
@@ -64,14 +64,28 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			else if (dyn_cast<Instruction>(expr2->left)) // LHS contains a temporary variable
 			{
 				MDNode* metadata2 = dyn_cast<Instruction>(expr2->left)->getMetadata("EFFECT");
+				
+				if (metadata2 == NULL)
+				{
+					errs() << "ERROR: THIS CASE SHOULD NOT HOLD!! (ASSUMPTION IN MODIFYPASS)\n";
+				}
+
+
 				Value* originVar = metadata2->getOperand(1);
-				ConstantInt* addVal = dyn_cast<ConstantInt>(metadata2->getOperand(2));
-				Instruction* loadInst = new LoadInst(originVar, "", callInst);
+				Value* addVal = dyn_cast<ConstantInt>(metadata2->getOperand(2));
+				Value* loadInst = new LoadInst(originVar, "", callInst);
+				
+				if ((loadInst->getType()) != Type::getInt64Ty(this->M->getContext()))
+					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
+				
+				if ((addVal->getType()) != Type::getInt64Ty(this->M->getContext()))
+					addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
+
 				Instruction* addInst = llvm::BinaryOperator::Create(Instruction::Add, loadInst, addVal, "", callInst);
 				generateMetadata(incrementString, originVar, addVal, addInst, M);
 				
-				if (addInst->getType() == Type::getInt32Ty(this->M->getContext()))
-				addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
+				if (addInst->getType() != Type::getInt64Ty(this->M->getContext()))
+					addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 
 //				errs() << "func arg0: " << *addInst << "\n";
 //				errs() << "func meta0: " << *addInst << "\n";
@@ -97,7 +111,7 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			else if (dyn_cast<AllocaInst>(expr2->right) || dyn_cast<GlobalVariable>(expr2->right)) // RHS contains a named variable
 			{
 				Instruction* loadInst = new LoadInst(expr2->right, "", callInst);
-				if (expr2->right->getType() == Type::getInt32PtrTy(this->M->getContext()))
+				if (expr2->right->getType() != Type::getInt64Ty(this->M->getContext()))
 					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 //				errs() << "func arg1: " << *loadInst << "\n";
 //				errs() << "func meta1: " << *(expr2->right) << "\n";
@@ -107,13 +121,26 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			else if (dyn_cast<Instruction>(expr2->right)) // LHS contains a temporary variable
 			{
 				MDNode* metadata2 = dyn_cast<Instruction>(expr2->right)->getMetadata("EFFECT");
+				
+				if (metadata2 == NULL)
+				{
+					errs() << "ERROR: THIS CASE SHOULD NOT HOLD!! (ASSUMPTION IN MODIFYPASS)\n";
+				}
+
 				Value* originVar = metadata2->getOperand(1);
-				ConstantInt* addVal = dyn_cast<ConstantInt>(metadata2->getOperand(2));
-				Instruction* loadInst = new LoadInst(originVar, "", callInst);
+				Value* addVal = dyn_cast<ConstantInt>(metadata2->getOperand(2));
+				Value* loadInst = new LoadInst(originVar, "", callInst);
+
+				if (loadInst->getType() != Type::getInt64Ty(this->M->getContext()))
+					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
+				
+				if (addVal->getType() != Type::getInt64Ty(this->M->getContext()))
+					addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
+
 				Instruction* addInst = llvm::BinaryOperator::Create(Instruction::Add, loadInst, addVal, "", callInst);
 				generateMetadata(decrementString, originVar, addVal, addInst, M);
 				
-				if (addInst->getType() == Type::getInt32Ty(this->M->getContext()))
+				if (addInst->getType() != Type::getInt64Ty(this->M->getContext()))
 					addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "", callInst);
 				
 //				errs() << "func arg1: " << *addInst << "\n";
@@ -130,7 +157,7 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			MDNode* effects = MDNode::get(this->M->getContext(), effect);
 			callInst->setMetadata("VarName", effects);
 			
-			errs() << "modified: " << *callInst << "\n";
+			//errs() << "modified: " << *callInst << "\n";
 			return;	
 		}
 	}
@@ -176,16 +203,18 @@ bool ModifyCheckPass::runOnBasicBlock(BasicBlock* BB)
 		 		
 		if (CallInst *CI = dyn_cast<CallInst>(inst)) 
 		{
+			if (CI->getCalledFunction() == NULL)
+				continue;
 			StringRef funcName = CI->getCalledFunction()->getName();
 			
 			if (funcName.equals("checkLessThan"))
 			{
-				errs() << "-------------------------------------------------------------------\n";
-				errs() << "inst: " << *CI << "\n";
+				//errs() << "-------------------------------------------------------------------\n";
+				//errs() << "inst: " << *CI << "\n";
 				RangeCheckSet* current = (*veryBusyMap)[inst];
-				errs() << "Very Busy Expressions: "; current->println();
+				//errs() << "Very Busy Expressions: "; current->println();
 				modify(CI, current, this->M);
-				errs() << "-------------------------------------------------------------------\n";
+				//errs() << "-------------------------------------------------------------------\n";
 			}
 		}
 	}

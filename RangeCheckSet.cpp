@@ -45,10 +45,10 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 		
 		if (current.subsumes(expr))
 		{
-			errs() << "\t\t";
-			current.print();
-			errs() << " SUBSUMES ";
-			expr->println();
+//			errs() << "\t\t";
+//			current.print();
+//			errs() << " SUBSUMES ";
+//			expr->println();
 			//if expr is not used then delete it
 			delete expr;
 			return unionedSet;
@@ -58,10 +58,10 @@ RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 			int index = (it - unionedSet->checkSet->begin());
 			unionedSet->checkSet->at(index) = *expr;
 
-			errs() << "\t\t";
-			expr->print();
-			errs() << " SUBSUMES ";
-			current.println();
+//			errs() << "\t\t";
+//			expr->print();
+//			errs() << " SUBSUMES ";
+//			current.println();
 			//if expr is not used then delete it
 			delete expr;	
 			return unionedSet;
@@ -152,7 +152,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 			{
 				if (op1 == valueBeingStored)
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					//errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -161,7 +161,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 			{
 				if (op2 == valueBeingStored)
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+					//errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -190,7 +190,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 			{
 				if (doValueKillCheckBackward(currentCheck, valueBeingStored, 0))
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+//					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -202,7 +202,7 @@ void RangeCheckSet::kill_backward(Instruction* store, Module* M)
 			{
 				if (doValueKillCheckBackward(currentCheck, valueBeingStored, 1))
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+//					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -293,7 +293,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 			{
 				if (op1 == valueBeingStored)
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+//					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -302,7 +302,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 			{
 				if (op2 == valueBeingStored)
 				{
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
+//					errs() << "\t\t"; (*it).print(); errs() << " got KILLED due to its address being copied into a pointer!\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -330,7 +330,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 				if (doValueKillCheckForward(currentCheck, valueBeingStored, 0))
 				{
 					// KILL IT
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					//errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}
@@ -343,7 +343,7 @@ void RangeCheckSet::kill_forward(Instruction* store, Module* M)
 				if (doValueKillCheckForward(currentCheck, valueBeingStored, 1))
 				{
 					// KILL IT
-					errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
+					//errs() << "\t\t"; (*it).print(); errs() << " got KILLED\n";
 					this->checkSet->erase(it);
 					erased = true;
 				}

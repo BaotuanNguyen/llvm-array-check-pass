@@ -17,11 +17,16 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 {
 //	errs() << "Comparing: " << *var1 << " to " << *var2 << "\n";
 	
+	if (var1 == var2)
+	{
+		return EQ; // easiest case
+	}
+
 	if (ConstantInt* ai = dyn_cast<ConstantInt>(var1)) // v1 is a constant
 	{
 //		errs() << "v1 is constant\n";
 
-		if	(ConstantInt* ci = dyn_cast<ConstantInt>(var2))
+		if(ConstantInt* ci = dyn_cast<ConstantInt>(var2))
 		{
 //			errs() << "v2 is constant\n";
 			int64_t a = ai->getSExtValue();
@@ -92,6 +97,10 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 		{
 //			errs() << "v2 is a temporary variable\n";
 			MDNode* effects = ct->getMetadata("EFFECT");
+
+			if (effects == NULL)
+				return UNKNOWN;
+
 			MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
 			
 			if (mdstr->getString().equals("CHANGED"))
@@ -129,6 +138,10 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 	{
 //		errs() << "v1 is a temporary variable\n";
 		MDNode* effects = at->getMetadata("EFFECT");
+
+		if (effects == NULL)
+			return UNKNOWN;
+	
 		MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
 			
 		if (!(mdstr->getString().equals("CHANGED"))) // a = v + 3
@@ -171,6 +184,11 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 			{
 //				errs() << "v2 is a temporary variable\n";
 				MDNode* effects2 = ct->getMetadata("EFFECT");
+			
+				if (effects2 == NULL)
+					return UNKNOWN;
+
+
 				MDString* mdstr2 = dyn_cast<MDString>(effects2->getOperand(0));
 				
 				if (!(mdstr2->getString().equals("CHANGED"))) // c = v + 3
@@ -229,6 +247,11 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 			else if (Instruction* ct = dyn_cast<Instruction>(var2)) // c is a temporary
 			{ 
 				MDNode* effects2 = ct->getMetadata("EFFECT");
+
+
+				if (effects2 == NULL)
+					return UNKNOWN;
+
 				MDString* mdstr2 = dyn_cast<MDString>(effects2->getOperand(0));
 				
 				if (!(mdstr2->getString().equals("CHANGED"))) // c = v + 3
@@ -270,21 +293,20 @@ bool RangeCheckExpression::subsumes(RangeCheckExpression* expr)
 	VALUE_STATUS compare_a_c = compare(a,c);
 	VALUE_STATUS compare_b_d = compare(b,d);
 
-	// ignore self-subsume for efficiency
 	if ((compare_a_c == EQ) && (compare_b_d == EQ))
 	{
-		this->print(); errs() << " DOES NOT SUBSUME "; expr->println();
-		return false;
+//		this->print(); errs() << " EQUALS "; expr->println();
+		return true;
 	}
 
 	if ((compare_a_c == GT || compare_a_c == EQ) && (compare_b_d == LT || compare_b_d == EQ))
 	{
-		this->print(); errs() << " SUBSUMES "; expr->println();
+//		this->print(); errs() << " SUBSUMES "; expr->println();
 		return true;
 	}
 	else
 	{
-		this->print(); errs() << " DOES NOT SUBSUME "; expr->println();
+//		this->print(); errs() << " DOES NOT SUBSUME "; expr->println();
 		return false;
 	}
 }
@@ -367,6 +389,8 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	
 	MDNode* metadata = inst->getMetadata("VarName");
 	
+	errs() << "func name " <<  *inst << "\n";
+	
 	if (metadata == NULL)
 	{
 		errs() << "ERROR! call inst does not have VarName metadata!\n";
@@ -425,6 +449,13 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 			if (Instruction* op2inst = dyn_cast<Instruction>(operand2)) // op2 is a temporary variable
 			{
 					MDNode* effects = op2inst->getMetadata("EFFECT");
+			
+					if (effects == NULL)
+					{
+						this->left = operand1;
+						this->right = operand2;
+						return;
+					}
 					MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
 		
 					if (!(mdstr->getString().equals("CHANGED")))
@@ -451,6 +482,14 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 			if (Instruction* op1inst = dyn_cast<Instruction>(operand1)) // op1 is a temporary variable
 			{
 					MDNode* effects = op1inst->getMetadata("EFFECT");
+
+					if (effects == NULL)
+					{
+						this->left = operand1;
+						this->right = operand2;
+						return;
+					}
+
 					MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
 		
 					if (!(mdstr->getString().equals("CHANGED")))
@@ -477,7 +516,13 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 
 bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
 {
-//	errs() << "IS EQUAL: "; ((RangeCheckExpression*)this)->print(); errs() << " AND "; ((RangeCheckExpression)other).println();
+	RangeCheckExpression* op1 = (RangeCheckExpression*) this;
+	RangeCheckExpression* op2 = (RangeCheckExpression*) &other;
+	
+	if (op1->subsumes(op2))
+		return true;
+	else
+		return false;
 
 		if (dyn_cast<ConstantInt>(this->left) && dyn_cast<ConstantInt>(other.left)) // LHS consists of constants for both
 		{

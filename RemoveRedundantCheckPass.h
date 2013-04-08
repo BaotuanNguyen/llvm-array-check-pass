@@ -43,7 +43,6 @@ namespace llvm
 			bool runOnBasicBlock(BasicBlock* BB);
 			Module* M;
 			AvailableAnalysisPass* availableAnalysis;
-			ArrayBoundsCheckPass* arrayBoundsCheckStat;
 			MapInstToRCS* availableMap;
 			int removedNum;
 	};
