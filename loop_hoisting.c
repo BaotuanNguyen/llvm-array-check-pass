@@ -4,14 +4,14 @@
 int main() 
 {
 
-        /*int a[100];
+        int a[100];
 	int i;
 
 	for (i = 0; i < 100; ++i) {
 		a[i] = 10;
-	}*/
+	}
 
-        int top = 100;
+        /*int top = 100;
 	int a[top];
 	int i;
         int variant = 0;
@@ -29,10 +29,10 @@ int main()
                 if (variant == invariant)
                         break;
 
-        }
+        }*/
         //funky();
 
-        printf("yo yo ma\n");
+        //printf("yo yo ma\n");
         //int oo = 0;
 	return 0;
 }

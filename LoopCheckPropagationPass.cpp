@@ -187,39 +187,6 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                 addDependencies(loop, moveVec, ci->getArgOperand(0));
                 addDependencies(loop, moveVec, ci->getArgOperand(1));
 
-                // start from the end of the check instruction's block
-                // iterate until we find our check instruction
-                // at that point, push our instruction onto the moveVec
-                // and mark a flag variable, keepPushing
-                // continue iterating, except now, we are pushing until we see a load instruction
-	        /*llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
-                bool keepPushing = false;
-                for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
-                        Instruction *instTemp = &*rStart;
-                        errs() << "instTemp: " << *instTemp << "\n";
-                        if(keepPushing){
-                                if(CallInst *ci = dyn_cast<CallInst> (instTemp)){
-                                        const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-                                        if(callFunctionName.equals("checkLessThan")){
-                                                continue;
-                                        }else{
-                                                // impossible
-                                        }
-                                }else{
-                                        // instTemp is needed by the check call
-                                        errs() << "pushing: " << *instTemp << "\n";
-                                        // we want to push all instructions up to the load of the invariant
-                                        moveVec->push_back(instTemp);
-                                        if(LoadInst *li = dyn_cast<LoadInst>(instTemp)) {
-                                                keepPushing = false;
-                                        }
-                                }
-                        }
-                        if(instTemp == inst){
-                                moveVec->push_back(instTemp);
-                                keepPushing = true;
-                        }
-                }*/
 
                 // remove and insert
                 while(moveVec->size() > 0){
@@ -298,7 +265,7 @@ effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Va
         }
 
         // increasing
-        /*if(operandOneEffect == INCREASING && operandTwoEffect == INVARIANT){
+        if(operandOneEffect == INCREASING && operandTwoEffect == INVARIANT){
                 return INCREASING;
         }
         if(operandTwoEffect == INCREASING && operandOneEffect == INVARIANT){
@@ -311,9 +278,9 @@ effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Va
         }
         if(operandTwoEffect == DECREASING && operandOneEffect == INVARIANT){
                 return DECREASING;
-        }*/
+        }
 
-        // TODO monotonic increase and decrease
+        // TODO i think the paper gives a more subtle increase/decrease case
 
         return WILD;
 }
