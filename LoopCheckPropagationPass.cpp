@@ -35,27 +35,95 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
         errs() << "Finding candidates\n";
         errs() << "***\n";
         findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to their candidate checks)
+
         errs() << "\n***\n";
         errs() << "Hoisting, good sirs\n";
         errs() << "***\n";
         hoist(L);
+        
+
+        // remove instructions
+        for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
+                errs() << "remove it\n";
+
+                /*
+                 * the check call is dependent on several instructions.
+                 * to simplify the algorithm, we make the assumption that those dependencies
+                 * directly precede the instruction.
+                 * because there is another check call that may rely on those same instructions, we
+                 * can first check to see if those instructions have been moved already
+                 */
+
+                PairBBAndInst *bni = *it;
+                BasicBlock *predBlock = bni->first; // the predecessor block into which we are hoisting
+                Instruction *inst = bni->second; // the check instruction we are hoisting
+                BasicBlock *instBlock = inst->getParent(); // the block of the check instruction
+                Instruction *back = &predBlock->back(); // the last instruction in the block into which we are hoisting
+                typedef std::vector<Instruction *> MoveVec;
+                MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
+                std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
+                //inst->eraseFromParent(); // this, without the other two calls, works
+
+                // these two calls together dont work because %idxprom is referenced by the call
+                //inst->removeFromParent();
+                //block->getInstList().insert(back, inst);
+
+	        llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
+                bool keepPushing = false;
+                for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
+                        Instruction *instTemp = &*rStart;
+                        errs() << "instTemp: " << *instTemp << "\n";
+                        if(keepPushing){
+                                if(CallInst *ci = dyn_cast<CallInst> (instTemp)){
+                                        const StringRef& callFunctionName = ci->getCalledFunction()->getName();
+                                        if(callFunctionName.equals("checkLessThan")){
+                                                continue;
+                                        }else{
+                                                // impossible
+                                        }
+                                }else{
+                                        // instTemp is needed by the check call
+                                        errs() << "pushing: " << *instTemp << "\n";
+                                        // we want to push all instructions up to the load of the invariant
+                                        moveVec->push_back(instTemp);
+                                        if(LoadInst *li = dyn_cast<LoadInst>(instTemp)) {
+                                                keepPushing = false;
+                                        }
+                                }
+                        }
+                        if(instTemp == inst){
+                                errs() << "Yo wuddup yo\n";
+                                moveVec->push_back(instTemp);
+                                // find the values it needs
+                                keepPushing = true;
+                        }
+                }
+
+                // remove!
+                while(moveVec->size() > 0){
+                        Instruction *instToRemove = moveVec->back();
+                        errs() << "instToRemove: " << *instToRemove << "\n";
+                        moveVec->pop_back();
+                        /*Instruction *clonedInst = instToRemove->clone();
+                        if(!clonedInst->getType()->isVoidTy()){
+                                //clonedInst->setName("yo");
+                                clonedInst->setName(instToRemove->getName());
+                        }
+                        errs() << clonedInst->getName().str() << "\n";
+                        predBlock->getInstList().insert(back, clonedInst);*/
+
+                        instToRemove->removeFromParent();
+                        predBlock->getInstList().insert(back, instToRemove);
+                }
+
+        }
+
+
         return true;
 }
 
 bool LoopCheckPropagationPass::doFinalization(void)
 {
-        for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
-                errs() << "remove it\n";
-
-                PairBBAndInst *bni = *it;
-                BasicBlock *block = bni->first;
-                Instruction *inst = bni->second;
-                Instruction *back = &block->back();
-
-                inst->removeFromParent();
-                //inst->eraseFromParent();
-                block->getInstList().insert(back, inst);
-        }
 	return true;
 }
 
@@ -80,6 +148,8 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
                                         if(isCandidate(loop, operandOne, operandTwo)){
 
+                                                errs() << "candidate operandOne: " << *operandOne << "\n";
+                                                errs() << "candidate operandTwo: " << *operandTwo << "\n";
                                                 // CallInst ci is a candidate check for BasicBlock block
                                                 // look up the basic block
                                                 // if it doesn't exist,
@@ -174,26 +244,14 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
                 for(BBToCheckSet::iterator it = bbToCheck->begin(), ie = bbToCheck->end(); it != ie; ++it){
                         // iterate over the candidate checks within a given block
                         CheckSet *checkSet =  it->second;
-                        int once = 1;
+                        //int once = 1;
                         for(CheckSet::iterator csIt = checkSet->begin(), csIe = checkSet->end(); csIt != csIe; ++csIt){
                                 // remove the instruction from its current block
                                 // add the instruction to header's predecessors -- we're just going to skip everything in the paper
                                 errs() << "BIG STINKING MAMAAAAAAAAAAAAAAAAAAAAAAAAA\n";
                                 errs() << **csIt << "\n";
 
-                                if(once == 1){
-                                        --once;
-                                }else{
-                                        errs() << "BREAKING\n";
-                                        break;
-                                }
-
-                                //(*csIt)->eraseFromParent();
-                                //(*csIt)->removeFromParent();
-
                                 for(PredBlocks::iterator predIt = validPredecessorBlocks->begin(), predIe = validPredecessorBlocks->end(); predIt != predIe; ++predIt){
-                                        //Instruction *back = &(*predIt)->back();
-                                        //(*predIt)->getInstList().insert(back, *csIt);
                                         bbAndInstVec->push_back(new PairBBAndInst(*predIt, *csIt));
                                 }
                         }
