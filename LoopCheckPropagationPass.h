@@ -29,6 +29,7 @@ namespace llvm
 	typedef std::pair<BasicBlock *, CheckSet *> PairBBAndCheckSet;
 	typedef std::pair<BasicBlock *, Instruction *> PairBBAndInst;
 	typedef std::vector<PairBBAndInst *> BBAndInstVec;
+        typedef std::vector<Instruction *> MoveVec;
         typedef enum{
                 WILD, INVARIANT, INCREASING, DECREASING // TODO monotonic inc/dec?
         }effect_t;
@@ -47,7 +48,8 @@ namespace llvm
 
                         void findCandidates(Loop *loop);
                         void prepHoist(Loop *loop);
-                        void hoist(void);
+                        void hoist(Loop *loop);
+                        void addDependencies(Loop *loop, MoveVec *moveVec, Value *v);
                         effect_t isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         effect_t getEffect(Loop *loop, Value *operand);
                         Value *swapFakeOperand(Value *operand);

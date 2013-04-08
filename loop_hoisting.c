@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 //void funky(void);
 int main() 
 {
@@ -30,6 +32,7 @@ int main()
         }
         //funky();
 
+        printf("yo yo ma\n");
         //int oo = 0;
 	return 0;
 }

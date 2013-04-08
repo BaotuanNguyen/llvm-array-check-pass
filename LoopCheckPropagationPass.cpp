@@ -44,7 +44,7 @@ bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
         errs() << "\n***\n";
         errs() << "Hoisting, good lads\n";
         errs() << "***\n";
-        hoist();
+        hoist(L);
 
 
         return true;
@@ -160,7 +160,7 @@ void LoopCheckPropagationPass::prepHoist(Loop *loop)
 /*
  * AHOY!
  */
-void LoopCheckPropagationPass::hoist(void)
+void LoopCheckPropagationPass::hoist(Loop *loop)
 {
 
         // iterate over every pair of predecessor block with a candidate check
@@ -176,16 +176,23 @@ void LoopCheckPropagationPass::hoist(void)
                 Instruction *inst = bni->second; // the check instruction we are hoisting
                 BasicBlock *instBlock = inst->getParent(); // the block of the check instruction
                 Instruction *back = &predBlock->back(); // the last instruction in the block into which we are hoisting
-                typedef std::vector<Instruction *> MoveVec;
                 MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
-                std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
+                //std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
+
+
+
+                // create a list of the instructions we are hoisting
+                moveVec->push_back(inst);
+                CallInst *ci = dyn_cast<CallInst>(inst);
+                addDependencies(loop, moveVec, ci->getArgOperand(0));
+                addDependencies(loop, moveVec, ci->getArgOperand(1));
 
                 // start from the end of the check instruction's block
                 // iterate until we find our check instruction
                 // at that point, push our instruction onto the moveVec
                 // and mark a flag variable, keepPushing
                 // continue iterating, except now, we are pushing until we see a load instruction
-	        llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
+	        /*llvm::BasicBlock::InstListType& instList = instBlock->getInstList();
                 bool keepPushing = false;
                 for(BasicBlock::InstListType::reverse_iterator rStart = instList.rbegin(), rEnd = instList.rend(); rStart != rEnd; ++rStart){
                         Instruction *instTemp = &*rStart;
@@ -212,7 +219,7 @@ void LoopCheckPropagationPass::hoist(void)
                                 moveVec->push_back(instTemp);
                                 keepPushing = true;
                         }
-                }
+                }*/
 
                 // remove and insert
                 while(moveVec->size() > 0){
@@ -240,7 +247,33 @@ void LoopCheckPropagationPass::hoist(void)
         }
 }
 
+void LoopCheckPropagationPass::addDependencies(Loop *loop, MoveVec *moveVec, Value *v)
+{
+        errs() << "looking for dependencies for value: " << *v << "\n";
 
+        if(Instruction *inst = dyn_cast<Instruction>(v)){
+                BasicBlock *parent = inst->getParent();
+
+                // only chase operands within the loop blocks
+                LoopBlocks *loopBlocks = &loop->getBlocksVector();
+                if(std::find(loopBlocks->begin(), loopBlocks->end(), parent) != loopBlocks->end()) {
+
+                        // add the instruction
+                        moveVec->push_back(inst); 
+                        errs() << "adding inst: " << *inst << "\n";
+
+                        // break when we hit a load
+                        if(LoadInst *loadInst = dyn_cast<LoadInst>(inst)){
+                                return;
+                        }
+
+                        // recurisvely add dependencies for this instruction's operands
+                        for(User::op_iterator it = inst->op_begin(), ie = inst->op_end(); it != ie; ++it){
+                                addDependencies(loop, moveVec, *it);
+                        }
+                }
+        }
+}
 
 
 
@@ -371,7 +404,6 @@ Value *LoopCheckPropagationPass::swapFakeOperand(Value *operand)
         //
         // swap %i for %2 if something like that happened
 
-        errs() << *operand << "\n";
         if(operand->getNumUses() <= 2){
                 if(Instruction *inst = dyn_cast<Instruction>(operand)){
                         if(inst->getOpcode() == Instruction::Add){
