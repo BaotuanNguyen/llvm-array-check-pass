@@ -22,19 +22,25 @@
 
 namespace llvm
 {
-	std::vector<CallInst*>* candidates;
-	
-	typedef std::vector<BasicBlock*> LoopBlocks;
-    typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
-    typedef std::set<Instruction *> CheckSet;
+
+        typedef enum{
+                WILD, INVARIANT, INCREASING, DECREASING
+        }effect_t;
+
+        typedef std::vector<BasicBlock *> LoopBlocks;
+        typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
+        typedef std::set<Instruction *> CheckSet;
 	typedef std::map<BasicBlock *, CheckSet *> BBToCheckSet;
 	typedef std::pair<BasicBlock *, CheckSet *> PairBBAndCheckSet;
 	typedef std::pair<BasicBlock *, Instruction *> PairBBAndInst;
 	typedef std::vector<PairBBAndInst *> BBAndInstVec;
- 
-	typedef enum{
-                INVARIANT, INCREASING, DECREASING, WILD // TODO monotonic inc/dec?
-        }effect_t;
+        typedef std::vector<Instruction *> MoveVec;
+	typedef std::pair<std::string, Value *> NameAndValuePair;
+        typedef std::map<Value *, NameAndValuePair *> ValueToNameAndValuePair; // map old names to pair of new name and value
+        typedef std::pair<Value *, NameAndValuePair *> OldAndNewPair;
+        typedef std::map<CallInst *, effect_t> CheckToCandidacy;
+        typedef std::pair<CallInst *, effect_t> CheckCandidacyPair;
+
 	struct LoopCheckPropagationPass : public LoopPass {
 		public:
 			static char ID;
@@ -48,12 +54,13 @@ namespace llvm
 				AU.addRequired<EffectGenPass>();
 			}
 
-						bool isInvariant(Value* operand, Loop* L);
-
                         void findCandidates(Loop *loop);
-                        void hoistTo(BasicBlock* preheader);
-                        bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
-                        effect_t getEffect(Loop *loop, Value *operand);
+                        void prepHoist(Loop *loop);
+                        void hoist(Loop *loop);
+                        void addDependencies(Loop *loop, MoveVec *moveVec, Value *v);
+                        effect_t isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
+                        effect_t getEffect(Loop *loop, Value *operand, int change);
+                        Value *swapFakeOperand(Value *operand);
 
                         std::string getEffectOfMeta(MDNode *meta);
                         Value *getAffectedOperandOfMeta(MDNode *meta);
@@ -62,6 +69,8 @@ namespace llvm
 
                         BBToCheckSet *bbToCheck;
                         BBAndInstVec *bbAndInstVec;
+                        ValueToNameAndValuePair *oldToNew;
+                        CheckToCandidacy *checkToCandidacy;
 	};
 
 }
