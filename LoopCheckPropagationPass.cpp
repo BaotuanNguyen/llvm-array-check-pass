@@ -2,6 +2,7 @@
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
 #include "llvm/InstrTypes.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "stdlib.h"
 #include <set>
 #include <queue>
@@ -10,8 +11,6 @@ using namespace llvm;
 
 char LoopCheckPropagationPass::ID = 0;
 static RegisterPass<LoopCheckPropagationPass> Y("loop-pass", "Propagate of checks out of loops", false, false);
-
-
 
 
 bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
@@ -29,21 +28,9 @@ bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
         return true;
 }
 
-bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
-{
-        errs() << "\n***\n";
-        errs() << "Finding candidates\n";
-        errs() << "***\n";
-        findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to their candidate checks)
-        errs() << "\n***\n";
-        errs() << "Hoisting, good sirs\n";
-        errs() << "***\n";
-        hoist(L);
-        return true;
-}
-
 bool LoopCheckPropagationPass::doFinalization(void)
 {
+	/*
         for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
                 errs() << "remove it\n";
 
@@ -55,75 +42,142 @@ bool LoopCheckPropagationPass::doFinalization(void)
                 inst->removeFromParent();
                 //inst->eraseFromParent();
                 block->getInstList().insert(back, inst);
-        }
+        }*/
 	return true;
 }
 
-void LoopCheckPropagationPass::findCandidates(Loop *loop)
+bool LoopCheckPropagationPass::runOnLoop(Loop *L, LPPassManager &LPM)
 {
-        LoopBlocks *blocks = &loop->getBlocksVector();
-        for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
+        errs() << "\n***\n";
+        errs() << "Finding candidates\n";
+        errs() << "***\n";
+		
+		candidates = new std::vector<CallInst*>();
+
+        LoopBlocks *blocks = &L->getBlocksVector();
+		
+        for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it)
+		{
                 BasicBlock *block = *it;
-                errs() << "\n--beginning new loop block--\n";
-                for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt){
+                errs() << "\nEntering a Loop Basic Block: " << block->getName() << "\n";
+                for(BasicBlock::iterator bbIt = block->begin(), bbIe = block->end(); bbIt != bbIe; ++bbIt)
+				{
                         Value *v = &*bbIt;
                         errs() << *v << "\n";
 
-                        if(CallInst *ci = dyn_cast<CallInst> (v)){
+                        if(CallInst *ci = dyn_cast<CallInst> (v))
+						{
 							if (ci->getCalledFunction() == NULL)
 								continue;
-				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
-				if(callFunctionName.equals("checkLessThan")){
-                                        errs() << "callinst: " << *ci << "\n";
-                                        MDNode* metadata = ci->getMetadata("VarName");
-                                        errs() << "metadata: " << *metadata;
+							
+							const StringRef& callFunctionName = ci->getCalledFunction()->getName();
+							
+							if(callFunctionName.equals("checkLessThan"))
+							{
+                                  Value *operandOne = ci->getOperand(0);
+                                  Value *operandTwo = ci->getOperand(1);
 
-                                        Value *operandOne = metadata->getOperand(0);
-                                        Value *operandTwo = metadata->getOperand(1);
+								  if (L->isLoopInvariant(operandOne) && L->isLoopInvariant(operandTwo))
+								  {
+                                      errs() << "Callinst: " << *ci << "is loop invariant!\n";
+									  candidates->push_back(ci);
+								  }
+							}
+						}
+				}
+		}
 
-                                        if(isCandidate(loop, operandOne, operandTwo)){
+		BasicBlock* uniqueExit = L->getUniqueExitBlock();
 
-                                                // CallInst ci is a candidate check for BasicBlock block
-                                                // look up the basic block
-                                                // if it doesn't exist,
-                                                //      create a new set
-                                                // add the call instruction to the set
-                                                // if it didnt exist,
-                                                //      insert the mapping
-                                                BBToCheckSet::iterator it = bbToCheck->find(block);
-                                                CheckSet *cs;
-                                                if(it != bbToCheck->end())
-                                                {
-                                                        // element found
-                                                        // set the checkset var
-                                                        cs = it->second;
-                                                }else{
-                                                        // element not found
-                                                        // create the checkste and the mapping
-                                                        cs = new CheckSet();
-                                                        bbToCheck->insert(PairBBAndCheckSet(block, cs));
-                                                }
+		if (uniqueExit != NULL)
+		{
+			errs() << "\nUnique exit found: " << *uniqueExit << "\n";		
+		}
 
-                                                // insert the call instruction to the set of candidate checks
-                                                cs->insert(ci);
+		if (candidates->size() > 0)
+		{
+			BasicBlock* preheader = L->getLoopPreheader();
+				
+			if (preheader != NULL)
+			{
+				errs() << "\nPreheader exists: " << preheader->getName() << "\n";
+			}
 
-                                                //bbToCheck->insert(PairBBAndCheck(block, ci));
-                                                //errs() << "candidate ci " << *ci << "\n";
-                                        }
-                                }
+			hoistTo(preheader);
+		}
+
+		delete candidates;
+
+
+		return true;
+}
+
+
+/*
+
+
+                                  if(isCandidate(loop, operandOne, operandTwo))
+								  {
+									// CallInst ci is a candidate check for BasicBlock block
+									// look up the basic block
+									// if it doesn't exist,
+									//      create a new set
+									// add the call instruction to the set
+									// if it didnt exist,
+                                    // insert the mapping
+                                    BBToCheckSet::iterator it = bbToCheck->find(block);
+                                    CheckSet *cs;
+                                    if(it != bbToCheck->end())
+                                    {
+										// element found
+                                        // set the checkset var
+                                        cs = it->second;
+                                        
+									}
+									else
+									{
+                                        // element not found
+                                        // create the checkste and the mapping
+                                        cs = new CheckSet();
+                                        bbToCheck->insert(PairBBAndCheckSet(block, cs));
+                                     }
+
+                                     // insert the call instruction to the set of candidate checks
+                                     cs->insert(ci);
+
+									 //bbToCheck->insert(PairBBAndCheck(block, ci));
+									 //errs() << "candidate ci " << *ci << "\n";
+									 }
+								  }
                         }
                 }
         }
 }
-
-
-void LoopCheckPropagationPass::hoist(Loop *loop)
+*/
+void LoopCheckPropagationPass::hoistTo(BasicBlock *preheader)
 {
-        // DO NOT DELETE... may want this later if we follow the paper more closely
+	// append to this basic block! oy oy!! hosing sir!!!
+	for (std::vector<CallInst*>::iterator it = candidates->begin(); it != candidates->end(); it++)
+	{
+		CallInst* hoistedInst = *it;
+		hoistedInst->removeFromParent();
+
+		BasicBlock::iterator rt = preheader->end();
+		rt--;
+
+	   	preheader->getInstList().insert(rt, hoistedInst);
+		errs() << *hoistedInst << " Hoisted!!! oy oy!\n";
+	}
+
+	return;	
+}
+
+
+//void LoopCheckPropagationPass::hoist(Loop *loop)
+//{        // DO NOT DELETE... may want this later if we follow the paper more closely
         /*LoopBlocks *blocks = &loop->getBlocksVector();
         for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
                 BasicBlock *block = *it;
-
                 //errs() << "hoisting\n";
                 std::vector<BasicBlock *> ND; 
                 // ND is the set of all blocks that do not dominate all loop exits
@@ -155,7 +209,7 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
         // adjust the paper's algorithm:
         //  grab the header of the loop.
         //  try hoisting all candidate checks into the header and go from there.
-
+/*
         // all predecessors going into the loop need to add the instruction...
         // but if the predecessor is in the loop, we don't include it
         typedef std::vector<BasicBlock *> PredBlocks;
@@ -207,11 +261,11 @@ void LoopCheckPropagationPass::hoist(Loop *loop)
 }
 
 
-
+*/
 /*
  * called by findCandidates()
  * operandOne and operandTwo are the two operands of a checkLTLimit or checkGTZero call
- */
+ 
 bool LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Value *operandTwo)
 {
         effect_t operandOneEffect = getEffect(loop, operandOne);
@@ -329,4 +383,4 @@ std::string LoopCheckPropagationPass::getEffectOfMeta(MDNode *meta)
 Value *LoopCheckPropagationPass::getAffectedOperandOfMeta(MDNode *meta)
 {
         return meta->getOperand(1);
-}
+}*/

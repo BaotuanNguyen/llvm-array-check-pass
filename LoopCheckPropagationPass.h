@@ -22,14 +22,17 @@
 
 namespace llvm
 {
-        typedef std::vector<BasicBlock *> LoopBlocks;
-        typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
-        typedef std::set<Instruction *> CheckSet;
+	std::vector<CallInst*>* candidates;
+	
+	typedef std::vector<BasicBlock*> LoopBlocks;
+    typedef SmallVector<BasicBlock *, 10> ExitingBlockVec;
+    typedef std::set<Instruction *> CheckSet;
 	typedef std::map<BasicBlock *, CheckSet *> BBToCheckSet;
 	typedef std::pair<BasicBlock *, CheckSet *> PairBBAndCheckSet;
 	typedef std::pair<BasicBlock *, Instruction *> PairBBAndInst;
 	typedef std::vector<PairBBAndInst *> BBAndInstVec;
-        typedef enum{
+ 
+	typedef enum{
                 INVARIANT, INCREASING, DECREASING, WILD // TODO monotonic inc/dec?
         }effect_t;
 	struct LoopCheckPropagationPass : public LoopPass {
@@ -46,7 +49,7 @@ namespace llvm
 			}
 
                         void findCandidates(Loop *loop);
-                        void hoist(Loop *loop);
+                        void hoistTo(BasicBlock* preheader);
                         bool isCandidate(Loop *loop, Value *operandOne, Value *operandTwo);
                         effect_t getEffect(Loop *loop, Value *operand);
 
