@@ -76,6 +76,7 @@ bool VeryBusyAnalysisPass::runOnFunction(Function* F)
 	return false;
 }
 
+
 void VeryBusyAnalysisPass::createUniverse()
 {
 	this->universe = new RangeCheckSet();
@@ -90,14 +91,17 @@ void VeryBusyAnalysisPass::createUniverse()
 
 			if(CallInst *ci = dyn_cast<CallInst> (inst))
 			{
+				if (ci->getCalledFunction() == NULL)
+					continue;
+
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
 
 				if(callFunctionName.equals("checkLessThan"))
 				{
 					RangeCheckExpression* newExpr = new RangeCheckExpression(ci, this->module);
-					errs() << "being unioned: "; newExpr->println();
+					//errs() << "being unioned: "; newExpr->println();
 					RangeCheckSet* tmpUniverse = universe->set_union(newExpr);
-					errs() << "union created: "; tmpUniverse->println();
+					//errs() << "union created: "; tmpUniverse->println();
 					delete this->universe;
 					this->universe = tmpUniverse;
 				}
@@ -105,7 +109,7 @@ void VeryBusyAnalysisPass::createUniverse()
 		}
 	}
 
-	errs() << "Universe: "; this->universe->println();
+	//errs() << "Universe: "; this->universe->println();
 }
 
 void VeryBusyAnalysisPass::dataFlowAnalysis()
@@ -144,14 +148,14 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 
 			///calculate the OUT of the block, by intersecting all successors IN's
 			RangeCheckSet *C_OUT = SetsMeet(&succsRCS, SetIntersection);
-			errs() << "OUT = "; C_OUT->println();
+//			errs() << "OUT = "; C_OUT->println();
 
 			///calculate the IN of the block, running the functions we already created
 			RangeCheckSet *C_IN = this->getVBIn(BB, C_OUT);
-			errs() << "IN = "; C_IN->println();
+//			errs() << "IN = "; C_IN->println();
 			
 			RangeCheckSet *C_IN_P = BB_VB_IN->find(BB)->second;
-			errs() << "IN_PREV = "; C_IN_P->println();
+//			errs() << "IN_PREV = "; C_IN_P->println();
 			
 			BB_VB_IN->erase(BB);
 			
@@ -183,6 +187,9 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 	{	
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
+			if (callInst->getCalledFunction() == NULL)
+				continue;
+			
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
 			
 			if(!callFunctionName.equals("checkLessThan"))
@@ -190,16 +197,16 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 				continue;
 			}
 			
-			errs() << "Call Instruction: " << *callInst << "\n";
+			//errs() << "Call Instruction: " << *callInst << "\n";
 			
 			I_VB_IN->erase(callInst);
 			this->I_VB_IN->insert(PairIAndRCS(callInst, currentRCS));
 
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module);
-			errs() << "\t\tRCS Generated: "; rce->println();
-			errs() << "\t\tCurrent RCS "; currentRCS->println();
+			//errs() << "\t\tRCS Generated: "; rce->println();
+			//errs() << "\t\tCurrent RCS "; currentRCS->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
-			errs() << "\t\tIN: "; tmp->println();
+			//errs() << "\t\tIN: "; tmp->println();
 			currentRCS = tmp;
 		}
 		else if (false)
@@ -208,7 +215,7 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 		}
 		else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
 		{
-			errs() << "Store Instruction: " << *storeInst << "\n";
+			//errs() << "Store Instruction: " << *storeInst << "\n";
 			currentRCS->kill_backward(storeInst, this->module);
 		}
 	}

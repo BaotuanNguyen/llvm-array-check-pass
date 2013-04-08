@@ -88,6 +88,9 @@ void AvailableAnalysisPass::createUniverse()
 			Instruction* inst = &*II;	
 			if (CallInst *ci = dyn_cast<CallInst> (inst))
 			{
+				if (ci->getCalledFunction() == NULL)
+					continue;
+
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
                if (callFunctionName.equals("checkLessThan"))
 			   {
@@ -99,7 +102,7 @@ void AvailableAnalysisPass::createUniverse()
 		}
 	}
 	
-	errs() << "Universe: "; this->universe->println();
+	//errs() << "Universe: "; this->universe->println();
 }
 
 void AvailableAnalysisPass::dataFlowAnalysis()
@@ -137,14 +140,14 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 
 			///calculate the OUT of the block, by intersecting all predecessors IN's
 			RangeCheckSet *C_IN = SetsMeet(&predRCS, SetIntersection);
-			errs() << "IN = "; C_IN->println();
+			//errs() << "IN = "; C_IN->println();
 
 			///calculate the IN of the block, running the functions we already created
 			RangeCheckSet *C_OUT = this->getAvailOut(BB, C_IN);
-			errs() << "OUT = "; C_OUT->println();
+			//errs() << "OUT = "; C_OUT->println();
 
 			RangeCheckSet *C_OUT_P = BB_A_OUT->find(BB)->second;
-			errs() << "OUT_PREV = "; C_OUT_P->println();
+			//errs() << "OUT_PREV = "; C_OUT_P->println();
 
 			BB_A_OUT->erase(BB);
 
@@ -175,6 +178,9 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 	{
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
+			if (callInst->getCalledFunction() == NULL)
+				continue;
+			
 			const StringRef& callFunctionName = callInst->getCalledFunction()->getName();
             
 			if(!callFunctionName.equals("checkLessThan"))
@@ -182,16 +188,16 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
                   continue;
             }
 			
-			errs() << "Call Instruction: " << *callInst << "\n";
+			//errs() << "Call Instruction: " << *callInst << "\n";
 
 			//INSERT AVAILABLE INFORMATION FOR THIS CALL INSTRUCTION!
 			I_A_OUT->erase(callInst);
 			this->I_A_OUT->insert(PairIAndRCS(callInst, currentRCS));
 					
 			RangeCheckExpression* rce = new RangeCheckExpression(callInst, this->module);
-			errs() << "\t\tRCS Generated: "; rce->println();
+			//errs() << "\t\tRCS Generated: "; rce->println();
 			RangeCheckSet* tmp = currentRCS->set_union(rce);
-			errs() << "\t\tOUT: "; tmp->println();
+			//errs() << "\t\tOUT: "; tmp->println();
 			currentRCS = tmp;
         }
 		else if (false)
@@ -200,7 +206,7 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 		}
         else if(StoreInst* storeInst = dyn_cast<StoreInst>(&*II))
 		{
-			errs() << "Store Instruction: " << *storeInst << "\n";
+			//errs() << "Store Instruction: " << *storeInst << "\n";
 			currentRCS->kill_forward(storeInst, this->module);
         }
    }
