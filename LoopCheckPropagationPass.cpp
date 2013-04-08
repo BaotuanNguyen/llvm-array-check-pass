@@ -115,37 +115,6 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
 void LoopCheckPropagationPass::prepHoist(Loop *loop)
 {
-        // DO NOT DELETE... may want this later if we follow the paper more closely
-        /*LoopBlocks *blocks = &loop->getBlocksVector();
-        for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
-                BasicBlock *block = *it;
-
-                //errs() << "hoisting\n";
-                std::vector<BasicBlock *> ND; 
-                // ND is the set of all blocks that do not dominate all loop exits
-                // Cn is the set of candidate checks c, s.t. at the entry to n, we can assert that c will be executed in n
-                //   -- captured by this->bbToCheck
-                //
-                // first, get all loop exit blocks
-                // for every block, check if it dominates all those loop exit blocks
-                // if it does not, add it to ND
-                DominatorTree &dt = getAnalysis<DominatorTree>();
-                ExitingBlockVec loopExitingBlocks;
-                loop->getExitingBlocks(loopExitingBlocks);
-                unsigned int numDominated = 0;
-                for(ExitingBlockVec::iterator it = loopExitingBlocks.begin(), ie = loopExitingBlocks.end(); it != ie; ++it){
-                        if(dt.dominates(block, *it)){
-                                ++numDominated;
-                        }else{
-                                break;
-                        }
-                }
-                if(numDominated != loopExitingBlocks.size()){
-                        // block does not dominate all exiting blocks
-                        errs() << "ND pushing back\n";
-                        ND.push_back(block);
-                }
-        }*/
 
 
         // adjust the paper's algorithm:
@@ -400,3 +369,40 @@ Value *LoopCheckPropagationPass::getAffectedOperandOfMeta(MDNode *meta)
 {
         return meta->getOperand(1);
 }
+
+
+
+
+/// old hoist code that may be helpful later
+        // DO NOT DELETE... may want this later if we follow the paper more closely
+        /*LoopBlocks *blocks = &loop->getBlocksVector();
+        for(LoopBlocks::iterator it = blocks->begin(), ie = blocks->end(); it != ie; ++it){
+                BasicBlock *block = *it;
+
+                //errs() << "hoisting\n";
+                std::vector<BasicBlock *> ND; 
+                // ND is the set of all blocks that do not dominate all loop exits
+                // Cn is the set of candidate checks c, s.t. at the entry to n, we can assert that c will be executed in n
+                //   -- captured by this->bbToCheck
+                //
+                // first, get all loop exit blocks
+                // for every block, check if it dominates all those loop exit blocks
+                // if it does not, add it to ND
+                DominatorTree &dt = getAnalysis<DominatorTree>();
+                ExitingBlockVec loopExitingBlocks;
+                loop->getExitingBlocks(loopExitingBlocks);
+                unsigned int numDominated = 0;
+                for(ExitingBlockVec::iterator it = loopExitingBlocks.begin(), ie = loopExitingBlocks.end(); it != ie; ++it){
+                        if(dt.dominates(block, *it)){
+                                ++numDominated;
+                        }else{
+                                break;
+                        }
+                }
+                if(numDominated != loopExitingBlocks.size()){
+                        // block does not dominate all exiting blocks
+                        errs() << "ND pushing back\n";
+                        ND.push_back(block);
+                }
+        }*/
+
