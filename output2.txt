@@ -1,0 +1,61 @@
+make: Nothing to be done for `all'.
+automotive-susan/
+checks added      :  16
+checks deleted    :  10
+checks total      :  6
+percentage deleted: .6250
+RunTime  (secs)   : 0.138
+ExecSize (bytes)  : 60288
+
+
+
+consumer-jpeg/
+checks added      :  926
+checks deleted    :  345
+checks total      :  581
+percentage deleted: .3725
+RunTime  (secs)   : 0.023
+ExecSize (bytes)  : 257908
+
+
+
+network-dijkstra/
+checks added      :  26
+checks deleted    :  12
+checks total      :  14
+percentage deleted: .4615
+RunTime  (secs)   : 0.187
+ExecSize (bytes)  : 14304
+
+
+
+office-ispell/
+checks added      :  397
+checks deleted    :  96
+checks total      :  301
+percentage deleted: .2418
+RunTime  (secs)   : 0.004
+ExecSize (bytes)  : 119084
+
+
+
+security-rijndael/
+checks added      :  994
+checks deleted    :  6
+checks total      :  988
+percentage deleted: .0060
+RunTime  (secs)   : 0.607
+ExecSize (bytes)  : 84208
+
+
+
+telecomm-gsm/
+checks added      :  70
+checks deleted    :  17
+checks total      :  53
+percentage deleted: .2428
+RunTime  (secs)   : 0.708
+ExecSize (bytes)  : 98884
+
+
+
