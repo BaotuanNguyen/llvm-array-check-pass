@@ -74,7 +74,7 @@ void LoopCheckPropagationPass::findCandidates(Loop *loop)
 
                                         errs() << "callinst: " << *ci << "\n";
                                         MDNode* metadata = ci->getMetadata("VarName");
-                                        //errs() << "metadata: " << *metadata;
+                                        errs() << "metadata: " << *metadata;
 
                                         Value *operandOne = metadata->getOperand(0);
                                         Value *operandTwo = metadata->getOperand(1);
@@ -361,8 +361,8 @@ effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Va
 
         effect_t operandOneEffect = getEffect(loop, operandOne, 0);
         effect_t operandTwoEffect = getEffect(loop, operandTwo, 0);
-        //errs() << "operandOneEffect: " << operandOneEffect << "\n";
-        //errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
+        errs() << "operandOneEffect: " << operandOneEffect << "\n";
+        errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
 
         // invariant
         if(operandOneEffect == INVARIANT && operandTwoEffect == INVARIANT){
@@ -403,6 +403,7 @@ effect_t LoopCheckPropagationPass::isCandidate(Loop *loop, Value *operandOne, Va
 // recursive -- must be able to find the effect across all nested loops
 effect_t LoopCheckPropagationPass::getEffect(Loop *loop, Value *operand, int change)
 {
+        errs() << "inside getEffect wit operand: " << *operand << "\n";
 
         Constant *constant;
         if((constant = dyn_cast<Constant>(operand))){
@@ -489,13 +490,16 @@ Value *LoopCheckPropagationPass::swapFakeOperand(Value *operand)
         //
         // swap %i for %2 if something like that happened
 
-        if(operand->getNumUses() <= 2){
+        /*if(operand->getNumUses() <= 2){
                 if(Instruction *inst = dyn_cast<Instruction>(operand)){
                         if(inst->getOpcode() == Instruction::Add){
                                 return getAffectedOperandOfMeta(inst->getMetadata("EFFECT"));
                         }
                 }
 
+        }*/
+        if(Instruction *inst = dyn_cast<Instruction>(operand)){
+                return getAffectedOperandOfMeta(inst->getMetadata("EFFECT"));
         }
         return operand;
 
