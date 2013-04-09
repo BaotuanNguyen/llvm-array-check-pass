@@ -4,7 +4,7 @@
 
 extern "C" void checkLessThan(int64_t left, int64_t right)
 {
-	std::cout << "checking: " << left << " < " << right << "\n";
+	//std::cout << "checking: " << left << " < " << right << "\n";
 	
 	if (left >= right)
 	{

@@ -15,6 +15,7 @@ shopt -s nullglob
 
 PASSES=""	#no optimizations
 VERBOSE=0
+makefile="Makefile"
 
 usage() {
 	usageMsg="usage TestBenchmarks [options]
@@ -29,7 +30,7 @@ options
 
 
 #parse the options
-while getopts "123avh" OPTION
+while getopts "123alvh" OPTION
 do
 	case "$OPTION" in
 		"1")	PASSES="-array-check"
@@ -38,7 +39,10 @@ do
 			;;
 		"3") 	PASSES="-loop-pass"
 			;;
-		"a")	usage; exit 1;;	#no used currently
+		"a")	usage
+			exit 1;;	#no used currently
+		"l") 	makefile="Makefile.large"
+			;;
 		"v")	VERBOSE=1
 			;;
 		"h")	usage
@@ -75,7 +79,7 @@ getMakeOption(){
 	#echo "----"
 	#cat "${1}Makefile"
 	#echo "----"
-	optionLine=`grep ^${2} "${1}Makefile"`
+	optionLine=`grep ^${2} "${1}${makefile}"`
 	option=""
 	if [[ $optionLine != "" ]]
 	then
