@@ -147,10 +147,12 @@ compileBenchmark(){
 			#Number of checks inserted
 			checksAdded=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/\ Number\ of\ checks\ inserted:(.*)/\1/p')
 			checksDeleted=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/REMOVED\ REDUNDANT\ CHECKS\ #:(.*)/\1/p') 
+			#$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null 
 			#echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
+
 			#if [[ ! -e ${llModFile} ]]; then
-			#	echo $llModFile
-			#	echo "!!aa!!does not exist"
+		#		echo $llModFile
+		#		echo "!!aa!!does not exist"
 			#fi
 
 			if [[ $checksDeleted == "" ]]; then
@@ -252,7 +254,7 @@ mkdir Output
 for BenchmarkFolder in ${BenchmarkFolders[@]}
 do
 	echo $BenchmarkFolder
-	#if [[ $BenchmarkFolder != "telecomm-gsm/" ]]; then
+	#if [[ $BenchmarkFolder != "consumer-jpeg/" ]]; then
 	#	continue;	
 	#fi
 	compileBenchmark "$BenchmarkFolder" "$PASSES"
