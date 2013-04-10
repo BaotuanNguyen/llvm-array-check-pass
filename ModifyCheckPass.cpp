@@ -30,7 +30,7 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 		RangeCheckExpression* expr2 = &(*it);
 
 		// Each side of RCE should constain: 1. constants only or, 2. Single same variable with different offsets
-		if (expr2->subsumes(expr))
+		if (expr2->subsumes(expr) && !(expr->subsumes(expr2)))
 		{
 			errs() << "Replacing "; expr->print();
 			errs() << " with "; expr2->println();
@@ -38,8 +38,15 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			if (dyn_cast<ConstantInt>(expr2->left) && dyn_cast<ConstantInt>(expr->left)) // LHS contains a constant
 			{
 				Value* arguement = expr2->left;
+
+				errs() << "argument: " << *arguement << "\n";
 				if ((expr2->left->getType()) != Type::getInt64Ty(this->M->getContext()))
-					arguement = CastInst::CreateIntegerCast(expr2->left, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+						if (expr2->left->getType()->isPointerTy())
+							arguement = CastInst::CreatePointerCast(arguement, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+						else
+							arguement = CastInst::CreateIntegerCast(arguement, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 //				errs() << "func arg0: " << *(expr2->left) << "\n";
 //				errs() << "func meta0: " << *(expr2->left) << "\n";
 				callInst->setArgOperand(0, arguement);
@@ -47,9 +54,13 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			}
 			else if (dyn_cast<AllocaInst>(expr2->left) || dyn_cast<GlobalVariable>(expr2->left)) // LHS contains a named variable
 			{
+
 				Instruction* loadInst = new LoadInst(expr2->left, "MODIFY_CHECK", callInst);
-				if (expr2->left->getType() != Type::getInt64PtrTy(this->M->getContext()))
-					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				
+				if (expr2->left->getType() != Type::getInt64Ty(this->M->getContext()))
+				{
+						loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 				
 //				errs() << "func arg0: " << *loadInst << "\n";
 //				errs() << "func meta0: " << *(expr2->left) << "\n";
@@ -72,16 +83,28 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 				Value* loadInst = new LoadInst(originVar, "MODIFY_CHECK", callInst);
 				
 				if ((loadInst->getType()) != Type::getInt64Ty(this->M->getContext()))
-					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+						loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 				
 				if ((addVal->getType()) != Type::getInt64Ty(this->M->getContext()))
-					addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+					if (addVal->getType()->isPointerTy())
+						addVal = CastInst::CreatePointerCast(addVal, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+					else
+						addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 
 				Instruction* addInst = llvm::BinaryOperator::Create(Instruction::Add, loadInst, addVal, "MODIFY_CHECK", callInst);
 				generateMetadata(incrementString, originVar, addVal, addInst, M);
 				
 				if (addInst->getType() != Type::getInt64Ty(this->M->getContext()))
-					addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+					if (addInst->getType()->isPointerTy())
+						addInst = CastInst::CreatePointerCast(addInst, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+					else
+						addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 
 //				errs() << "func arg0: " << *addInst << "\n";
 //				errs() << "func meta0: " << *addInst << "\n";
@@ -101,7 +124,12 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 //				errs() << "func meta1: " << *(expr2->right) << "\n";
 				Value* arguement = expr2->right;
 				if ((expr2->right->getType()) != Type::getInt64Ty(this->M->getContext()))
-					arguement = CastInst::CreateIntegerCast(expr2->right, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+					if (expr2->right->getType()->isPointerTy())
+						arguement = CastInst::CreatePointerCast(arguement, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+					else
+						arguement = CastInst::CreateIntegerCast(arguement, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 
 				callInst->setArgOperand(1, arguement);
 				effect.push_back(arguement);
@@ -110,8 +138,12 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			else if (dyn_cast<AllocaInst>(expr2->right) || dyn_cast<GlobalVariable>(expr2->right)) // RHS contains a named variable
 			{
 				Instruction* loadInst = new LoadInst(expr2->right, "MODIFY_CHECK", callInst);
+				errs() << "RHS: " << *(expr2->right) << "\n";
+				errs() << "Load: " << *loadInst << "\n";
 				if (expr2->right->getType() != Type::getInt64Ty(this->M->getContext()))
-					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+						loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 //				errs() << "func arg1: " << *loadInst << "\n";
 //				errs() << "func meta1: " << *(expr2->right) << "\n";
 				callInst->setArgOperand(1, loadInst);
@@ -131,16 +163,28 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 				Value* loadInst = new LoadInst(originVar, "MODIFY_CHECK", callInst);
 
 				if (loadInst->getType() != Type::getInt64Ty(this->M->getContext()))
-					loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+						loadInst = CastInst::CreateIntegerCast(loadInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 				
 				if (addVal->getType() != Type::getInt64Ty(this->M->getContext()))
-					addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+					if (addVal->getType()->isPointerTy())
+						addVal = CastInst::CreatePointerCast(addVal, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+					else
+						addVal = CastInst::CreateIntegerCast(addVal, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 
 				Instruction* addInst = llvm::BinaryOperator::Create(Instruction::Add, loadInst, addVal, "MODIFY_CHECK", callInst);
 				generateMetadata(decrementString, originVar, addVal, addInst, M);
 				
 				if (addInst->getType() != Type::getInt64Ty(this->M->getContext()))
-					addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				{
+					if (addInst->getType()->isPointerTy())
+						addInst = CastInst::CreatePointerCast(addInst, Type::getInt64PtrTy(this->M->getContext()), "MODIFY_CHECK", callInst);
+					else
+						addInst = CastInst::CreateIntegerCast(addInst, Type::getInt64Ty(this->M->getContext()), true, "MODIFY_CHECK", callInst);
+				}
 				
 //				errs() << "func arg1: " << *addInst << "\n";
 //				errs() << "func meta1: " << *addInst << "\n";

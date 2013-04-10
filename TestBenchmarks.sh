@@ -22,7 +22,7 @@ usage() {
 options
 	-1	unoptimized checks inserted
 	-2	optimized using global check removal
-	-3 	optimized using local check removal
+	-3 	loop-hoist
 	-v	verbose output
 	-h	help"
 	echo "$usageMsg"
@@ -37,7 +37,7 @@ do
 			;;
 		"2")	PASSES="-effect-gen -insert-check -modify-check -remove-check"
 			;;
-		"3") 	PASSES="-loop-hoist"
+		"3") 	PASSES="-effect-gen -insert-check -loop-hoist"
 			;;
 		"a")	usage
 			exit 1;;	#no used currently
@@ -111,6 +111,7 @@ compileBenchmark(){
 	#compile all benchmarks
 	sumAdded="0"
 	sumDeleted="0"
+	sumHoisted="0"
 	for cFile in ${cFiles[@]}
 	do
 		oFile="${cFile%.c}.o"
@@ -147,6 +148,7 @@ compileBenchmark(){
 			#Number of checks inserted
 			checksAdded=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/\ Number\ of\ checks\ inserted:(.*)/\1/p')
 			checksDeleted=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/REMOVED\ REDUNDANT\ CHECKS\ #:(.*)/\1/p') 
+			checksHoisted=$( $OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile 2>&1 | sed -E -n 's/\ Number\ of\ checks\ hoisted:(.*)/\1/p')
 			#$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null 
 			#echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
 
@@ -161,6 +163,7 @@ compileBenchmark(){
 			#process the numbers found
 			sumAdded=$(echo "${sumAdded}+${checksAdded}" | bc)
 			sumDeleted=$(echo "${sumDeleted}+${checksDeleted}" | bc)
+			sumHoisted=$(echo "${sumHoisted}+${checksHoisted}" | bc)
 			#echo "current sumAdded: ${sumAdded}"
 			#echo "current sumDeleted: ${sumDeleted}"
 			#$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile &> sed -n 's/Number\ of\ checks\ inserted:\ \(.*\)/\1/gp'
@@ -180,6 +183,7 @@ compileBenchmark(){
 	fi
 	echo "checks added      :  ${sumAdded}"
 	echo "checks deleted    :  ${sumDeleted}"
+	echo "checks hoisted      :  ${sumHoisted}"
 	echo "checks total      :  ${totalChecks}"
 	echo "percentage deleted: ${percentageDeleted}"
 	#echo "-> linking ${progOpt} ld-options (${ldOpts}) object-files (${oFiles})"

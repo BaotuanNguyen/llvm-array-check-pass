@@ -76,12 +76,18 @@ Instruction* ArrayBoundsCheckPass::insertLessThanCheck(Value* left, Value* right
 
 	if (left->getType() != Type::getInt64Ty(this->M->getContext()))
 	{
-		left = llvm::CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+		if (left->getType()->isPointerTy())
+			left = CastInst::CreatePointerCast(left, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
+		else
+			left = CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
 	}
 
 	if (right->getType() != Type::getInt64Ty(this->M->getContext()))
 	{
-		right = llvm::CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+		if (right->getType()->isPointerTy())
+			right = CastInst::CreatePointerCast(right, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
+		else
+			right = CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
 	}
 	
 	///create vector with values which containts arguments values
@@ -357,12 +363,18 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						if (firstOp->getType() != Type::getInt64Ty(this->M->getContext())) 
 						{
-							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (firstOp->getType()->isPointerTy())
+								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						if (secondOp->getType() != Type::getInt64Ty(this->M->getContext()))
 						{
-							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (secondOp->getType()->isPointerTy())
+								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						Value* index;
@@ -544,12 +556,18 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						if (firstOp->getType() != Type::getInt64Ty(this->M->getContext())) 
 						{
-							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (firstOp->getType()->isPointerTy())
+								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						if (secondOp->getType() != Type::getInt64Ty(this->M->getContext()))
 						{
-							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (secondOp->getType()->isPointerTy())
+								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						BinaryOperator* index = BinaryOperator::Create(Instruction::Add, firstOp, secondOp, "ADD_CHECK", currInst);
@@ -662,7 +680,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						
 						if (var_index->getType() != Type::getInt64Ty(this->M->getContext()))
 						{
-							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (var_index->getType()->isPointerTy())
+								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						var_index = BinaryOperator::Create(Instruction::Mul, var_index, secondOp, "ADD_CHECK", currInst);
@@ -720,7 +741,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 								
 						if (var_index->getType() != Type::getInt64Ty(this->M->getContext()))
 						{
-							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+							if (var_index->getType()->isPointerTy())
+								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+							else
+								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
 						}
 
 						var_index = BinaryOperator::Create(Instruction::Mul, var_index, secondOp, "ADD_CHECK", currInst);
@@ -786,8 +810,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 	if (origin_index == NULL)
 		origin_index = var_index;
 					
-//	if (dyn_cast<LoadInst>(origin_index))
-//		origin_index = ((LoadInst*)origin_index)->getOperand(0);
+	if (dyn_cast<LoadInst>(origin_index))
+		origin_index = ((LoadInst*)origin_index)->getOperand(0);
 
 	varNames1.push_back(negone);
 	varNames1.push_back(origin_index);
