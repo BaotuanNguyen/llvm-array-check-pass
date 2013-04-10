@@ -103,17 +103,17 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 
 	int i = 0;
 	bool isChanged = true;
-	errs() << "******************* AVAILABLE ANALYSIS *************************\n";
+//	errs() << "******************* AVAILABLE ANALYSIS *************************\n";
 	while (isChanged)
 	{
 		isChanged = false;
 		
 		///go throught all of the blocks
-		errs() << "******************* ROUND " << i << "*************************\n";
+//		errs() << "******************* ROUND " << i << "*************************\n";
 		for(Function::iterator BBI = this->currentFunction->begin(), BBE = this->currentFunction->end(); BBI != BBE; BBI++)
 		{
 			BasicBlock* BB = &*BBI;
-			errs() << "Basic Block: " << BB->getName() << "\n";
+//			errs() << "Basic Block: " << BB->getName() << "\n";
 			ListRCS predRCS;
 
 			///get a list of range check sets
@@ -139,18 +139,18 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 			if(!C_OUT_P->equal(C_OUT))
 			{
 				isChanged = true;	
-				errs() << "changed\n";
+//				errs() << "changed\n";
 			}
 			else
 			{
-				errs() << "unchanged\n";
+//				errs() << "unchanged\n";
 			}
 
 			BB_A_OUT->insert(PairBBAndRCS(BB, C_OUT));
 
-			errs() << "\n";
+//			errs() << "\n";
 		}	
-		errs() << "***************************************************\n";
+//		errs() << "***************************************************\n";
 		i++;
 	}
 }
@@ -195,18 +195,4 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
         }
    }
    return currentRCS;
-}
-
-template <typename T> void AvailableAnalysisPass::dumpSetOfPtr(std::set<T*> *set)
-{
-	llvm::errs() << "{\n";
-	for(typename std::set<T*>::iterator IP = set->begin(), EP = set->end(); IP != EP; IP++)
-	{
-		llvm::errs() << "\t" << **IP << "\n";
-	}
-	if(set->empty())
-	{
-		llvm::errs() << "\tempty" << "\n";
-	}
-	llvm::errs() << "}\n";
 }

@@ -63,7 +63,7 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 				
 				if (metadata2 == NULL)
 				{
-					errs() << "ERROR: THIS CASE SHOULD NOT HOLD!! (ASSUMPTION IN MODIFYPASS)\n";
+					errs() << "ERROR: THIS CASE SHOULD NOT HOLD!! (MY ASSUMPTION IN MODIFYPASS)\n";
 				}
 
 

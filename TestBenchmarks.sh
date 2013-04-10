@@ -22,7 +22,7 @@ usage() {
 options
 	-1	unoptimized checks inserted
 	-2	optimized using global check removal
-	-3 	optimized using loop check removal
+	-3 	optimized using local check removal
 	-v	verbose output
 	-h	help"
 	echo "$usageMsg"
@@ -37,7 +37,7 @@ do
 			;;
 		"2")	PASSES="-effect-gen -insert-check -modify-check -remove-check"
 			;;
-		"3") 	PASSES="-loop-pass"
+		"3") 	PASSES="-loop-hoist"
 			;;
 		"a")	usage
 			exit 1;;	#no used currently

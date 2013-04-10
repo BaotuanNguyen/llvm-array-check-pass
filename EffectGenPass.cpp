@@ -37,7 +37,7 @@ bool EffectGenPass::runOnFunction(Function* F)
 
 bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 {
-	errs() << "Entering basic block\n";
+//	errs() << "Entering basic block\n";
 
 		LLVMContext& context = this->M->getContext();
 		ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
@@ -171,7 +171,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 						{
 							case Instruction::Add:
 							{
-								errs() << *BO <<  " BINOP: ADD\n";
+//								errs() << *BO <<  " BINOP: ADD\n";
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{
@@ -217,7 +217,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 							}
 							case Instruction::Sub:
 							{
-								errs() << *BO <<  " BINOP: SUB\n";
+//								errs() << *BO <<  " BINOP: SUB\n";
 
 								if (ConstantInt* CI = dyn_cast<ConstantInt>(constant))
 								{
@@ -256,7 +256,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 								}
 								else
 								{
-										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
+//										errs() << "ERROR!!!!!!! UNKNOWN CONSTANT VALUE TYPE FOUND!!!!\n";
 										continue;
 								}
 								break;
@@ -272,7 +272,7 @@ bool EffectGenPass::runOnBasicBlock(BasicBlock* BB)
 				}
 		}
 				
-        errs() << "Exiting basic block\n\n";
+//        errs() << "Exiting basic block\n\n";
         return true;
 }
 

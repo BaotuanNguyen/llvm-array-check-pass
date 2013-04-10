@@ -11,53 +11,50 @@ OPT="${LLVM_LIBRARY}bin/opt"
 
 #DIFFERENT WAYS TO RUN OPT UNDER
 case "$1" in
-	'-array-check')	
-		OPT_PASSES="-array-check"
-		;;
 	'-effect-gen')
 		OPT_PASSES="-effect-gen"
 		;;
-	'-test-pass')
-		OPT_PASSES="-test-pass"
+	'-insert-check')	
+		OPT_PASSES="-insert-check"
+		;;
+    '-loop-hoist')
+		OPT_PASSES="-effect-gen -insert-check -loop-hoist"
 		;;
 	'-very-busy-analysis')
-		OPT_PASSES="-very-busy-analysis"
+		OPT_PASSES="-effect-gen -insert-check -loop-hoist -very-busy-analysis"
 		;;
 	'-modify-check')
-		OPT_PASSES="-modify-check"
+		OPT_PASSES="-effect-gen -insert-check -loop-hoist -modify-check"
 		;;	
 	'-available-analysis')
-		OPT_PASSES="-available-analysis"
+		OPT_PASSES="-effect-gen -insert-check -loop-hoist -modify-check -available-analysis"
 		;;
-	'-remove-global')
-		OPT_PASSES="-effect-gen -array-check -available-analysis -modify-check -available-analysis -remove-global"
-		;;
-        '-loop-pass')
-		OPT_PASSES="-loop-pass"
+	'-remove-check')
+		OPT_PASSES="-effect-gen -insert-check -loop-hoist -modify-check -remove-check"
 		;;
 
 	*)
 		echo "invalid argument,"
-		echo "Usage: runPass	[ -array-check | -effect-gen | -very-busy-analysis | -modify-check | -available-analysis | -remove-global  ] <filename>"
+		echo "Usage: runPass	[ -effect-gen | -insert-check | -loop-hoist | -very-busy-analysis | -modify-check
+	   	| -available-analysis | -remove-check ] <filename>"
 		exit 1
 		;;
 esac
 
 #remove suffix .c
-TEST_NAME=${2%.c}
+TEST_NAME=${2%.ll}
 
 #compiles the test file, and the check library
-clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
+clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.ll
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
-./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
+./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -disable-verify -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
 
 #the test code and library code are linked into executable
-clang -lstdc++ -o $TEST_NAME.out $TEST_NAME.mod.ll LibArrayCheck.ll
+#clang -lstdc++ -o $TEST_NAME.out $TEST_NAME.mod.ll LibArrayCheck.ll
 
 #clean up al intermediate files, unless specified
 #if [[ $1 != "-i" ]] 
 #then
 #	rm -rf *.bc *.ll *.o
 #fi
-	

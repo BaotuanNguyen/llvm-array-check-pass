@@ -69,10 +69,10 @@ Instruction* ArrayBoundsCheckPass::insertLessThanCheck(Value* left, Value* right
 {
 	this->checkNumber++;
 
-	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-	errs() << "   *** Inserting a Bound Check Instruction ***\n";
-	errs() <<"   " <<  *left << "  <  " << *right << "\n";
-	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+//	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+//	errs() << "   *** Inserting a Bound Check Instruction ***\n";
+//	errs() <<"   " <<  *left << "  <  " << *right << "\n";
+//	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
 
 	if (left->getType() != Type::getInt64Ty(this->M->getContext()))
 	{
@@ -222,9 +222,9 @@ bool ArrayBoundsCheckPass::runOnConstantExpression(ConstantExpr* CE, Instruction
 // I think it is sufficient to check whether FIRST index of GEP instruction is greater than 0 (except in VLA case)
 bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 {
-	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
-	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+//	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+//	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
+//	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
 	
 	bool index_all_const = true;
 	int64_t arr_size = 0;
@@ -272,7 +272,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI))
 			{
 				int64_t firstIndex = CI->getSExtValue();
-				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+//				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
 			
 				// if there is only one index in GEP and Base Pointer is alloca, then this must be a VLA
 				if ((OI+1) == user->op_end())
@@ -281,8 +281,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					{
 						this->Inst = currInst;
 						
-						errs() << "VLA Detected1\n";
-						errs() << "base pointer: " << *allocaInst << "\n";
+//						errs() << "VLA Detected1\n";
+//						errs() << "base pointer: " << *allocaInst << "\n";
 
 						//errs() << "arr_index: " << arr_index << "\n";
 						arr_index = firstIndex;
@@ -292,7 +292,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						if (elementType->isArrayTy()) // array name is being used as a pointer (ex. a[10]; a + 30;)
 						{
-							errs() << "** This GEP is not an array access. **\n";
+//							errs() << "** This GEP is not an array access. **\n";
 							return true;
 
 //							ArrayType *Aty = dyn_cast<ArrayType>(elementType);
@@ -312,10 +312,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						if (dyn_cast<LoadInst>(originLimit))
 							originLimit = ((LoadInst*) originLimit)->getOperand(0);
 
-						errs() << "index: " << *CI << "\n";
-						errs() << "limit: " << *limit << "\n";
-						errs() << "originIndex: " << *CI << "\n";
-						errs() << "originLimit: " << *originLimit << "\n";
+//						errs() << "index: " << *CI << "\n";
+//						errs() << "limit: " << *limit << "\n";
+//						errs() << "originIndex: " << *CI << "\n";
+//						errs() << "originLimit: " << *originLimit << "\n";
 
 						if (CI->getSExtValue() < 0)
 						{
@@ -346,8 +346,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						this->Inst = currInst;
 						
 						// Insert runtime check 
-						errs() << "VLA Chain Detected1\n";
-						errs() << "origin pointer: " << *originPointer << "\n";
+//						errs() << "VLA Chain Detected1\n";
+//						errs() << "origin pointer: " << *originPointer << "\n";
 						
 						arr_index = firstIndex;
 						//errs() << "arr_index: " << arr_index << "\n";
@@ -381,7 +381,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						
 						if (elementType->isArrayTy()) // array name is being used as a pointer (ex. a[10]; a + 30;)
 						{
-							errs() << "** This GEP is not an array access. **\n";
+//							errs() << "** This GEP is not an array access. **\n";
 							return true;
 
 							//ArrayType *Aty = dyn_cast<ArrayType>(elementType);
@@ -402,11 +402,17 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						if (originLimit == NULL)
 							originLimit = limit;
 
-						errs() << "index: " << *index << "\n";
-						errs() << "limit: " << *limit << "\n";
+						if (dyn_cast<LoadInst>(originIndex))
+							originIndex = ((LoadInst*) originIndex)->getOperand(0);
 						
-						errs() << "origin index: " << *originIndex << "\n";
-						errs() << "origin limit: " << *originLimit << "\n";
+						if (dyn_cast<LoadInst>(originLimit))
+							originLimit = ((LoadInst*) originLimit)->getOperand(0);
+
+//						errs() << "index: " << *index << "\n";
+//						errs() << "limit: " << *limit << "\n";
+						
+//						errs() << "origin index: " << *originIndex << "\n";
+//						errs() << "origin limit: " << *originLimit << "\n";
 						
 						if (CI->getSExtValue() < 0)
 						{
@@ -434,7 +440,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					}
 					else
 					{
-						errs() << "** This GEP is not an array access. **\n";
+//						errs() << "** This GEP is not an array access. **\n";
 						return true;
 					}
 				}		
@@ -442,8 +448,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 				{
 					int64_t currentIndex = CI->getSExtValue();
 					
-					errs() << "Regular Array Detected\n";
-					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+//					errs() << "Regular Array Detected\n";
+//					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
 						
 					arr_size = 1;
 					arr_index = currentIndex;
@@ -451,7 +457,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 			}
 			else // First index is in non-constant form
 			{
-				errs() << "First Index (Non-constant): " << **OI << "\n";
+//				errs() << "First Index (Non-constant): " << **OI << "\n";
 				index_all_const = false;
 		
 				// if there is only one index in GEP and Base Pointer is alloca, then this must be a VLA
@@ -462,8 +468,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						this->Inst = currInst;
 						
 						// Insert runtime check 
-						errs() << "VLA Detected2\n";
-						errs() << "base pointer: " << *allocaInst << "\n";
+//						errs() << "VLA Detected2\n";
+//						errs() << "base pointer: " << *allocaInst << "\n";
 
 						Value* originIndex = findOriginOfPointer(*OI);
 						Value* index = *OI;
@@ -473,7 +479,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						if (elementType->isArrayTy())
 						{
-							errs() << "** This GEP is not an array access. **\n";
+//							errs() << "** This GEP is not an array access. **\n";
 							return true;
 
 							//ArrayType *Aty = dyn_cast<ArrayType>(elementType);
@@ -499,11 +505,11 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						if (dyn_cast<LoadInst>(originLimit))
 							originLimit = ((LoadInst*)originLimit)->getOperand(0);
 						
-						errs() << "index: " << *index << "\n";
-						errs() << "limit: " << *limit << "\n";
+//						errs() << "index: " << *index << "\n";
+//						errs() << "limit: " << *limit << "\n";
 						
-						errs() << "origin index: " << *originIndex << "\n";
-						errs() << "origin limit: " << *originLimit << "\n";
+//						errs() << "origin index: " << *originIndex << "\n";
+//						errs() << "origin limit: " << *originLimit << "\n";
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -529,9 +535,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					else if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(originPointer))
 					{
 						// Insert runtime check 
-						errs() << "VLA Chain Detected2\n";
+//						errs() << "VLA Chain Detected2\n";
 
-						errs() << "OriginPointer: " << *allocaInst << "\n";
+//						errs() << "OriginPointer: " << *allocaInst << "\n";
 						
 						Value* firstOp = dyn_cast<User>(basePointer)->getOperand(1);
 						Value* secondOp = &(**OI);
@@ -555,7 +561,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 
 						if (elementType->isArrayTy())
 						{
-							errs() << "** This GEP is not an array access. **\n";
+//							errs() << "** This GEP is not an array access. **\n";
 							return true;
 
 							//ArrayType *Aty = dyn_cast<ArrayType>(elementType);
@@ -581,11 +587,11 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						if (dyn_cast<LoadInst>(originLimit))
 							originLimit = ((LoadInst*)originLimit)->getOperand(0);
 					
-						errs() << "index: " << *index << "\n";
-						errs() << "limit: " << *limit << "\n";
+//						errs() << "index: " << *index << "\n";
+//						errs() << "limit: " << *limit << "\n";
 						
-						errs() << "origin index: " << *originIndex << "\n";
-						errs() << "origin limit: " << *originLimit << "\n";
+//						errs() << "origin index: " << *originIndex << "\n";
+//						errs() << "origin limit: " << *originLimit << "\n";
 						
 						LLVMContext& context = this->M->getContext();
 						std::vector<Value*> varNames1;
@@ -610,28 +616,28 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					}
 					else
 					{
-						errs() << "This GEP is not an array access\n";
+//						errs() << "This GEP is not an array access\n";
 						return true;
 					}
 				}
 				else // regular array iteration
 				{
 					index_all_const = false;
-					errs() << "Regular Array Detected\n";
-					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+//					errs() << "Regular Array Detected\n";
+//					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
 					
 					arr_size = 1;
 					arr_index = 0;
 					var_index = *OI;
 					
-					errs() << "Variable index: " << *var_index;
+//					errs() << "Variable index: " << *var_index;
 				}					
 			}
 		}
 		// bound checking for indices other than the "first" indexn
 		else
 		{
-			errs() << "Regular Array Iteration\n";
+//			errs() << "Regular Array Iteration\n";
 
 			if (ConstantInt *CI = dyn_cast<ConstantInt>(*OI)) // index in constant form
 			{
@@ -641,13 +647,13 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					int64_t numElements = Aty->getNumElements();
 					arr_size = arr_size * numElements;
 
-					errs() << "this index: " << current_index << "\n";
-					errs() << "this array size: " << numElements << "\n";
+//					errs() << "this index: " << current_index << "\n";
+//					errs() << "this array size: " << numElements << "\n";
 					
 					if (index_all_const)
 					{
 						arr_index = (arr_index * numElements) + current_index;
-						errs() << "Cumulative array index: " << arr_index << "\n";
+//						errs() << "Cumulative array index: " << arr_index << "\n";
 					}
 					else
 					{
@@ -664,10 +670,10 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						if (current_index != 0)
 							var_index = BinaryOperator::Create(Instruction::Add, var_index, thirdOp, "ADD_CHECK", currInst);
 					
-						errs() << "Cumulative array index: " << *var_index << "\n";
+//						errs() << "Cumulative array index: " << *var_index << "\n";
 					}
 					
-					errs() << "cumulutive array size: " << arr_size << "\n";
+//					errs() << "cumulutive array size: " << arr_size << "\n";
 				}
 			}
 			else // index is in non-constant form
@@ -680,8 +686,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					int64_t numElements = Aty->getNumElements();
 					arr_size = arr_size * numElements;
 
-					errs() << "this index: " << *current_index << "\n";
-					errs() << "this array size: " << numElements << "\n";
+//					errs() << "this index: " << *current_index << "\n";
+//					errs() << "this array size: " << numElements << "\n";
 					
 					this->Inst = currInst;
 
@@ -699,8 +705,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 						{
 								var_index = current_index;
 								
-								errs() << "cumulative array index: " << *var_index << "\n";
-								errs() << "cumulative array size: " << arr_size << "\n";
+//								errs() << "cumulative array index: " << *var_index << "\n";
+//								errs() << "cumulative array size: " << arr_size << "\n";
 								continue;
 						}					
 						else
@@ -722,29 +728,29 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					
 					var_index = BinaryOperator::Create(Instruction::Add, var_index, current_index, "ADD_CHEK", currInst);
 						
-					errs() << "cumulative array index: " << *var_index << "\n";
-					errs() << "cumulative array size: " << arr_size << "\n";
+//					errs() << "cumulative array index: " << *var_index << "\n";
+//					errs() << "cumulative array size: " << arr_size << "\n";
 				}
 			}
 		}
-		errs() << "\n";
+//		errs() << "\n";
 	}
 						
 	if (arr_size == 0)
 	{
-			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
+//			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
 			return true;
 	}
 
-	errs() << "---------------------- GEP Statistics: -----------------------\n";
-	errs() << "Cumulative Index: ";
+//	errs() << "---------------------- GEP Statistics: -----------------------\n";
+//	errs() << "Cumulative Index: ";
 
-	if (index_all_const)
-		errs() << arr_index << "\n";
-	else
-		errs() << *var_index << "\n";
+//	if (index_all_const)
+//		errs() << arr_index << "\n";
+//	else
+//		errs() << *var_index << "\n";
    
-	errs() << "Cumulative Array Size: " << arr_size << "\n";
+//	errs() << "Cumulative Array Size: " << arr_size << "\n";
 
 	ConstantInt* arr_size_CI = ConstantInt::get(Type::getInt64Ty(this->M->getContext()), arr_size);	
 
@@ -779,6 +785,9 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 					
 	if (origin_index == NULL)
 		origin_index = var_index;
+					
+//	if (dyn_cast<LoadInst>(origin_index))
+//		origin_index = ((LoadInst*)origin_index)->getOperand(0);
 
 	varNames1.push_back(negone);
 	varNames1.push_back(origin_index);
@@ -795,7 +804,7 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 	lowerBoundCheck->setMetadata("VarName", meta_lowerBound);
 	upperBoundCheck->setMetadata("VarName", meta_upperBound);
 
-	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+//	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
 
 	return true;
 }

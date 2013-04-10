@@ -48,8 +48,6 @@ namespace llvm {
 		private:
 			void dataFlowAnalysis();
 			void findGenSets();
-			template <typename T>
-				void dumpSetOfPtr(std::set<T*>* set);
 
 			MapBBToRCS *BB_A_OUT;
 

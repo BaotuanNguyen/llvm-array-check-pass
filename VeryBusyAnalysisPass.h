@@ -42,11 +42,7 @@ namespace llvm {
 		private:
 			void dataFlowAnalysis();
 			void findGenSets();
-			template <typename T>
-				void dumpSetOfPtr(std::set<T*>* set);
-
 			MapBBToRCS *BB_VB_IN;
-
 			Module* module;
 			Function* currentFunction;
 			RangeCheckSet *universe;

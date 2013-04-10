@@ -385,7 +385,7 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	
 	MDNode* metadata = inst->getMetadata("VarName");
 	
-	errs() << "func name " <<  *inst << "\n";
+//	errs() << "func name " <<  *inst << "\n";
 	
 	if (metadata == NULL)
 	{
