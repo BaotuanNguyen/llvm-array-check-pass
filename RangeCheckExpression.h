@@ -1,11 +1,15 @@
+#ifndef __RANGE_CHECK_EXPRESSION__
+#define __RANGE_CHECK_EXPRESSION__
+
 #include "ArrayBoundsCheckPass.h"
 #include "llvm/GlobalVariable.h"
 #include "llvm/GlobalValue.h"
 #include "llvm/InstrTypes.h"
 #include <string>
-
-#ifndef __RANGE_CHECK_EXPRESSION__
-#define __RANGE_CHECK_EXPRESSION__
+#include "ArrayBoundsCheckPass.h"
+#include "llvm/GlobalVariable.h"
+#include "llvm/GlobalValue.h"
+#include "llvm/InstrTypes.h"
 
 using namespace llvm;
 

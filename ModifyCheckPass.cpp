@@ -1,11 +1,4 @@
 #include "ModifyCheckPass.h"
-#include "RangeCheckExpression.h"
-#include "RangeCheckSet.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/Analysis/Dominators.h"
-#include "stdlib.h"
-#include <vector>
 
 using namespace llvm;
 

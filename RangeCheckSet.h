@@ -1,12 +1,14 @@
-#include "RangeCheckExpression.h"
-#include <set>
-#include <iterator>
-#include "llvm/InstrTypes.h"
-
-using namespace llvm;
-
 #ifndef __RANGE_CHECK_SET__
 #define __RANGE_CHECK_SET__
+
+#include "RangeCheckExpression.h"
+#include "llvm/InstrTypes.h"
+#include "RangeCheckExpression.h"
+#include "RangeCheckSet.h"
+#include <iterator>
+#include <set>
+
+using namespace llvm;
 
 class RangeCheckSet
 {

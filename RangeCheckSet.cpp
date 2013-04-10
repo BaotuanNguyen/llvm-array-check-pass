@@ -1,9 +1,4 @@
-#include "RangeCheckExpression.h"
 #include "RangeCheckSet.h"
-#include <set>
-#include "llvm/InstrTypes.h"
-
-using namespace llvm;
 		
 RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
 {

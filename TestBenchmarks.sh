@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ccWOpts="-w -S -emit-llvm"
 LibFile="../LibArrayCheck.cpp"
 LibFileLL="${LibFile%.cpp}.ll"
@@ -33,9 +33,9 @@ options
 while getopts "123alvh" OPTION
 do
 	case "$OPTION" in
-		"1")	PASSES="-array-check"
+		"1")	PASSES="-effect-gen -insert-check"
 			;;
-		"2")	PASSES="-remove-global"
+		"2")	PASSES="-effect-gen -insert-check -modify-check -remove-check"
 			;;
 		"3") 	PASSES="-loop-pass"
 			;;

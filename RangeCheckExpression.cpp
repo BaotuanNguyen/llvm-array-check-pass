@@ -1,7 +1,3 @@
-#include "ArrayBoundsCheckPass.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/InstrTypes.h"
 #include "RangeCheckExpression.h"
 
 using namespace llvm;
@@ -393,52 +389,16 @@ RangeCheckExpression::RangeCheckExpression(CallInst* inst, Module* M)
 	
 	if (metadata == NULL)
 	{
-		errs() << "ERROR! call inst does not have VarName metadata!\n";
+		errs() << "ERROR! range check call does not have VarName metadata!\n";
+		errs() << "You should generate effect first in order to create range check expressions!\n";
+	
+		this->left = NULL;
+		this->right = NULL;;
+		return;
 	}
 
 	Value* operand1 = metadata->getOperand(0);
 	Value* operand2 = metadata->getOperand(1);
-
-	// Compile-time Bound-Check Anlyasis opportunities here after we did effect-gen
-	// WILL USE THIS FOR PART 3!! DONT DELETE IT!!!
-	
-	/*
-	VALUE_STATUS comp = compare(operand1, operand2);
-
-	if (comp == LT)
-	{
-			MDNode* effect1 = ((Instruction*) operand1)->getMetadata("EFFECT");
-			MDNode* effect2 = ((Instruction*) operand2)->getMetadata("EFFECT");
-			
-			Value* var1 = effect1->getOperand(1);
-			Value* inc1 = effect1->getOperand(2);
-			
-			Value* var2 = effect2->getOperand(1);
-			Value* inc2 = effect2->getOperand(2);
-
-			errs() << "*** UNNECESSARY CHECK DETECTED DURING COMPILE TIME ANALYSIS! ***\n";
-			errs() << "*** UNNECESSARY Check: " << operand1->getName() << " < " << operand2->getName() << " ***\n";
-			errs() << "*** " << operand1->getName() << "(" << var1->getName() << ", " << *inc1 << ") is less than "
-			   	<< operand2->getName() << "(" << var2->getName() << ", " << *inc2 << ") ***\n";	
-	}
-	else if (comp == EQ || comp == GT)
-	{
-			MDNode* effect1 = ((Instruction*) operand1)->getMetadata("EFFECT");
-			MDNode* effect2 = ((Instruction*) operand2)->getMetadata("EFFECT");
-			
-			Value* var1 = effect1->getOperand(1);
-			Value* inc1 = effect1->getOperand(2);
-			
-			Value* var2 = effect2->getOperand(1);
-			Value* inc2 = effect2->getOperand(2);
-			
-			errs() << "*** OUT-OF-BOUND ARRAY ACCESS DETECTED DURING COMPILE TIME ANALYSIS! ***\n";
-			errs() << "*** Violated Check: " << operand1->getName() << " < " << operand2->getName() << " ***\n";
-			errs() << "*** " << operand1->getName() << "(" << var1->getName() << ", " << *inc1 << ") is greater than or equal to "
-			   	<< operand2->getName() << "(" << var2->getName() << ", " << *inc2 << ") ***\n";	
-			errs() << "TERMINATING...\n";
-			exit(1);
-	}*/
 
 	// tries to restructure range structures such as n+1 < 5 into n < 4
 	// this transformation can only work with combination of non-changed temporary variable + a constant

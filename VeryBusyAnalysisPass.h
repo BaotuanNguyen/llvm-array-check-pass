@@ -1,29 +1,20 @@
 #ifndef __VERY_BUSY_ANALYSIS_PASS_H__
 #define __VERY_BUSY_ANALYSIS_PASS_H__
 
-#include "llvm/User.h"
-#include "llvm/BasicBlock.h"
+#include "llvm/Support/InstIterator.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CFG.h"
 #include "llvm/Pass.h"
+#include "llvm/Module.h"
 #include "llvm/Operator.h"
 #include "llvm/Support/GetElementPtrTypeIterator.h"
-#include "llvm/Function.h"
 #include "llvm/Instructions.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/InstIterator.h"
-#include "llvm/InstrTypes.h"
-#include "llvm/Module.h"
-#include "llvm/Function.h"
-#include "llvm/DataLayout.h"
-#include "llvm/Target/TargetLibraryInfo.h"
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/ScalarEvolution.h"
-#include "llvm/Analysis/ScalarEvolutionExpressions.h"
-#include "ArrayBoundsCheckPass.h"
-#include "EffectGenPass.h"
 #include "RangeCheckSet.h"
+#include <queue>
 #include <set>
 #include <map>
+
+using namespace llvm;
 
 namespace llvm {
 
@@ -42,7 +33,7 @@ namespace llvm {
 			bool runOnFunction(Function *F);
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const 
 			{
-                                AU.addRequired<EffectGenPass>();
+//                                AU.addRequired<EffectGenPass>();
 			}
 			RangeCheckSet *getVBIn(BasicBlock *bb, RangeCheckSet *cOutOfBlock);
 			void createUniverse();
@@ -62,4 +53,4 @@ namespace llvm {
 	};
 }
 
-#endif /* __VERY_BUSY_ANALYSIS_PASS_H__ */
+#endif 

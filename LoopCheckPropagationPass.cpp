@@ -1,20 +1,7 @@
 #include "LoopCheckPropagationPass.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/InstrTypes.h"
-#include "stdlib.h"
-#include <set>
-#include <queue>
-#include <sstream>
-
-
-using namespace llvm;
 
 char LoopCheckPropagationPass::ID = 0;
 static RegisterPass<LoopCheckPropagationPass> Y("loop-pass", "Propagate of checks out of loops", false, false);
-
-
-
 
 bool LoopCheckPropagationPass::doInitialization(Loop *L, LPPassManager &LPM)
 {

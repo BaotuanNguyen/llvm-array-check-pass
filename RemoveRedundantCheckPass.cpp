@@ -1,17 +1,9 @@
 #include "RemoveRedundantCheckPass.h"
-#include "AvailableAnalysisPass.h"
-#include "RangeCheckExpression.h"
-#include "RangeCheckSet.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/Analysis/Dominators.h"
-#include "stdlib.h"
-#include <vector>
 
 using namespace llvm;
 
 char RemoveRedundantCheckPass::ID = 0;
-static RegisterPass<RemoveRedundantCheckPass> C("remove-global", "Global redundant array bounds check removal", false, false);
+static RegisterPass<RemoveRedundantCheckPass> C("remove-check", "Redundant array bounds check removal", false, false);
 	
 bool RemoveRedundantCheckPass::runOnModule(Module& M)
 {

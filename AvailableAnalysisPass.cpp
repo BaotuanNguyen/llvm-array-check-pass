@@ -1,20 +1,4 @@
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/ADT/ilist.h"
-#include "llvm/Support/CFG.h"
-#include "stdlib.h"
-#include <set>
-#include <queue>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <list>
-#include <algorithm>
-#include <iterator>
-#include "ArrayBoundsCheckPass.h"
 #include "AvailableAnalysisPass.h"
-
-using namespace llvm;
 
 char AvailableAnalysisPass::ID = 0;
 static RegisterPass<AvailableAnalysisPass> F("available-analysis", "Global Available Bound Checks Analysis", false, false);

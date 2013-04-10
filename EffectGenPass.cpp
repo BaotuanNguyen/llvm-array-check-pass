@@ -1,12 +1,4 @@
 #include "EffectGenPass.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/Analysis/Dominators.h"
-#include "stdlib.h"
-#include "ArrayBoundsCheckPass.h"
-#include "RangeCheckExpression.h"
-#include "RangeCheckSet.h"
-#include <vector>
 
 using namespace llvm;
 

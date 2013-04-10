@@ -1,15 +1,7 @@
 #include "ArrayBoundsCheckPass.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/GlobalValue.h"
-#include "llvm/InstrTypes.h"
-#include "stdlib.h"
-#include <set>
-#include <queue>
-
-using namespace llvm;
 
 char ArrayBoundsCheckPass::ID = 0;
-static RegisterPass<ArrayBoundsCheckPass> Y("array-check", "Insert Run-Time Array Bounds Checks", false, false);
+static RegisterPass<ArrayBoundsCheckPass> Y("insert-check", "Insert Run-Time Array Bounds Checks", false, false);
 
 Value* ArrayBoundsCheckPass::findOriginOfPointer(Value* pointer)
 {

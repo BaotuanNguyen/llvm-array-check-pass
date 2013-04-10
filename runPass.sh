@@ -30,7 +30,7 @@ case "$1" in
 		OPT_PASSES="-available-analysis"
 		;;
 	'-remove-global')
-		OPT_PASSES="-remove-global"
+		OPT_PASSES="-effect-gen -array-check -available-analysis -modify-check -available-analysis -remove-global"
 		;;
         '-loop-pass')
 		OPT_PASSES="-loop-pass"
@@ -50,19 +50,7 @@ TEST_NAME=${2%.c}
 clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
 clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 
-#run opt, with specified passes
-checksAdded=$( ./$OPT -load ${MODULE_LIB} ${OPT_PASSES} -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll 2>&1 | sed -E -n 's/\ Number\ of\ checks\ inserted:(.*)/\1/p')
-checksDeleted=$( ./$OPT -load ${MODULE_LIB} ${OPT_PASSES} -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll 2>&1 | sed -E -n 's/REMOVED\ REDUNDANT\ CHECKS\ #:(.*)/\1/p') 
 ./$OPT -load $MODULE_LIB $OPT_PASSES -debug-pass=Structure -S -o $TEST_NAME.mod.ll < $TEST_NAME.ll > /dev/null
-totalChecks=$( echo "${checksAdded}-${checksDeleted}" | bc )
-percentageDeleted=" 0"
-if [[ ${checksAdded} != "0" ]]; then
-	percentageDeleted=$( echo "scale=4; ${checksDeleted}/${checksAdded}" | bc )
-fi
-echo "checks added      :  ${checksAdded}"
-echo "checks deleted    :  ${checksDeleted}"
-echo "checks total      :  ${totalChecks}"
-echo "percentage deleted: ${percentageDeleted}"
 
 #the test code and library code are linked into executable
 clang -lstdc++ -o $TEST_NAME.out $TEST_NAME.mod.ll LibArrayCheck.ll
