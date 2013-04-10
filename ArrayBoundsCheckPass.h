@@ -55,7 +55,6 @@ namespace llvm
 			Function* checkLessThanFunction;
 			/*instruction before which to insert instructions*/
 			Instruction* Inst;
-			ConstantInt* negone;
 	};
 
 }

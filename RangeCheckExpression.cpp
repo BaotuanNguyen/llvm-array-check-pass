@@ -519,69 +519,8 @@ bool RangeCheckExpression::operator==(const RangeCheckExpression& other) const
 	RangeCheckExpression* op1 = (RangeCheckExpression*) this;
 	RangeCheckExpression* op2 = (RangeCheckExpression*) &other;
 	
-	if (op1->subsumes(op2))
+	if (op1->subsumes(op2) && op2->subsumes(op1))
 		return true;
 	else
 		return false;
-
-		if (dyn_cast<ConstantInt>(this->left) && dyn_cast<ConstantInt>(other.left)) // LHS consists of constants for both
-		{
-//			errs() << "LHS consists of constants for both\n";
-			ConstantInt* CI1 = dyn_cast<ConstantInt>(this->left);
-			ConstantInt* CI2 = dyn_cast<ConstantInt>(other.left);
-
-			int64_t intVal1 = CI1->getSExtValue();
-			int64_t intVal2 = CI2->getSExtValue();
-			
-			if (!(intVal1 == intVal2))
-				return false;
-		}
-		else if (dyn_cast<Instruction>(this->left) && dyn_cast<Instruction>(other.left)) // LHS consists of variables
-		{
-//			errs() << "LHS consists of variables\n";
-			if (!(this->left == other.left))
-				return false;
-		}
-		else if (dyn_cast<GlobalVariable>(this->left) && dyn_cast<GlobalVariable>(other.left)) // LHS consists of global variables
-		{
-//			errs() << "LHS consists of global variables\n";
-			if (!(this->left == other.left))
-				return false;
-		}		
-		else
-		{
-//			errs() << "LHS other combination\n";
-			return false;
-		}
-		
-		if (dyn_cast<ConstantInt>(this->right) && dyn_cast<ConstantInt>(other.right)) // RHS consists of constants for both
-		{
-//			errs() << "RHS consists of constants for both\n";
-			ConstantInt* CI1 = dyn_cast<ConstantInt>(this->right);
-			ConstantInt* CI2 = dyn_cast<ConstantInt>(other.right);
-				
-			int64_t intVal1 = CI1->getSExtValue();
-			int64_t intVal2 = CI2->getSExtValue();
-			
-			if (!(intVal1 == intVal2))
-				return false;
-		}
-		else if (dyn_cast<Instruction>(this->right) && dyn_cast<Instruction>(other.right)) // RHS consists of variables
-		{
-//			errs() << "RHS consists of variables\n";
-			if (!(this->right == other.right))
-				return false;
-		}
-		else if (dyn_cast<GlobalVariable>(this->right) && dyn_cast<GlobalVariable>(other.right)) // RHS consists of global variables
-		{
-//			errs() << "RHS consists of global variables\n";
-			if (!(this->right == other.right))
-				return false;
-		}
-		else
-		{
-//			errs() << "RHS other combination\n";
-			return false;
-		}
-	return true;
 }
