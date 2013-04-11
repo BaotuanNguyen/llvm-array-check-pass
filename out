@@ -1,1010 +1,276 @@
-Pass Arguments:  -targetlibinfo -datalayout -effect-gen -insert-check -loop-hoist -print-module
-Target Library Information
-Data Layout
-  ModulePass Manager
-    Effect Generation
-    Insert Run-Time Array Bounds Checks
-    Propagate of checks out of loops
-      Unnamed pass: implement Pass::getPassName()
-    Print module to stderr
-Pass Arguments:  -domtree -loops
-  FunctionPass Manager
-    Dominator Tree Construction
-    Natural Loop Information
-
-#########################################################################
-   Generating Effects
-###########################################################################
-
-########################################################################
-   DONE
-##########################################################################
-#################################################################################################################
-	              	Array Bound Checks Insertion Pass          
-#################################################################################################################
------------------------------------------------------------------------------------------------------------------
- Number of checks inserted: 174
------------------------------------------------------------------------------------------------------------------
-
-#########################################################################
-   Loop Hoist Pass
-###########################################################################
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: for.cond2
-
-Entering a Loop Basic Block: for.cond3
-
-Entering a Loop Basic Block: for.end11
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: if.end18
-
-Entering a Loop Basic Block: if.then23
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom25), !VarName !{i64 -1, i32 %sub24}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom25, i64 8192), !VarName !{i32 %sub24, i64 8192}
-
-Entering a Loop Basic Block: while.cond28
-
-Entering a Loop Basic Block: land.rhs
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom33), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom33, i64 228), !VarName !{i32* %ch, i64 228}
-
-Entering a Loop Basic Block: lor.lhs.false
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom38), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom38, i64 228), !VarName !{i32* %ch, i64 228}
-
-Entering a Loop Basic Block: lor.rhs
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom43), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom43, i64 128), !VarName !{i32* %ch, i64 128}
-
-Entering a Loop Basic Block: lor.end
-
-Entering a Loop Basic Block: land.end
-
-Entering a Loop Basic Block: while.body47
-
-Entering a Loop Basic Block: if.end52
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom55), !VarName !{i64 -1, i32* %bufsize}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom55, i64 8192), !VarName !{i32* %bufsize, i64 8192}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom57), !VarName !{i64 -1, i32* %bufsize}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom57, i64 8192), !VarName !{i32* %bufsize, i64 8192}
-
-Entering a Loop Basic Block: if.then51
-
-Entering a Loop Basic Block: while.end59
-
-Entering a Loop Basic Block: if.end60
-
-Entering a Loop Basic Block: for.body5
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom6), !VarName !{i64 -1, i32* %bufno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom6, i64 10), !VarName !{i32* %bufno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom8), !VarName !{i64 -1, i32 %sub}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom8, i64 10), !VarName !{i32 %sub, i64 10}
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %bufno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 10), !VarName !{i32* %bufno, i64 10}
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: checkagain
-
-Entering a Loop Basic Block: lor.lhs.false
-
-Entering a Loop Basic Block: if.end7
-
-Entering a Loop Basic Block: if.then10
-
-Entering a Loop Basic Block: if.end12
-
-Entering a Loop Basic Block: if.then14
-
-Entering a Loop Basic Block: if.end16
-
-Entering a Loop Basic Block: if.then22
-
-Entering a Loop Basic Block: if.end24
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.end
-
-Entering a Loop Basic Block: for.cond52
-
-Entering a Loop Basic Block: for.end62
-
-Entering a Loop Basic Block: if.then68
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: if.end81
-
-Entering a Loop Basic Block: if.then80
-
-Entering a Loop Basic Block: while.end
-
-Entering a Loop Basic Block: if.then87
-
-Entering a Loop Basic Block: if.end88
-
-Entering a Loop Basic Block: if.then91
-
-Entering a Loop Basic Block: if.end92
-
-Entering a Loop Basic Block: if.end93
-
-Entering a Loop Basic Block: if.then98
-
-Entering a Loop Basic Block: if.end101
-
-Entering a Loop Basic Block: for.cond102
-
-Entering a Loop Basic Block: sw.bb226
-
-Entering a Loop Basic Block: if.end236
-
-Entering a Loop Basic Block: if.then234
-
-Entering a Loop Basic Block: sw.bb225
-
-Entering a Loop Basic Block: sw.bb181
-
-Entering a Loop Basic Block: if.then185
-
-Entering a Loop Basic Block: land.lhs.true190
-
-Entering a Loop Basic Block: if.else197
-
-Entering a Loop Basic Block: land.lhs.true200
-
-Entering a Loop Basic Block: if.end205
-
-Entering a Loop Basic Block: if.then203
-
-Entering a Loop Basic Block: if.then193
-
-Entering a Loop Basic Block: if.end206
-
-Entering a Loop Basic Block: if.end207
-
-Entering a Loop Basic Block: if.end223
-
-Entering a Loop Basic Block: sw.bb153
-
-Entering a Loop Basic Block: if.then156
-
-Entering a Loop Basic Block: if.end159
-
-Entering a Loop Basic Block: if.else167
-
-Entering a Loop Basic Block: if.then170
-
-Entering a Loop Basic Block: if.end173
-
-Entering a Loop Basic Block: if.then164
-
-Entering a Loop Basic Block: if.end174
-
-Entering a Loop Basic Block: if.end180
-
-Entering a Loop Basic Block: sw.bb138
-
-Entering a Loop Basic Block: if.end148
-
-Entering a Loop Basic Block: if.then145
-
-Entering a Loop Basic Block: sw.bb137
-
-Entering a Loop Basic Block: sw.bb136
-
-Entering a Loop Basic Block: sw.bb107
-
-Entering a Loop Basic Block: if.else114
-
-Entering a Loop Basic Block: if.then109
-
-Entering a Loop Basic Block: if.end115
-
-Entering a Loop Basic Block: lor.lhs.false118
-
-Entering a Loop Basic Block: if.then121
-
-Entering a Loop Basic Block: if.end123
-
-Entering a Loop Basic Block: sw.bb
-
-Entering a Loop Basic Block: sw.default
-
-Entering a Loop Basic Block: sw.epilog
-
-Entering a Loop Basic Block: for.body55
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom56), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom56, i64 10), !VarName !{i32* %i, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom59), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom59, i64 10), !VarName !{i32* %i, i64 10}
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: land.lhs.true
-
-Entering a Loop Basic Block: if.else45
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom46), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom46, i64 100), !VarName !{i32* %i, i64 100}
-
-Entering a Loop Basic Block: if.then40
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom41), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom41, i64 100), !VarName !{i32* %i, i64 100}
-
-Entering a Loop Basic Block: if.end50
-
-Entering a Loop Basic Block: if.then34
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 100), !VarName !{i32* %i, i64 100}
-
-Entering a Loop Basic Block: if.end51
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: if.then15
-
-Entering a Loop Basic Block: lor.lhs.false
-
-Entering a Loop Basic Block: if.then20
-
-Entering a Loop Basic Block: sw.epilog
-
-Entering a Loop Basic Block: if.end29
-
-Entering a Loop Basic Block: if.end30
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 100), !VarName !{i32* %i, i64 100}
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: while.cond19
-
-Entering a Loop Basic Block: land.rhs22
-
-Entering a Loop Basic Block: land.end26
-
-Entering a Loop Basic Block: while.body27
-
-Entering a Loop Basic Block: while.cond3
-
-Entering a Loop Basic Block: land.rhs6
-
-Entering a Loop Basic Block: land.end10
-
-Entering a Loop Basic Block: while.body11
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: land.rhs
-
-Entering a Loop Basic Block: land.end
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: land.rhs
-
-Entering a Loop Basic Block: land.end
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: if.else10
-
-Entering a Loop Basic Block: lor.lhs.false
-
-Entering a Loop Basic Block: if.else16
-
-Entering a Loop Basic Block: if.else25
-
-Entering a Loop Basic Block: if.else33
-
-Entering a Loop Basic Block: if.then28
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.end
-
-Entering a Loop Basic Block: if.end37
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: if.then19
-
-Entering a Loop Basic Block: if.then22
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: if.end38
-
-Entering a Loop Basic Block: if.end39
-
-Entering a Loop Basic Block: if.end40
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: if.end41
-
-Entering a Loop Basic Block: while.cond15
-
-Entering a Loop Basic Block: while.body20
-
-Entering a Loop Basic Block: while.cond9
-
-Entering a Loop Basic Block: while.body11
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond71
-
-Entering a Loop Basic Block: for.body73
-
-Entering a Loop Basic Block: if.end86
-
-Entering a Loop Basic Block: for.inc87
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: if.else
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom15), !VarName !{i64 -1, i8* %15}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom15, i64 228), !VarName !{i8* %15, i64 228}
-
-Entering a Loop Basic Block: if.else35
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom36), !VarName !{i64 -1, i8* %32}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom36, i64 228), !VarName !{i8* %32, i64 228}
-
-Entering a Loop Basic Block: lor.lhs.false40
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom41), !VarName !{i64 -1, i8* %35}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom41, i64 228), !VarName !{i8* %35, i64 228}
-
-Entering a Loop Basic Block: if.end55
-
-Entering a Loop Basic Block: if.then17
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom18), !VarName !{i64 -1, i8* %18}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom18, i64 228), !VarName !{i8* %18, i64 228}
-
-Entering a Loop Basic Block: lor.lhs.false
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom22), !VarName !{i64 -1, i8* %21}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom22, i64 228), !VarName !{i8* %21, i64 228}
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: if.end56
-
-Entering a Loop Basic Block: if.end57
-
-Entering a Loop Basic Block: if.end58
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond28
-
-Entering a Loop Basic Block: for.body31
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom32), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom32, i64 228), !VarName !{i32* %i, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom34), !VarName !{i64 -1, i8* %arrayidx33}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom34, i64 228), !VarName !{i8* %arrayidx33, i64 228}
-
-Entering a Loop Basic Block: if.end38
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom39), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom39, i64 228), !VarName !{i32* %i, i64 228}
-
-Entering a Loop Basic Block: if.then44
-
-Entering a Loop Basic Block: if.end50
-
-Entering a Loop Basic Block: if.end51
-
-Entering a Loop Basic Block: if.then37
-
-Entering a Loop Basic Block: for.inc52
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: for.cond3
-
-Entering a Loop Basic Block: for.end
-
-Entering a Loop Basic Block: for.body6
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 228), !VarName !{i32* %i, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom7), !VarName !{i64 -1, i8* %arrayidx}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom7, i64 228), !VarName !{i8* %arrayidx, i64 228}
-
-Entering a Loop Basic Block: land.lhs.true
-
-Entering a Loop Basic Block: if.end
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom13), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom13, i64 228), !VarName !{i32* %i, i64 228}
-
-Entering a Loop Basic Block: if.then18
-
-Entering a Loop Basic Block: if.end24
-
-Entering a Loop Basic Block: if.end25
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: if.end12
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then7
-
-Entering a Loop Basic Block: if.end13
-
-Entering a Loop Basic Block: if.end14
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 120), !VarName !{i32* %i, i64 120}
-
-Entering a Loop Basic Block: for.cond4
-
-Entering a Loop Basic Block: for.end
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom40), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom40, i64 120), !VarName !{i32* %i, i64 120}
-
-Entering a Loop Basic Block: for.inc42
-
-Entering a Loop Basic Block: for.body7
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom8), !VarName !{i64 -1, i32* %j}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom8, i64 228), !VarName !{i32* %j, i64 228}
-
-Entering a Loop Basic Block: if.else
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom14), !VarName !{i64 -1, i32* %j}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom14, i64 228), !VarName !{i32* %j, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom16), !VarName !{i64 -1, i8* %arrayidx15}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom16, i64 228), !VarName !{i8* %arrayidx15, i64 228}
-
-Entering a Loop Basic Block: land.lhs.true
-
-Entering a Loop Basic Block: lor.lhs.false
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: if.end24
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom25), !VarName !{i64 -1, i32* %j}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom25, i64 228), !VarName !{i32* %j, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom27), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom27, i64 120), !VarName !{i32* %i, i64 120}
-
-Entering a Loop Basic Block: if.then32
-
-Entering a Loop Basic Block: if.end38
-
-Entering a Loop Basic Block: if.end39
-
-Entering a Loop Basic Block: if.then23
-
-Entering a Loop Basic Block: if.then
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then13
-
-Entering a Loop Basic Block: if.then20
-
-Entering a Loop Basic Block: for.cond25
-
-Entering a Loop Basic Block: for.end59
-
-Entering a Loop Basic Block: if.end60
-
-Entering a Loop Basic Block: if.end61
-
-Entering a Loop Basic Block: for.inc62
-
-Entering a Loop Basic Block: for.body28
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %firstno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 10), !VarName !{i32* %firstno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %sub.ptr.sub), !VarName !{i64 -1, i64 %sub.ptr.sub}
-Checking invariance of:   call void @checkLessThan(i64 %sub.ptr.sub, i64 120), !VarName !{i64 %sub.ptr.sub, i64 120}
-
-Entering a Loop Basic Block: for.cond32
-
-Entering a Loop Basic Block: for.end
-
-Entering a Loop Basic Block: for.inc57
-
-Entering a Loop Basic Block: for.body35
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom37), !VarName !{i64 -1, i32* %secondno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom37, i64 10), !VarName !{i32* %secondno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom41), !VarName !{i64 -1, i32* %firstno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom41, i64 10), !VarName !{i32* %firstno, i64 10}
-
-Entering a Loop Basic Block: if.end48
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom49), !VarName !{i64 -1, i32* %firstno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom49, i64 10), !VarName !{i32* %firstno, i64 10}
-
-Entering a Loop Basic Block: if.end56
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 10), !VarName !{i32* %i, i64 10}
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond164
-
-Entering a Loop Basic Block: lor.lhs.false167
-
-Entering a Loop Basic Block: land.lhs.true176
-
-Entering a Loop Basic Block: lor.lhs.false179
-
-Entering a Loop Basic Block: if.then188
-
-Entering a Loop Basic Block: if.else219
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom230), !VarName !{i64 -1, i8* %arrayidx229}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom230, i64 228), !VarName !{i8* %arrayidx229, i64 228}
-
-Entering a Loop Basic Block: if.else247
-
-Entering a Loop Basic Block: for.cond248
-
-Entering a Loop Basic Block: for.end260
-
-Entering a Loop Basic Block: for.body251
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom252), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom252, i64 184), !VarName !{i32* %i, i64 184}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom254), !VarName !{i64 -1, i8* %arrayidx253}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom254, i64 228), !VarName !{i8* %arrayidx253, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom256), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom256, i64 184), !VarName !{i32* %i, i64 184}
-
-Entering a Loop Basic Block: for.inc258
-
-Entering a Loop Basic Block: if.then233
-
-Entering a Loop Basic Block: for.cond234
-
-Entering a Loop Basic Block: for.end246
-
-Entering a Loop Basic Block: if.end261
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom272), !VarName !{i64 -1, i8* %159}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom272, i64 228), !VarName !{i8* %159, i64 228}
-
-Entering a Loop Basic Block: if.else289
-
-Entering a Loop Basic Block: for.cond293
-
-Entering a Loop Basic Block: for.end302
-
-Entering a Loop Basic Block: for.body296
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom297), !VarName !{i64 -1, i8* %174}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom297, i64 228), !VarName !{i8* %174, i64 228}
-
-Entering a Loop Basic Block: for.inc299
-
-Entering a Loop Basic Block: if.then275
-
-Entering a Loop Basic Block: for.cond279
-
-Entering a Loop Basic Block: for.end288
-
-Entering a Loop Basic Block: if.end303
-
-Entering a Loop Basic Block: if.end313
-
-Entering a Loop Basic Block: for.body282
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom283), !VarName !{i64 -1, i8* %165}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom283, i64 228), !VarName !{i8* %165, i64 228}
-
-Entering a Loop Basic Block: for.inc285
-
-Entering a Loop Basic Block: for.body237
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom238), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom238, i64 184), !VarName !{i32* %i, i64 184}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom240), !VarName !{i64 -1, i8* %arrayidx239}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom240, i64 228), !VarName !{i8* %arrayidx239, i64 228}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom242), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom242, i64 184), !VarName !{i32* %i, i64 184}
-
-Entering a Loop Basic Block: for.inc244
-
-Entering a Loop Basic Block: if.then194
-
-Entering a Loop Basic Block: lor.lhs.false197
-
-Entering a Loop Basic Block: if.then203
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom205), !VarName !{i64 -1, i8* %arrayidx204}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom205, i64 228), !VarName !{i8* %arrayidx204, i64 228}
-
-Entering a Loop Basic Block: if.end208
-
-Entering a Loop Basic Block: if.end218
-
-Entering a Loop Basic Block: if.end314
-
-Entering a Loop Basic Block: if.end315
-
-Entering a Loop Basic Block: if.end322
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: lor.lhs.false94
-
-Entering a Loop Basic Block: lor.lhs.false97
-
-Entering a Loop Basic Block: land.lhs.true
-
-Entering a Loop Basic Block: lor.lhs.false105
-
-Entering a Loop Basic Block: if.end115
-
-Entering a Loop Basic Block: if.else136
-
-Entering a Loop Basic Block: if.end150
-
-Entering a Loop Basic Block: if.then117
-
-Entering a Loop Basic Block: if.end135
-
-Entering a Loop Basic Block: if.end151
-
-Entering a Loop Basic Block: if.then114
-
-Entering a Loop Basic Block: for.cond30
-
-Entering a Loop Basic Block: for.body32
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom33), !VarName !{i64 -1, i8* %31}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom33, i64 228), !VarName !{i8* %31, i64 228}
-
-Entering a Loop Basic Block: if.end37
-
-Entering a Loop Basic Block: for.inc38
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom13), !VarName !{i64 -1, i8* %17}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom13, i64 228), !VarName !{i8* %17, i64 228}
-
-Entering a Loop Basic Block: if.end17
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 100), !VarName !{i32* %i, i64 100}
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: if.end15
-
-Entering a Loop Basic Block: if.then7
-
-Entering a Loop Basic Block: if.end11
-
-Entering a Loop Basic Block: if.end16
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32 %sub}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 8192), !VarName !{i32 %sub, i64 8192}
-
-Entering a Loop Basic Block: if.else24
-
-Entering a Loop Basic Block: if.then21
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom22), !VarName !{i64 -1, i32 %dec}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom22, i64 8192), !VarName !{i32 %dec, i64 8192}
-
-Entering a Loop Basic Block: if.end25
-
-Entering a Loop Basic Block: if.then29
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom31), !VarName !{i64 -1, i32 %sub30}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom31, i64 8192), !VarName !{i32 %sub30, i64 8192}
-
-Entering a Loop Basic Block: while.cond34
-
-Entering a Loop Basic Block: land.rhs
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom39), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom39, i64 228), !VarName !{i32* %ch, i64 228}
-
-Entering a Loop Basic Block: lor.lhs.false
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom44), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom44, i64 228), !VarName !{i32* %ch, i64 228}
-
-Entering a Loop Basic Block: lor.rhs
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom49), !VarName !{i64 -1, i32* %ch}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom49, i64 128), !VarName !{i32* %ch, i64 128}
-
-Entering a Loop Basic Block: lor.end
-
-Entering a Loop Basic Block: land.end
-
-Entering a Loop Basic Block: while.body53
-
-Entering a Loop Basic Block: if.end58
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom60), !VarName !{i64 -1, i32* %bufsize}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom60, i64 8192), !VarName !{i32* %bufsize, i64 8192}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom62), !VarName !{i64 -1, i32* %bufsize}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom62, i64 8192), !VarName !{i32* %bufsize, i64 8192}
-
-Entering a Loop Basic Block: if.then57
-
-Entering a Loop Basic Block: while.end
-
-Entering a Loop Basic Block: if.end64
-
-Entering a Loop Basic Block: if.else68
-
-Entering a Loop Basic Block: lor.lhs.false72
-
-Entering a Loop Basic Block: if.else82
-
-Entering a Loop Basic Block: if.else89
-
-Entering a Loop Basic Block: if.else94
-
-Entering a Loop Basic Block: if.else99
-
-Entering a Loop Basic Block: if.else104
-
-Entering a Loop Basic Block: if.else109
-
-Entering a Loop Basic Block: if.else122
-
-Entering a Loop Basic Block: if.else132
-
-Entering a Loop Basic Block: if.then136
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.end
-
-Entering a Loop Basic Block: if.end143
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then126
-
-Entering a Loop Basic Block: if.then130
-
-Entering a Loop Basic Block: if.end131
-
-Entering a Loop Basic Block: if.end144
-
-Entering a Loop Basic Block: if.then113
-
-Entering a Loop Basic Block: land.rhs117
-
-Entering a Loop Basic Block: land.end121
-
-Entering a Loop Basic Block: if.end145
-
-Entering a Loop Basic Block: if.then108
-
-Entering a Loop Basic Block: if.end146
-
-Entering a Loop Basic Block: if.then103
-
-Entering a Loop Basic Block: if.end147
-
-Entering a Loop Basic Block: if.then98
-
-Entering a Loop Basic Block: if.end148
-
-Entering a Loop Basic Block: if.then93
-
-Entering a Loop Basic Block: if.end149
-
-Entering a Loop Basic Block: if.then86
-
-Entering a Loop Basic Block: if.end150
-
-Entering a Loop Basic Block: if.then76
-
-Entering a Loop Basic Block: if.end151
-
-Entering a Loop Basic Block: if.then67
-
-Entering a Loop Basic Block: if.end152
-
-Entering a Loop Basic Block: if.else155
-
-Entering a Loop Basic Block: if.then154
-
-Entering a Loop Basic Block: if.end156
-
-Entering a Loop Basic Block: if.then158
-
-Entering a Loop Basic Block: if.then160
-
-Entering a Loop Basic Block: if.end162
-
-Entering a Loop Basic Block: if.end163
-
-Entering a Loop Basic Block: while.cond
-
-Entering a Loop Basic Block: while.body
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: land.lhs.true
-
-Entering a Loop Basic Block: if.then4
-
-Entering a Loop Basic Block: if.end6
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %i}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 10), !VarName !{i32* %i, i64 10}
-
-Entering a Loop Basic Block: if.end
-
-Entering a Loop Basic Block: for.inc
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: land.rhs
-
-Entering a Loop Basic Block: land.end
-
-Entering a Loop Basic Block: for.body
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom, i64 10), !VarName !{i32* %hitno, i64 10}
-
-Entering a Loop Basic Block: if.else
-
-Entering a Loop Basic Block: if.then6
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom7), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom7, i64 10), !VarName !{i32* %hitno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom11), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom11, i64 10), !VarName !{i32* %hitno, i64 10}
-
-Entering a Loop Basic Block: if.end15
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom16), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom16, i64 10), !VarName !{i32* %hitno, i64 10}
-
-Entering a Loop Basic Block: if.else30
-
-Entering a Loop Basic Block: if.then19
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom20), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom20, i64 10), !VarName !{i32* %hitno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom25), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom25, i64 10), !VarName !{i32* %hitno, i64 10}
-
-Entering a Loop Basic Block: if.end31
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom32), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom32, i64 10), !VarName !{i32* %hitno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom34), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom34, i64 10), !VarName !{i32* %hitno, i64 10}
-Checking invariance of:   call void @checkLessThan(i64 -1, i64 %idxprom37), !VarName !{i64 -1, i32* %hitno}
-Checking invariance of:   call void @checkLessThan(i64 %idxprom37, i64 10), !VarName !{i32* %hitno, i64 10}
-
-Entering a Loop Basic Block: for.cond
-
-Entering a Loop Basic Block: for.body
-
-Entering a Loop Basic Block: if.then42
-
-Entering a Loop Basic Block: if.then44
-
-Entering a Loop Basic Block: if.end47
-
-Entering a Loop Basic Block: if.end50
-
-Entering a Loop Basic Block: lor.lhs.false
-
-Entering a Loop Basic Block: if.else70
-
-Entering a Loop Basic Block: if.then72
-
-Entering a Loop Basic Block: if.end74
-
-Entering a Loop Basic Block: if.then55
-
-Entering a Loop Basic Block: if.then57
-
-Entering a Loop Basic Block: if.else63
-
-Entering a Loop Basic Block: if.then61
-
-Entering a Loop Basic Block: if.end67
-
-Entering a Loop Basic Block: if.end68
-
-Entering a Loop Basic Block: if.end76
-
-Entering a Loop Basic Block: for.inc
------------------------------------------------------------------------------------------
-	          Number of checks hoisted: 0
------------------------------------------------------------------------------------------
+72,75c72,75
+< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+< //	errs() << "   *** Inserting a Bound Check Instruction ***\n";
+< //	errs() <<"   " <<  *left << "  <  " << *right << "\n";
+< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+---
+> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+> 	errs() << "   *** Inserting a Bound Check Instruction ***\n";
+> 	errs() <<"   " <<  *left << "  <  " << *right << "\n";
+> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+79,82c79
+< 		if (left->getType()->isPointerTy())
+< 			left = CastInst::CreatePointerCast(left, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
+< 		else
+< 			left = CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+---
+> 		left = llvm::CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+87,90c84
+< 		if (right->getType()->isPointerTy())
+< 			right = CastInst::CreatePointerCast(right, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
+< 		else
+< 			right = CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+---
+> 		right = llvm::CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
+231,233c225,227
+< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+< //	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
+< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+---
+> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+> 	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
+> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+281c275
+< //				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+---
+> 				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
+290,291c284,285
+< //						errs() << "VLA Detected1\n";
+< //						errs() << "base pointer: " << *allocaInst << "\n";
+---
+> 						errs() << "VLA Detected1\n";
+> 						errs() << "base pointer: " << *allocaInst << "\n";
+301c295
+< //							errs() << "** This GEP is not an array access. **\n";
+---
+> 							errs() << "** This GEP is not an array access. **\n";
+321,324c315,318
+< //						errs() << "index: " << *CI << "\n";
+< //						errs() << "limit: " << *limit << "\n";
+< //						errs() << "originIndex: " << *CI << "\n";
+< //						errs() << "originLimit: " << *originLimit << "\n";
+---
+> 						errs() << "index: " << *CI << "\n";
+> 						errs() << "limit: " << *limit << "\n";
+> 						errs() << "originIndex: " << *CI << "\n";
+> 						errs() << "originLimit: " << *originLimit << "\n";
+355,356c349,350
+< //						errs() << "VLA Chain Detected1\n";
+< //						errs() << "origin pointer: " << *originPointer << "\n";
+---
+> 						errs() << "VLA Chain Detected1\n";
+> 						errs() << "origin pointer: " << *originPointer << "\n";
+366,369c360
+< 							if (firstOp->getType()->isPointerTy())
+< 								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+374,377c365
+< 							if (secondOp->getType()->isPointerTy())
+< 								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+396c384
+< //							errs() << "** This GEP is not an array access. **\n";
+---
+> 							errs() << "** This GEP is not an array access. **\n";
+417,418c405,406
+< 						if (dyn_cast<LoadInst>(originIndex))
+< 							originIndex = ((LoadInst*) originIndex)->getOperand(0);
+---
+> 						errs() << "index: " << *index << "\n";
+> 						errs() << "limit: " << *limit << "\n";
+420,427c408,409
+< 						if (dyn_cast<LoadInst>(originLimit))
+< 							originLimit = ((LoadInst*) originLimit)->getOperand(0);
+< 
+< //						errs() << "index: " << *index << "\n";
+< //						errs() << "limit: " << *limit << "\n";
+< 						
+< //						errs() << "origin index: " << *originIndex << "\n";
+< //						errs() << "origin limit: " << *originLimit << "\n";
+---
+> 						errs() << "origin index: " << *originIndex << "\n";
+> 						errs() << "origin limit: " << *originLimit << "\n";
+455c437
+< //						errs() << "** This GEP is not an array access. **\n";
+---
+> 						errs() << "** This GEP is not an array access. **\n";
+463,464c445,446
+< //					errs() << "Regular Array Detected\n";
+< //					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+---
+> 					errs() << "Regular Array Detected\n";
+> 					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+472c454
+< //				errs() << "First Index (Non-constant): " << **OI << "\n";
+---
+> 				errs() << "First Index (Non-constant): " << **OI << "\n";
+483,484c465,466
+< //						errs() << "VLA Detected2\n";
+< //						errs() << "base pointer: " << *allocaInst << "\n";
+---
+> 						errs() << "VLA Detected2\n";
+> 						errs() << "base pointer: " << *allocaInst << "\n";
+494c476
+< //							errs() << "** This GEP is not an array access. **\n";
+---
+> 							errs() << "** This GEP is not an array access. **\n";
+520,521c502,503
+< //						errs() << "index: " << *index << "\n";
+< //						errs() << "limit: " << *limit << "\n";
+---
+> 						errs() << "index: " << *index << "\n";
+> 						errs() << "limit: " << *limit << "\n";
+523,524c505,506
+< //						errs() << "origin index: " << *originIndex << "\n";
+< //						errs() << "origin limit: " << *originLimit << "\n";
+---
+> 						errs() << "origin index: " << *originIndex << "\n";
+> 						errs() << "origin limit: " << *originLimit << "\n";
+550c532
+< //						errs() << "VLA Chain Detected2\n";
+---
+> 						errs() << "VLA Chain Detected2\n";
+552c534
+< //						errs() << "OriginPointer: " << *allocaInst << "\n";
+---
+> 						errs() << "OriginPointer: " << *allocaInst << "\n";
+559,562c541
+< 							if (firstOp->getType()->isPointerTy())
+< 								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+567,570c546
+< 							if (secondOp->getType()->isPointerTy())
+< 								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+582c558
+< //							errs() << "** This GEP is not an array access. **\n";
+---
+> 							errs() << "** This GEP is not an array access. **\n";
+608,609c584,585
+< //						errs() << "index: " << *index << "\n";
+< //						errs() << "limit: " << *limit << "\n";
+---
+> 						errs() << "index: " << *index << "\n";
+> 						errs() << "limit: " << *limit << "\n";
+611,612c587,588
+< //						errs() << "origin index: " << *originIndex << "\n";
+< //						errs() << "origin limit: " << *originLimit << "\n";
+---
+> 						errs() << "origin index: " << *originIndex << "\n";
+> 						errs() << "origin limit: " << *originLimit << "\n";
+637c613
+< //						errs() << "This GEP is not an array access\n";
+---
+> 						errs() << "This GEP is not an array access\n";
+644,645c620,621
+< //					errs() << "Regular Array Detected\n";
+< //					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+---
+> 					errs() << "Regular Array Detected\n";
+> 					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
+651c627
+< //					errs() << "Variable index: " << *var_index;
+---
+> 					errs() << "Variable index: " << *var_index;
+658c634
+< //			errs() << "Regular Array Iteration\n";
+---
+> 			errs() << "Regular Array Iteration\n";
+668,669c644,645
+< //					errs() << "this index: " << current_index << "\n";
+< //					errs() << "this array size: " << numElements << "\n";
+---
+> 					errs() << "this index: " << current_index << "\n";
+> 					errs() << "this array size: " << numElements << "\n";
+674c650
+< //						errs() << "Cumulative array index: " << arr_index << "\n";
+---
+> 						errs() << "Cumulative array index: " << arr_index << "\n";
+683,686c659
+< 							if (var_index->getType()->isPointerTy())
+< 								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+694c667
+< //						errs() << "Cumulative array index: " << *var_index << "\n";
+---
+> 						errs() << "Cumulative array index: " << *var_index << "\n";
+697c670
+< //					errs() << "cumulutive array size: " << arr_size << "\n";
+---
+> 					errs() << "cumulutive array size: " << arr_size << "\n";
+710,711c683,684
+< //					errs() << "this index: " << *current_index << "\n";
+< //					errs() << "this array size: " << numElements << "\n";
+---
+> 					errs() << "this index: " << *current_index << "\n";
+> 					errs() << "this array size: " << numElements << "\n";
+729,730c702,703
+< //								errs() << "cumulative array index: " << *var_index << "\n";
+< //								errs() << "cumulative array size: " << arr_size << "\n";
+---
+> 								errs() << "cumulative array index: " << *var_index << "\n";
+> 								errs() << "cumulative array size: " << arr_size << "\n";
+744,747c717
+< 							if (var_index->getType()->isPointerTy())
+< 								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
+< 							else
+< 								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+---
+> 							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
+755,756c725,726
+< //					errs() << "cumulative array index: " << *var_index << "\n";
+< //					errs() << "cumulative array size: " << arr_size << "\n";
+---
+> 					errs() << "cumulative array index: " << *var_index << "\n";
+> 					errs() << "cumulative array size: " << arr_size << "\n";
+760c730
+< //		errs() << "\n";
+---
+> 		errs() << "\n";
+765c735
+< //			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
+---
+> 			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
+769,770c739,740
+< //	errs() << "---------------------- GEP Statistics: -----------------------\n";
+< //	errs() << "Cumulative Index: ";
+---
+> 	errs() << "---------------------- GEP Statistics: -----------------------\n";
+> 	errs() << "Cumulative Index: ";
+772,775c742,745
+< //	if (index_all_const)
+< //		errs() << arr_index << "\n";
+< //	else
+< //		errs() << *var_index << "\n";
+---
+> 	if (index_all_const)
+> 		errs() << arr_index << "\n";
+> 	else
+> 		errs() << *var_index << "\n";
+777c747
+< //	errs() << "Cumulative Array Size: " << arr_size << "\n";
+---
+> 	errs() << "Cumulative Array Size: " << arr_size << "\n";
+812,814d781
+< 					
+< 	if (dyn_cast<LoadInst>(origin_index))
+< 		origin_index = ((LoadInst*)origin_index)->getOperand(0);
+831c798
+< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+---
+> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";

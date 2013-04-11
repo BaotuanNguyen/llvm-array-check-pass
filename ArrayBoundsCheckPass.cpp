@@ -810,8 +810,8 @@ bool ArrayBoundsCheckPass::checkGEP(User* user, Instruction* currInst)
 	if (origin_index == NULL)
 		origin_index = var_index;
 					
-	if (dyn_cast<LoadInst>(origin_index))
-		origin_index = ((LoadInst*)origin_index)->getOperand(0);
+//	if (dyn_cast<LoadInst>(origin_index))
+//		origin_index = ((LoadInst*)origin_index)->getOperand(0);
 
 	varNames1.push_back(negone);
 	varNames1.push_back(origin_index);
