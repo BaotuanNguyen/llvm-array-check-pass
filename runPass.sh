@@ -6,6 +6,7 @@ LLVM_LIBRARY=../../Release+Asserts/
 MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
 OPT="${LLVM_LIBRARY}bin/opt"
 MOREOPTION=""
+LLFILE=""
 
 #other optimizations can added by opt as argument
 #all optimization can be obtained by -help
@@ -30,6 +31,10 @@ case "$1" in
 	'-remove-check')
 		OPT_PASSES="-insert-check -modify-check -remove-check" 
 		;;
+	'-remove-check-hoist')
+		OPT_PASSES="-insert-check -loop-hoist -modify-check -remove-check" 
+		;;
+
 	'-remove-check-more')
 		OPT_PASSES="-insert-check -modify-check -remove-check" MOREOPTION="-D__MORE__"
 		;;
@@ -42,7 +47,10 @@ case "$1" in
 esac
 
 #remove suffix .c
-TEST_NAME=${2%.c}
+SUFFIX=${2##*.}
+SUFFIX=.$SUFFIX
+
+TEST_NAME=${2%$SUFFIX}
 
 touch VeryBusyAnalysisPass.cpp
 touch AvailableAnalysisPass.cpp
@@ -50,7 +58,7 @@ make CPPFLAGS=$MOREOPTION
 
 #compiles the test file, and the check library
 
-clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME.c
+clang -emit-llvm -S -o $TEST_NAME.ll $TEST_NAME$SUFFIX
 
 #clang++ -D__STDC_LIMIT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -D__MORE__=$MORE -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp
 clang++ -emit-llvm -S -o LibArrayCheck.ll LibArrayCheck.cpp

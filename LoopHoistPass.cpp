@@ -5,13 +5,9 @@ static RegisterPass<LoopHoistPass> Y("loop-hoist", "Propagate of checks out of l
 
 bool LoopHoistPass::doInitialization(Loop *L, LPPassManager &LPM)
 {
-        errs() << "\n";
-        errs() << "\n";
-        errs() << "++++++++++++++++++++++++++++++++++++++++++++\n";
-        errs() << "Beginning propagation of checks out of loops\n";
-        errs() << "++++++++++++++++++++++++++++++++++++++++++++\n";
-        errs() << "\n";
-
+	errs() << "\n#########################################\n";
+	errs() << "     LOOP HOIST PASS\n";
+	errs() << "#########################################\n";
         
         return true;
 }
@@ -23,19 +19,19 @@ bool LoopHoistPass::runOnLoop(Loop *L, LPPassManager &LPM)
         this->oldToNew = new ValueToNameAndValuePair();
         this->checkToCandidacy = new CheckToCandidacy();
 
-        errs() << "\n***\n";
-        errs() << "Finding candidates\n";
-        errs() << "***\n";
+//        errs() << "\n***\n";
+//        errs() << "Finding candidates\n";
+//        errs() << "***\n";
         findCandidates(L); // populates the this->bbToCheck (mapping of basic blocks to their candidate checks)
 
-        errs() << "\n***\n";
-        errs() << "Preparing for hoist\n";
-        errs() << "***\n";
+//        errs() << "\n***\n";
+//        errs() << "Preparing for hoist\n";
+//        errs() << "***\n";
         prepHoist(L); // populates bbAndInstVec
 
-        errs() << "\n***\n";
-        errs() << "Hoisting, good lads\n";
-        errs() << "***\n";
+//        errs() << "\n***\n";
+//        errs() << "Hoisting, good lads\n";
+//        errs() << "***\n";
         hoist(L);
 
         return true;
@@ -59,9 +55,9 @@ void LoopHoistPass::findCandidates(Loop *loop)
 				const StringRef& callFunctionName = ci->getCalledFunction()->getName();
 				if(callFunctionName.equals("checkLessThan")){
 
-                                        errs() << "callinst: " << *ci << "\n";
+                                        //errs() << "callinst: " << *ci << "\n";
                                         MDNode* metadata = ci->getMetadata("VarName");
-                                        errs() << "metadata: " << *metadata;
+                                        //errs() << "metadata: " << *metadata;
 
                                         Value *operandOne = metadata->getOperand(0);
                                         Value *operandTwo = metadata->getOperand(1);
@@ -69,9 +65,9 @@ void LoopHoistPass::findCandidates(Loop *loop)
                                         if(effect_t candidacy = isCandidate(loop, operandOne, operandTwo)){
 
 
-                                                errs() << "candidacy: " << candidacy << "\n";
-                                                errs() << "candidate operandOne: " << *operandOne << "\n";
-                                                errs() << "candidate operandTwo: " << *operandTwo << "\n";
+                                                //errs() << "candidacy: " << candidacy << "\n";
+                                                //errs() << "candidate operandOne: " << *operandOne << "\n";
+                                                //errs() << "candidate operandTwo: " << *operandTwo << "\n";
 
                                                 CheckCandidacyPair *ccp = new CheckCandidacyPair(ci, candidacy);
                                                 checkToCandidacy->insert(*ccp);
@@ -96,11 +92,11 @@ void LoopHoistPass::findCandidates(Loop *loop)
                                                         cs = new CheckSet();
                                                         PairBBAndCheckSet *pbj = new PairBBAndCheckSet(block, cs);
                                                         bbToCheck->insert(*pbj);
-                                                        errs() << "made new checkset and added to bbToCheck\n";
+                                                        //errs() << "made new checkset and added to bbToCheck\n";
                                                 }
 
                                                 // insert the call instruction to the set of candidate checks
-                                                errs() << "about to insert to checkset with ci: " << *ci << "\n";
+                                                //errs() << "about to insert to checkset with ci: " << *ci << "\n";
                                                 cs->insert(ci);
                                         }
                                 }
@@ -146,7 +142,7 @@ void LoopHoistPass::prepHoist(Loop *loop)
                                 // remove the instruction from its current block
                                 // add the instruction to header's predecessors -- we're just going to skip everything in the paper
                                 for(PredBlocks::iterator predIt = validPredecessorBlocks->begin(), predIe = validPredecessorBlocks->end(); predIt != predIe; ++predIt){
-                                        errs() << "pushing onto bbAndInstVec with inst: " << *csIt << "\n";
+                                        //errs() << "pushing onto bbAndInstVec with inst: " << *csIt << "\n";
                                         bbAndInstVec->push_back(new PairBBAndInst(*predIt, *csIt));
                                 }
                         }
@@ -159,8 +155,7 @@ void LoopHoistPass::prepHoist(Loop *loop)
  */
 void LoopHoistPass::hoist(Loop *loop)
 {
-
-        errs() << "inside hoist\n";
+        //errs() << "inside hoist\n";
         // iterate over every pair of predecessor block with a candidate check
         for(BBAndInstVec::iterator it = bbAndInstVec->begin(), ie = bbAndInstVec->end(); it != ie; ++it){
 
@@ -177,34 +172,34 @@ void LoopHoistPass::hoist(Loop *loop)
                 MoveVec *moveVec = new MoveVec(); // the vector of instructions being moved
                 //std::vector<Instruction *> *instDependenciesVec = new std::vector<Instruction *>();
 
-                errs() << "after initial definitions\n";
+//                errs() << "after initial definitions\n";
 
 
                 // create a list of the instructions we are hoisting
                 moveVec->push_back(inst);
-                errs() << "after push back\n";
+  //              errs() << "after push back\n";
                 CallInst *ci = dyn_cast<CallInst>(inst);
-                errs() << "after cast with ci: " << *ci << "\n";
+    //            errs() << "after cast with ci: " << *ci << "\n";
                 addDependencies(loop, moveVec, ci->getArgOperand(0));
-                errs() << "between dependencies\n";
+      //          errs() << "between dependencies\n";
                 addDependencies(loop, moveVec, ci->getArgOperand(1));
 
-                errs() << "finished adding dependencies\n";
+        //        errs() << "finished adding dependencies\n";
 
 
 
                 CheckToCandidacy::iterator ctcIt = checkToCandidacy->find(ci);
                 if(ctcIt != checkToCandidacy->end()){
                         // element found
-                        errs() << "Match ci: " << *ci << "\n";
-                        errs() << "its candidacy: " << ctcIt->second << "\n";
+          //              errs() << "Match ci: " << *ci << "\n";
+            //            errs() << "its candidacy: " << ctcIt->second << "\n";
 
                         effect_t candidacy = ctcIt->second;
 
                         if(candidacy == INVARIANT){
                                 while(moveVec->size() > 0){
                                         Instruction *instToRemove = moveVec->back();
-                                        errs() << "instToRemove: " << *instToRemove << "\n";
+              //                          errs() << "instToRemove: " << *instToRemove << "\n";
                                         moveVec->pop_back();
 
                                         instToRemove->removeFromParent();
@@ -213,7 +208,7 @@ void LoopHoistPass::hoist(Loop *loop)
 
                         }else{
 
-                                errs() << "\nBEGINNING HOY\n";
+                //                errs() << "\nBEGINNING HOY\n";
                                 // remove and insert
                                 int count = 0;
                                 //char *ss = itoa(count);
@@ -223,7 +218,7 @@ void LoopHoistPass::hoist(Loop *loop)
                                 std::string tag = "hoy" + ss.str();
                                 while(moveVec->size() > 0){
                                         Instruction *instToRemove = moveVec->back();
-                                        errs() << "instToRemove: " << *instToRemove << "\n";
+            //                            errs() << "instToRemove: " << *instToRemove << "\n";
                                         moveVec->pop_back();
 
                                         // cloning for increment and decrement loop hoisting
@@ -259,23 +254,23 @@ void LoopHoistPass::hoist(Loop *loop)
                                                                 if(it != oldToNew->end()){
                                                                         // element found
                                                                         NameAndValuePair *nvpTemp = it->second;
-                                                                        errs() << " found inst: " << *(nvpTemp->second) << "\n";
+                //                                                        errs() << " found inst: " << *(nvpTemp->second) << "\n";
                                                                         clonedInst->setOperand(n, nvpTemp->second);
                                                                 }
                                                         }
                                                 }
-                                                errs() << "clonedinst at the end: " << *clonedInst << "\n";
+                                                //errs() << "clonedinst at the end: " << *clonedInst << "\n";
                                         }else{
                                                 // call instruction
                                                 if(CallInst *checkInst = dyn_cast<CallInst>(clonedInst)){
-                                                        errs() << "found a call: " << *checkInst << "\n";
+                                                        //errs() << "found a call: " << *checkInst << "\n";
                                                         unsigned int numArgs = checkInst->getNumArgOperands();
                                                         for(unsigned int a = 0; a < numArgs; ++a){
                                                                 ValueToNameAndValuePair::iterator it = oldToNew->find(checkInst->getArgOperand(a));
                                                                 if(it != oldToNew->end()){
                                                                         // element found
                                                                         NameAndValuePair *nvpTemp = it->second;
-                                                                        errs() << " found inst: " << *(nvpTemp->second) << "\n";
+              //                                                          errs() << " found inst: " << *(nvpTemp->second) << "\n";
                                                                         checkInst->setArgOperand(a, nvpTemp->second);
                                                                 }
                                                                 //oldTonew->find(clonedInst->getOperand(n)
@@ -283,11 +278,11 @@ void LoopHoistPass::hoist(Loop *loop)
                                                         }
 
                                                 }
-                                                errs() << "The instToRemove within the call block: " << *instToRemove << "\n";
+                                                //errs() << "The instToRemove within the call block: " << *instToRemove << "\n";
                                                 instToRemove->eraseFromParent();
                                                 //predBlock->getInstList().insert(back, instToRemove);
                                         }
-                                        errs() << clonedInst->getName().str() << "\n";
+                  //                      errs() << clonedInst->getName().str() << "\n";
                                         predBlock->getInstList().insert(back, clonedInst);
 
                                 }
@@ -307,7 +302,7 @@ void LoopHoistPass::hoist(Loop *loop)
 
 void LoopHoistPass::addDependencies(Loop *loop, MoveVec *moveVec, Value *v)
 {
-        errs() << "looking for dependencies for value: " << *v << "\n";
+        //errs() << "looking for dependencies for value: " << *v << "\n";
 
         if(Instruction *inst = dyn_cast<Instruction>(v)){
                 BasicBlock *parent = inst->getParent();
@@ -318,7 +313,7 @@ void LoopHoistPass::addDependencies(Loop *loop, MoveVec *moveVec, Value *v)
 
                         // add the instruction
                         moveVec->push_back(inst); 
-                        errs() << "adding inst: " << *inst << "\n";
+                        //errs() << "adding inst: " << *inst << "\n";
 
                         // break when we hit a load
                         LoadInst *loadInst;
@@ -348,8 +343,8 @@ effect_t LoopHoistPass::isCandidate(Loop *loop, Value *operandOne, Value *operan
 
         effect_t operandOneEffect = getEffect(loop, operandOne, 0);
         effect_t operandTwoEffect = getEffect(loop, operandTwo, 0);
-        errs() << "operandOneEffect: " << operandOneEffect << "\n";
-        errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
+        //errs() << "operandOneEffect: " << operandOneEffect << "\n";
+        //errs() << "operandTwoEffect: " << operandTwoEffect << "\n";
 
         // invariant
         if(operandOneEffect == INVARIANT && operandTwoEffect == INVARIANT){
@@ -390,7 +385,7 @@ effect_t LoopHoistPass::isCandidate(Loop *loop, Value *operandOne, Value *operan
 // recursive -- must be able to find the effect across all nested loops
 effect_t LoopHoistPass::getEffect(Loop *loop, Value *operand, int change)
 {
-        errs() << "inside getEffect wit operand: " << *operand << "\n";
+        //errs() << "inside getEffect wit operand: " << *operand << "\n";
 
         Constant *constant;
         if((constant = dyn_cast<Constant>(operand))){

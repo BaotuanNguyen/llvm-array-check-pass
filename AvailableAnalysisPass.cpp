@@ -156,10 +156,16 @@ void AvailableAnalysisPass::dataFlowAnalysis()
 }
 RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet *cInOfBlock)
 {
+	std::map<Instruction*, bool> stored;
     RangeCheckSet* currentRCS = cInOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++)
 	{
+		if (StoreInst* sti = dyn_cast<StoreInst>(&(*II)))
+		{
+			if (dyn_cast<AllocaInst>(sti->getOperand(1)))
+				stored[&(*II)] = true;
+		}
 	
 #ifdef __MORE__
 		EffectGenMore::generateEffectMore(&(*II), BB, this->module);
@@ -201,6 +207,23 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 			currentRCS->kill_forward(storeInst, this->module);
         }
    }
+	
+/*	
+	for (std::map<Instruction*, bool>::iterator i = stored.begin(), e = stored.end(); i != e; i++)
+	{
+		LLVMContext& context = this->module->getContext();
+		MDString* unchangedString = MDString::get(context, "UNCHANGED");
+		Value* var = i->first->getOperand(1);
+		ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
+	
+		std::vector<Value*> effect;
+		effect.push_back(unchangedString);
+		effect.push_back(var);
+		effect.push_back(zero);
+		MDNode* effects = MDNode::get(context, effect);
+
+		dyn_cast<Instruction>(var)->setMetadata("EFFECT", effects);
+	}*/
    
 	return currentRCS;
 }

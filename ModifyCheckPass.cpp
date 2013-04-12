@@ -39,7 +39,6 @@ void ModifyCheckPass::modify(CallInst* callInst, RangeCheckSet* RCS, Module* M)
 			{
 				Value* arguement = expr2->left;
 
-				errs() << "argument: " << *arguement << "\n";
 				if ((expr2->left->getType()) != Type::getInt64Ty(this->M->getContext()))
 				{
 						if (expr2->left->getType()->isPointerTy())
@@ -222,9 +221,9 @@ bool ModifyCheckPass::runOnModule(Module& M)
 		runOnFunction(&(*func));
 	}
 	
-	errs() << "\n#########################################\n";
-	errs() << "DONE\n";
-	errs() << "#########################################\n";
+//	errs() << "\n#########################################\n";
+//	errs() << "DONE\n";
+//	errs() << "#########################################\n";
 
 	return false;
 }

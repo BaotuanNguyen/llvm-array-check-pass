@@ -3,12 +3,6 @@
 char VeryBusyAnalysisPass::ID = 0;
 static RegisterPass<VeryBusyAnalysisPass> E("very-busy-analysis", "Global Very Busy Array Bound Checks Analysis", false, false);
 
-/*RangeCheckSet* SetUnion(RangeCheckSet* S1, RangeCheckSet* S2)
-  {
-  RangeCheckSet* unionSet = S1->set_union(S2);
-  return unionSet;
-  }*/
-
 static RangeCheckSet* SetIntersection(RangeCheckSet* S1, RangeCheckSet* S2)
 {
 	RangeCheckSet* intersectSet = S1->set_intersect(S2);
@@ -165,12 +159,19 @@ void VeryBusyAnalysisPass::dataFlowAnalysis()
 
 RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOutOfBlock)
 {
+	std::map<Instruction*, bool> stored;
 	RangeCheckSet* currentRCS = cOutOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++)
 	{
 		for (BasicBlock::InstListType::iterator i = instList.begin(), e = &(*II); i != e; i++)
 		{
+			if (StoreInst* sti = dyn_cast<StoreInst>(&(*i)))
+			{
+				if (dyn_cast<AllocaInst>(sti->getOperand(1)))
+					stored[&(*i)] = true;
+			}
+
 #ifdef __MORE__
 			EffectGenMore::generateEffectMore(&(*i), BB, this->module);
 #else
@@ -212,6 +213,25 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 			currentRCS->kill_backward(storeInst, this->module);
 		}
 	}
+
+	/*
+	for (std::map<Instruction*, bool>::iterator i = stored.begin(), e = stored.end(); i != e; i++)
+	{
+		errs() << "store inst " << *(i->first) << "\n";
+		LLVMContext& context = this->module->getContext();
+		MDString* unchangedString = MDString::get(context, "UNCHANGED");
+		Value* var = i->first->getOperand(1);
+		ConstantInt* zero = ConstantInt::get(Type::getInt64Ty(context), 0);
+	
+		std::vector<Value*> effect;
+		effect.push_back(unchangedString);
+		effect.push_back(var);
+		effect.push_back(zero);
+		MDNode* effects = MDNode::get(context, effect);
+
+		dyn_cast<Instruction>(var)->setMetadata("EFFECT", effects);
+	}*/
+
 
 	return currentRCS;
 }

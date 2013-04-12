@@ -84,6 +84,7 @@ bool RemoveRedundantCheckPass::runOnBasicBlock(BasicBlock* BB)
 	for (it = redundantList.begin(); it != redundantList.end(); it++)
 	{
 		removedNum++;
+		errs() << "Removing: " << **it << "\n";
 		(*it)->eraseFromParent();
 	}
 

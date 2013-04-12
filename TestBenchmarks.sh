@@ -59,11 +59,9 @@ done
 #compile file with flags
 if [[ $MORE -eq 1 ]]
 then
-	echo "compiling with MORE"
 	make clean
 	make CPPFLAGS:="-D __MORE__ -w" 
 else
-	echo "compiling with NOMORE"
 	make clean
 	make
 fi
@@ -127,6 +125,7 @@ compileBenchmark(){
 		#if there are no passes assigned to run, then don't load library
 		checksAdded="0"
 		checksDeleted="0"
+	
 		if [[ $2 == "" ]]; then
 			if [[ $VERBOSE == 1 ]]; then
 				echo "$OPT -S -o $llModFile < $llFile > /dev/null"
