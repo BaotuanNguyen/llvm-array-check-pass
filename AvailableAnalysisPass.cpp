@@ -160,6 +160,13 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::iterator II = instList.begin(), EI = instList.end(); II != EI; II++)
 	{
+	
+#ifdef __MORE__
+		EffectGenMore::generateEffectMore(&(*II), BB, this->module);
+#else
+		EffectGen::generateEffect(&(*II), this->module);
+#endif
+	
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
 			if (callInst->getCalledFunction() == NULL)
@@ -194,5 +201,6 @@ RangeCheckSet *AvailableAnalysisPass::getAvailOut(BasicBlock *BB, RangeCheckSet 
 			currentRCS->kill_forward(storeInst, this->module);
         }
    }
-   return currentRCS;
+   
+	return currentRCS;
 }

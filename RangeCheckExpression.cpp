@@ -44,235 +44,146 @@ VALUE_STATUS RangeCheckExpression::compare(Value* var1, Value* var2)
 				return GT;
 			}
 		}
-		else if (dyn_cast<Instruction>(var2))
+		else if (dyn_cast<Instruction>(var2) || dyn_cast<GlobalVariable>(var2))
 		{
 //			errs() << "v2 is instruction\n";
-			// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-			// Find the possible constant value of this variable!
-			// return unknown for now
 			return UNKNOWN;
 		}
 		else
 		{
-//			errs() << "ERROR!! UNKNOWN OPERAND!!\n";
+			errs() << "ERROR!! UNKNOWN OPERAND!!\n";
+			errs() << *var2 << "\n";
 			return UNKNOWN;
 		}
 	}
-	else if (dyn_cast<AllocaInst>(var1) || dyn_cast<GlobalVariable>(var1)) // v1 is a named variable
+	else if (ConstantInt* ci = dyn_cast<ConstantInt>(var2))
 	{
-//		errs() << "v1 is a named variable\n";
-		Value* ai = var1;
+//		errs() << "v2 is constant\n";
 
-		if (dyn_cast<ConstantInt>(var2)) // v2 is a constant
+		if(ConstantInt* ai = dyn_cast<ConstantInt>(var1))
 		{
-//			errs() << "v2 is constant\n";
-			// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-			// Find the possible constant value of this variable!
-			// return unknown for now
+//			errs() << "v1 is constant\n";
+			int64_t a = ai->getSExtValue();
+			int64_t c = ci->getSExtValue();
+			
+			if (a < c)
+			{
+//				errs() << "v1 < v2\n";
+				return LT;
+			}
+			else if (a == c)
+			{
+//				errs() << "v1 == v2\n";
+				return EQ;
+			}
+			else
+			{
+//				errs() << "v1 > v2\n";
+				return GT;
+			}
+		}
+		else if (dyn_cast<Instruction>(var1) || dyn_cast<GlobalVariable>(var1))
+		{
+//			errs() << "v2 is instruction\n";
 			return UNKNOWN;
 		}
-		else if (dyn_cast<AllocaInst>(var2) || dyn_cast<GlobalVariable>(var2)) // v2 is a named variable
+		else
+		{
+			errs() << "ERROR!! UNKNOWN OPERAND!!\n";
+			errs() << *var1 << "\n";
+			return UNKNOWN;
+		}
+	}
+
+	// can't deal with global variables...
+	if (dyn_cast<GlobalVariable>(var1) || dyn_cast<GlobalVariable>(var2))
+		return UNKNOWN;
+
+	MDNode* metadata1 = dyn_cast<Instruction>(var1)->getMetadata("EFFECT");
+	MDNode* metadata2 = dyn_cast<Instruction>(var2)->getMetadata("EFFECT");
+
+	if (metadata1 == NULL || metadata2 == NULL)
+	{
+		return UNKNOWN;
+	}
+
+	if (dyn_cast<MDString>(metadata1->getOperand(0))->getString().equals("UNCHANGED")) // v1 is a named variable
+	{
+		Value* av = metadata1->getOperand(1);
+
+		if (dyn_cast<MDString>(metadata2->getOperand(0))->getString().equals("UNCHANGED")) // v2 is a named variable
 		{
 //			errs() << "v2 is a named variable\n";
-			Value* ci = var2;
+			Value* cv = metadata2->getOperand(1);
 
-			if (ai == ci)
+			if (av == cv)
 			{
 				return EQ;
 			}
 			else
 			{
-				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-				// Find the possible constant value of this variable!
-				// return unknown for now
 				return UNKNOWN;
 			}
 
 		}
-		else if (Instruction* ct = dyn_cast<Instruction>(var2)) // v2 is a temporary variable
+		else if (dyn_cast<MDString>(metadata2->getOperand(0))->getString().equals("CHANGED")) // v2 unknown
+		{
+			return UNKNOWN;
+		}
+		else // v2 is a temporary variable	
 		{
 //			errs() << "v2 is a temporary variable\n";
-			MDNode* effects = ct->getMetadata("EFFECT");
 
-			if (effects == NULL)
-				return UNKNOWN;
-
-			MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
+			Value* cv = metadata2->getOperand(1);
 			
-			if (mdstr->getString().equals("CHANGED"))
+			if (av != cv) // "related" variable in temporary c must be same to a
 			{
-				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-				// Find the possible constant value of this variable
-				// return unknown for now
 				return UNKNOWN;
 			}
 			else
-			{
-				Value* cv = dyn_cast<Value>(effects->getOperand(1));
-				
-				if (ai != cv) // "related" variable in temporary c must be same to a
-				{
-					// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-					// Find the possible constant value of this variable!
-					// return unknown for now
-					return UNKNOWN;
-				}
+			{   
+				// a < a+c for all c > 0
+				if (dyn_cast<MDString>(metadata2->getOperand(0))->getString().equals("INCREMENT"))
+					return LT;
+				else if (dyn_cast<MDString>(metadata2->getOperand(0))->getString().equals("UNCHANGED"))
+					return EQ;
 				else
-				{   
-					// a < a+c for all c > 0
-					if (mdstr->getString().equals("INCREMENT"))
-						return LT;
-					else if (mdstr->getString().equals("UNCHANGED"))
-						return EQ;
-					else
-						return GT;
-				}
+					return GT;
 			}
+			
 		}
 	}
-	else if (Instruction* at = dyn_cast<Instruction>(var1)) // a is a temporary variable
+	else // a is a temporary variable
 	{
-//		errs() << "v1 is a temporary variable\n";
-		MDNode* effects = at->getMetadata("EFFECT");
+		MDString* str1 = dyn_cast<MDString>(metadata1->getOperand(0));
+		MDString* str2 = dyn_cast<MDString>(metadata2->getOperand(0));
 
-		if (effects == NULL)
+		if (str1->getString().equals("CHANGED"))
 			return UNKNOWN;
+
+		if (str2->getString().equals("CHANGED"))
+			return UNKNOWN;
+
+		Value* av = metadata1->getOperand(1);
+		Value* cv = metadata2->getOperand(1);
+
+		if (av != cv)
+			return UNKNOWN;
+
+		ConstantInt* CI1 = dyn_cast<ConstantInt>(metadata1->getOperand(2));
+		ConstantInt* CI2 = dyn_cast<ConstantInt>(metadata2->getOperand(2));
+
+		int64_t c1 = CI1->getSExtValue();
+		int64_t c2 = CI2->getSExtValue();
+
+		if (c1 < c2)
+			return LT;
+		else if (c1 == c2)
+			return EQ;
+		else
+			return GT;
+	}
 	
-		MDString* mdstr = dyn_cast<MDString>(effects->getOperand(0));
-			
-		if (!(mdstr->getString().equals("CHANGED"))) // a = v + 3
-		{
-			Value* av = dyn_cast<Value>(effects->getOperand(1));
-			
-			if (dyn_cast<ConstantInt>(var2)) // c is a constant
-			{
-//				errs() << "v2 is a constant\n";
-				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-				// Find the possible constant value of this variable!
-				// return unknown for now
-				return UNKNOWN;
-			}
-			else if (dyn_cast<AllocaInst>(var2) || dyn_cast<GlobalVariable>(var2)) // c is a named variable
-			{
-//				errs() << "v2 is a named variable\n";
-				Value* cv = var2;
-
-				if (av != cv)
-				{
-					// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-					// Find the possible constant value of this variable!
-					// return unknown for now
-
-					return UNKNOWN;
-				}
-				else
-				{
-					// a+c < a for all c < 0
-					if (mdstr->getString().equals("DECREMENT"))
-						return LT;
-					else if (mdstr->getString().equals("UNCHANGED"))
-						return EQ;
-					else
-						return GT;
-				}
-			}
-			else if (Instruction* ct = dyn_cast<Instruction>(var2)) // c is a temporary variable
-			{
-//				errs() << "v2 is a temporary variable\n";
-				MDNode* effects2 = ct->getMetadata("EFFECT");
-			
-				if (effects2 == NULL)
-					return UNKNOWN;
-
-
-				MDString* mdstr2 = dyn_cast<MDString>(effects2->getOperand(0));
-				
-				if (!(mdstr2->getString().equals("CHANGED"))) // c = v + 3
-				{
-					Value* cv = dyn_cast<Value>(effects2->getOperand(1));
-
-					if (av != cv)
-					{
-						// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-						// Find the possible constant value of this variable!
-						// return unknown for now
-						return UNKNOWN;
-					}
-					else
-					{
-						// a + c1 < a + c2 if c1 < c2
-						ConstantInt* CI1 = dyn_cast<ConstantInt>(effects->getOperand(2));
-						ConstantInt* CI2 = dyn_cast<ConstantInt>(effects2->getOperand(2));
-
-						int64_t c1 = CI1->getSExtValue();
-						int64_t c2 = CI2->getSExtValue();
-
-						if (c1 < c2)
-							return LT;
-						else if (c1 == c2)
-							return EQ;
-						else
-							return GT;
-					}
-				}
-				else
-				{
-					// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-					// Find the possible constant value of this variable!
-					// return unknown for now
-					return UNKNOWN;
-				}
-			}
-		}
-		else // a = v1 + v2
-		{
-			if (dyn_cast<ConstantInt>(var2))
-			{
-				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-				// Find the possible constant value of this variable!
-				// return unknown for now
-				return UNKNOWN;
-			}
-			else if (dyn_cast<AllocaInst>(var2) || dyn_cast<GlobalVariable>(var2))
-			{
-				// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-				// Find the possible constant value of this variable!
-				// return unknown for now
-				return UNKNOWN;
-			}
-			else if (Instruction* ct = dyn_cast<Instruction>(var2)) // c is a temporary
-			{ 
-				MDNode* effects2 = ct->getMetadata("EFFECT");
-
-
-				if (effects2 == NULL)
-					return UNKNOWN;
-
-				MDString* mdstr2 = dyn_cast<MDString>(effects2->getOperand(0));
-				
-				if (!(mdstr2->getString().equals("CHANGED"))) // c = v + 3
-				{
-					// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-					// Find the possible constant value of this variable!
-					// return unknown for now
-					return UNKNOWN;
-				}
-				else // c = v1 + v2
-				{
-					// VALUE NUMBERING GOES HERE!!!!!!!!!!!!!!!!!!!!
-					// Find the possible constant value of this variable!
-					// return unknown for now
-					return UNKNOWN;
-				}			
-			}
-		}
-	}
-	else
-	{
-		errs() << "ERROR: UNKNOWN OPERAND IN compare()\n";
-		return UNKNOWN;
-	}
-
 	return UNKNOWN;
 }
 

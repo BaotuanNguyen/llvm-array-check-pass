@@ -26,6 +26,26 @@ RangeCheckSet* RangeCheckSet::set_intersect(RangeCheckSet* s)
 	return intersectSet;
 }
 
+RangeCheckSet* RangeCheckSet::set_intersect_proper(RangeCheckSet* s)
+{
+	RangeCheckSet* intersectSet = new RangeCheckSet();
+
+	for (std::vector<RangeCheckExpression>::iterator it1 = this->checkSet->begin(); it1 != this->checkSet->end(); ++it1)
+	{
+		for (std::vector<RangeCheckExpression>::iterator it2 = s->checkSet->begin(); it2 != s->checkSet->end(); ++it2)
+		{
+			if (*it1 == *it2)
+			{
+				intersectSet->insert(*it1);
+			}
+		}
+	}
+	
+	return intersectSet;
+}
+
+
+
 RangeCheckSet* RangeCheckSet::set_union(RangeCheckExpression* expr)
 {
 	RangeCheckSet* unionedSet = this->copy();

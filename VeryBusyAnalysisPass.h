@@ -10,6 +10,8 @@
 #include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Instructions.h"
 #include "RangeCheckSet.h"
+#include "EffectGen.h"
+#include "EffectGenMore.h"
 #include <queue>
 #include <set>
 #include <map>

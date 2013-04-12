@@ -1,276 +1,58 @@
-72,75c72,75
-< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-< //	errs() << "   *** Inserting a Bound Check Instruction ***\n";
-< //	errs() <<"   " <<  *left << "  <  " << *right << "\n";
-< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
----
-> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-> 	errs() << "   *** Inserting a Bound Check Instruction ***\n";
-> 	errs() <<"   " <<  *left << "  <  " << *right << "\n";
-> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-79,82c79
-< 		if (left->getType()->isPointerTy())
-< 			left = CastInst::CreatePointerCast(left, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
-< 		else
-< 			left = CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
----
-> 		left = llvm::CastInst::CreateIntegerCast(left, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
-87,90c84
-< 		if (right->getType()->isPointerTy())
-< 			right = CastInst::CreatePointerCast(right, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", Inst);
-< 		else
-< 			right = CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
----
-> 		right = llvm::CastInst::CreateIntegerCast(right, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", Inst);
-231,233c225,227
-< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-< //	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
-< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
----
-> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-> 	errs() << "   [GEP instruction detected]: " << *currInst << "\n";
-> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
-281c275
-< //				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
----
-> 				errs() << "\nFirst Index (Constant): " << firstIndex << "\n";
-290,291c284,285
-< //						errs() << "VLA Detected1\n";
-< //						errs() << "base pointer: " << *allocaInst << "\n";
----
-> 						errs() << "VLA Detected1\n";
-> 						errs() << "base pointer: " << *allocaInst << "\n";
-301c295
-< //							errs() << "** This GEP is not an array access. **\n";
----
-> 							errs() << "** This GEP is not an array access. **\n";
-321,324c315,318
-< //						errs() << "index: " << *CI << "\n";
-< //						errs() << "limit: " << *limit << "\n";
-< //						errs() << "originIndex: " << *CI << "\n";
-< //						errs() << "originLimit: " << *originLimit << "\n";
----
-> 						errs() << "index: " << *CI << "\n";
-> 						errs() << "limit: " << *limit << "\n";
-> 						errs() << "originIndex: " << *CI << "\n";
-> 						errs() << "originLimit: " << *originLimit << "\n";
-355,356c349,350
-< //						errs() << "VLA Chain Detected1\n";
-< //						errs() << "origin pointer: " << *originPointer << "\n";
----
-> 						errs() << "VLA Chain Detected1\n";
-> 						errs() << "origin pointer: " << *originPointer << "\n";
-366,369c360
-< 							if (firstOp->getType()->isPointerTy())
-< 								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-374,377c365
-< 							if (secondOp->getType()->isPointerTy())
-< 								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-396c384
-< //							errs() << "** This GEP is not an array access. **\n";
----
-> 							errs() << "** This GEP is not an array access. **\n";
-417,418c405,406
-< 						if (dyn_cast<LoadInst>(originIndex))
-< 							originIndex = ((LoadInst*) originIndex)->getOperand(0);
----
-> 						errs() << "index: " << *index << "\n";
-> 						errs() << "limit: " << *limit << "\n";
-420,427c408,409
-< 						if (dyn_cast<LoadInst>(originLimit))
-< 							originLimit = ((LoadInst*) originLimit)->getOperand(0);
-< 
-< //						errs() << "index: " << *index << "\n";
-< //						errs() << "limit: " << *limit << "\n";
-< 						
-< //						errs() << "origin index: " << *originIndex << "\n";
-< //						errs() << "origin limit: " << *originLimit << "\n";
----
-> 						errs() << "origin index: " << *originIndex << "\n";
-> 						errs() << "origin limit: " << *originLimit << "\n";
-455c437
-< //						errs() << "** This GEP is not an array access. **\n";
----
-> 						errs() << "** This GEP is not an array access. **\n";
-463,464c445,446
-< //					errs() << "Regular Array Detected\n";
-< //					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
----
-> 					errs() << "Regular Array Detected\n";
-> 					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
-472c454
-< //				errs() << "First Index (Non-constant): " << **OI << "\n";
----
-> 				errs() << "First Index (Non-constant): " << **OI << "\n";
-483,484c465,466
-< //						errs() << "VLA Detected2\n";
-< //						errs() << "base pointer: " << *allocaInst << "\n";
----
-> 						errs() << "VLA Detected2\n";
-> 						errs() << "base pointer: " << *allocaInst << "\n";
-494c476
-< //							errs() << "** This GEP is not an array access. **\n";
----
-> 							errs() << "** This GEP is not an array access. **\n";
-520,521c502,503
-< //						errs() << "index: " << *index << "\n";
-< //						errs() << "limit: " << *limit << "\n";
----
-> 						errs() << "index: " << *index << "\n";
-> 						errs() << "limit: " << *limit << "\n";
-523,524c505,506
-< //						errs() << "origin index: " << *originIndex << "\n";
-< //						errs() << "origin limit: " << *originLimit << "\n";
----
-> 						errs() << "origin index: " << *originIndex << "\n";
-> 						errs() << "origin limit: " << *originLimit << "\n";
-550c532
-< //						errs() << "VLA Chain Detected2\n";
----
-> 						errs() << "VLA Chain Detected2\n";
-552c534
-< //						errs() << "OriginPointer: " << *allocaInst << "\n";
----
-> 						errs() << "OriginPointer: " << *allocaInst << "\n";
-559,562c541
-< 							if (firstOp->getType()->isPointerTy())
-< 								firstOp = CastInst::CreatePointerCast(firstOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								firstOp = CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							firstOp = llvm::CastInst::CreateIntegerCast(firstOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-567,570c546
-< 							if (secondOp->getType()->isPointerTy())
-< 								secondOp = CastInst::CreatePointerCast(secondOp, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								secondOp = CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							secondOp = llvm::CastInst::CreateIntegerCast(secondOp, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-582c558
-< //							errs() << "** This GEP is not an array access. **\n";
----
-> 							errs() << "** This GEP is not an array access. **\n";
-608,609c584,585
-< //						errs() << "index: " << *index << "\n";
-< //						errs() << "limit: " << *limit << "\n";
----
-> 						errs() << "index: " << *index << "\n";
-> 						errs() << "limit: " << *limit << "\n";
-611,612c587,588
-< //						errs() << "origin index: " << *originIndex << "\n";
-< //						errs() << "origin limit: " << *originLimit << "\n";
----
-> 						errs() << "origin index: " << *originIndex << "\n";
-> 						errs() << "origin limit: " << *originLimit << "\n";
-637c613
-< //						errs() << "This GEP is not an array access\n";
----
-> 						errs() << "This GEP is not an array access\n";
-644,645c620,621
-< //					errs() << "Regular Array Detected\n";
-< //					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
----
-> 					errs() << "Regular Array Detected\n";
-> 					errs() << "Base Pointer: " << *(dyn_cast<AllocaInst>(basePointer)) << "\n";
-651c627
-< //					errs() << "Variable index: " << *var_index;
----
-> 					errs() << "Variable index: " << *var_index;
-658c634
-< //			errs() << "Regular Array Iteration\n";
----
-> 			errs() << "Regular Array Iteration\n";
-668,669c644,645
-< //					errs() << "this index: " << current_index << "\n";
-< //					errs() << "this array size: " << numElements << "\n";
----
-> 					errs() << "this index: " << current_index << "\n";
-> 					errs() << "this array size: " << numElements << "\n";
-674c650
-< //						errs() << "Cumulative array index: " << arr_index << "\n";
----
-> 						errs() << "Cumulative array index: " << arr_index << "\n";
-683,686c659
-< 							if (var_index->getType()->isPointerTy())
-< 								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-694c667
-< //						errs() << "Cumulative array index: " << *var_index << "\n";
----
-> 						errs() << "Cumulative array index: " << *var_index << "\n";
-697c670
-< //					errs() << "cumulutive array size: " << arr_size << "\n";
----
-> 					errs() << "cumulutive array size: " << arr_size << "\n";
-710,711c683,684
-< //					errs() << "this index: " << *current_index << "\n";
-< //					errs() << "this array size: " << numElements << "\n";
----
-> 					errs() << "this index: " << *current_index << "\n";
-> 					errs() << "this array size: " << numElements << "\n";
-729,730c702,703
-< //								errs() << "cumulative array index: " << *var_index << "\n";
-< //								errs() << "cumulative array size: " << arr_size << "\n";
----
-> 								errs() << "cumulative array index: " << *var_index << "\n";
-> 								errs() << "cumulative array size: " << arr_size << "\n";
-744,747c717
-< 							if (var_index->getType()->isPointerTy())
-< 								var_index = CastInst::CreatePointerCast(var_index, Type::getInt64PtrTy(this->M->getContext()), "ADD_CHECK", currInst);
-< 							else
-< 								var_index = CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
----
-> 							var_index = llvm::CastInst::CreateIntegerCast(var_index, Type::getInt64Ty(this->M->getContext()), true, "ADD_CHECK", currInst);
-755,756c725,726
-< //					errs() << "cumulative array index: " << *var_index << "\n";
-< //					errs() << "cumulative array size: " << arr_size << "\n";
----
-> 					errs() << "cumulative array index: " << *var_index << "\n";
-> 					errs() << "cumulative array size: " << arr_size << "\n";
-760c730
-< //		errs() << "\n";
----
-> 		errs() << "\n";
-765c735
-< //			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
----
-> 			errs() << "** This GEP involves a global array whose size cannot be determined at compile time. **\n";
-769,770c739,740
-< //	errs() << "---------------------- GEP Statistics: -----------------------\n";
-< //	errs() << "Cumulative Index: ";
----
-> 	errs() << "---------------------- GEP Statistics: -----------------------\n";
-> 	errs() << "Cumulative Index: ";
-772,775c742,745
-< //	if (index_all_const)
-< //		errs() << arr_index << "\n";
-< //	else
-< //		errs() << *var_index << "\n";
----
-> 	if (index_all_const)
-> 		errs() << arr_index << "\n";
-> 	else
-> 		errs() << *var_index << "\n";
-777c747
-< //	errs() << "Cumulative Array Size: " << arr_size << "\n";
----
-> 	errs() << "Cumulative Array Size: " << arr_size << "\n";
-812,814d781
-< 					
-< 	if (dyn_cast<LoadInst>(origin_index))
-< 		origin_index = ((LoadInst*)origin_index)->getOperand(0);
-831c798
-< //	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
----
-> 	errs() << "-----------------------------------------------------------------------------------------------------------------\n";
+Pass Arguments:  -targetlibinfo -datalayout -insert-check -very-busy-analysis -modify-check -available-analysis -remove-check -print-module
+Target Library Information
+Data Layout
+  ModulePass Manager
+    Insert Run-Time Array Bounds Checks
+    Global Very Busy Array Bound Checks Analysis
+    Modify Array Bound Checks using very busy checks
+    Global Available Bound Checks Analysis
+    Redundant array bounds check removal
+    Print module to stderr
+#################################################################################################################
+	              	Array Bound Checks Insertion Pass          
+#################################################################################################################
+-----------------------------------------------------------------------------------------------------------------
+ Number of checks inserted: 4
+-----------------------------------------------------------------------------------------------------------------
+
+#########################################
+VERY BUSY ANALYSIS
+#########################################
+
+#########################################
+MODIFYCHECK PASS
+#########################################
+
+#########################################
+DONE
+#########################################
+
+#########################################
+AVAILABLE ANALYSIS
+#########################################
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+generated LESS!!
+
+#########################################
+REMOVE REDUNDANT CHECK PASS
+#########################################
+---------------------------------------------
+REMOVED REDUNDANT CHECKS #: 0
+---------------------------------------------

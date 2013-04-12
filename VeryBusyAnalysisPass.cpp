@@ -168,7 +168,16 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 	RangeCheckSet* currentRCS = cOutOfBlock;
 	llvm::BasicBlock::InstListType& instList = BB->getInstList();
 	for(BasicBlock::InstListType::reverse_iterator II = instList.rbegin(), EI = instList.rend(); II != EI; II++)
-	{	
+	{
+		for (BasicBlock::InstListType::iterator i = instList.begin(), e = &(*II); i != e; i++)
+		{
+#ifdef __MORE__
+			EffectGenMore::generateEffectMore(&(*i), BB, this->module);
+#else
+			EffectGen::generateEffect(&(*i), this->module);
+#endif
+		}
+		
 		if(CallInst* callInst = dyn_cast<CallInst>(&*II))
 		{
 			if (callInst->getCalledFunction() == NULL)
@@ -203,5 +212,6 @@ RangeCheckSet *VeryBusyAnalysisPass::getVBIn(BasicBlock *BB, RangeCheckSet *cOut
 			currentRCS->kill_backward(storeInst, this->module);
 		}
 	}
+
 	return currentRCS;
 }

@@ -1,8 +1,8 @@
 int main()
 {
-	int a[10];
-	int n = 4;
-	int b = n;
-	a[n] = 4;
-	a[b] = 33;
+	int a[3];
+	int	b = 4;
+	int c = b;
+	a[b] = 9;
+	a[c] = 11;
 }

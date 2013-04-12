@@ -8,6 +8,7 @@ MODULE_LIB=`ls ${LLVM_LIBRARY}lib/llvm-array-check-pass*`
 cd ../
 OPT="./${LLVM_LIBRARY}bin/opt"
 PASSES=""
+MORE=0
 
 shopt -s dotglob
 shopt -s nullglob
@@ -33,11 +34,11 @@ options
 while getopts "123alvh" OPTION
 do
 	case "$OPTION" in
-		"1")	PASSES="-effect-gen -insert-check"
+		"1")	PASSES="-insert-check"
 			;;
-		"2")	PASSES="-effect-gen -insert-check -modify-check -remove-check"
+		"2")	PASSES="-insert-check -modify-check -remove-check" MORE=0
 			;;
-		"3") 	PASSES="-effect-gen-more -insert-check -modify-check -remove-check"
+		"3") 	PASSES="-insert-check -modify-check -remove-check" MORE=1
 			;;
 		"a")	usage
 			exit 1;;	#no used currently
@@ -56,23 +57,15 @@ esac
 done
 
 #compile file with flags
-if [[ $VERBOSE -eq 1 ]]
+if [[ $MORE -eq 1 ]]
 then
-	in=$( cat "m.o" )
-	if [[ $in != "1" ]]; then
-		make clean
-	fi
-	#echo "make"
-	make 
-	echo "1" > "m.o"
+	echo "compiling with MORE"
+	make clean
+	make CPPFLAGS:="-D __MORE__ -w" 
 else
-	in=$( cat "m.o" )
-	if [[ $in != "0" ]]; then
-		make clean
-	fi
-	#echo "make CPPFLAGS:=\"-D__NOT_VERBOSE__ -w\""
-	make CPPFLAGS:="-D__NOT_VERBOSE__=1 -w"
-	echo "0" > "m.o"
+	echo "compiling with NOMORE"
+	make clean
+	make
 fi
 
 getMakeOption(){
@@ -118,7 +111,6 @@ compileBenchmark(){
 		llModFile=${cFile%.c}".mod.ll"
 		#oFiles=$oFiles" "$oFile
 		llModFiles=$llModFiles" "$llModFile
-
 		#emitting intermediate llvm IR code
 		clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile}
 		#echo "clang ${ccOpts} -I${1} ${ccWOpts} -o ${llFile} ${cFile} 2> /dev/null"
@@ -133,7 +125,8 @@ compileBenchmark(){
 		fi
 
 		#if there are no passes assigned to run, then don't load library
-		checksAdded=""
+		checksAdded="0"
+		checksDeleted="0"
 		if [[ $2 == "" ]]; then
 			if [[ $VERBOSE == 1 ]]; then
 				echo "$OPT -S -o $llModFile < $llFile > /dev/null"
@@ -141,7 +134,7 @@ compileBenchmark(){
 			$OPT -S -o $llModFile < $llFile > /dev/null
 		else
 			if [[ $VERBOSE == 1 ]]; then
-				echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile > /dev/null"
+				echo "$OPT -load ${MODULE_LIB} $2 -S -o $llModFile < $llFile" #dev/null
 			fi
 			#get number of checks interted
 			#Number of checks inserted

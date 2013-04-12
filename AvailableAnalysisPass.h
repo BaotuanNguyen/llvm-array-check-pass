@@ -10,6 +10,8 @@
 #include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Instructions.h"
 #include "RangeCheckSet.h"
+#include "EffectGen.h"
+#include "EffectGenMore.h"
 #include <queue>
 #include <set>
 #include <map>
@@ -44,7 +46,7 @@ namespace llvm {
 			RangeCheckSet *getAvailOut(BasicBlock *bb, RangeCheckSet *cInOfBlock);
 			void createUniverse();
 			MapInstToRCS *I_A_OUT;
-		
+					
 		private:
 			void dataFlowAnalysis();
 			void findGenSets();

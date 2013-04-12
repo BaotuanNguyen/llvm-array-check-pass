@@ -9,7 +9,7 @@
 #include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Instructions.h"
 #include "AvailableAnalysisPass.h"
-#include "EffectGenPass.h"
+#include "EffectGen.h"
 #include "RangeCheckSet.h"
 #include <queue>
 #include <set>
